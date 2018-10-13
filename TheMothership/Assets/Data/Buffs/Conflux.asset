@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c9fde687c5bd9941842d78715712586, type: 3}
+  m_Name: Conflux
+  m_EditorClassIdentifier: 
+  enumName: Conflux
+  buffName: Conflux
+  buffPicture: 304212775
+  type: 30
+  duration: 1
+  isDebuff: 1
+  affectors:
+  - statAffectorName: 30% Less Shield
+    stat: 6
+    condition: 00000000
+    calculation: 0
+    amount: -0.3
+    threshold: -0.3
+  - statAffectorName: 20% More Health
+    stat: 5
+    condition: 00000000
+    calculation: 0
+    amount: 0.2
+    threshold: 0.2

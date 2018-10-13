@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1047c78fd402dc40b22f606f59f9273, type: 3}
+  m_Name: ThorProject
+  m_EditorClassIdentifier: 
+  enumName: OrbitalBombardment
+  onHitName: Orbital Bombardment
+  onHitDescription: Charges a Oribital Bombardment beam
+  type: 0
+  endQualifier: 
+  effectsWhen:
+  - when: 210
+    effect: 1100800972
+  debuffs: 
+  delayedDamage:
+  - damage:
+    - type: 0
+      amount: 20
+    - type: 5
+      amount: 100
+    modifiers: []
+    delay: 1.4
+    radius: 2
+    impact: 100
+  - damage:
+    - type: 0
+      amount: 40
+    - type: 5
+      amount: 200
+    modifiers: []
+    delay: 2
+    radius: 2
+    impact: 300
+  - damage:
+    - type: 0
+      amount: 60
+    - type: 5
+      amount: 300
+    modifiers: []
+    delay: 3
+    radius: 2
+    impact: 600
+  - damage:
+    - type: 0
+      amount: 80
+    - type: 5
+      amount: 400
+    modifiers: []
+    delay: 4
+    radius: 2
+    impact: 800
+  - damage:
+    - type: 0
+      amount: 100
+    - type: 5
+      amount: 500
+    modifiers: []
+    delay: 4.4
+    radius: 2
+    impact: 1000

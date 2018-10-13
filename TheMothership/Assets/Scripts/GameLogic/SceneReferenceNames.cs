@@ -1,0 +1,28 @@
+public enum SceneReferenceNames 
+{
+	Main = 1200001086,
+	NodeClone = 1313158513,
+	NodeDroppedItems = 1314304615,
+	NodeLinks = 1313162250,
+	NodeMarkers = 1313552661,
+	NodeProjectiles = 1313387766,
+	PanelAttachmentItem = 1500401133,
+	PanelAttachmentSlot = 1500401265,
+	PanelDebuffDuration = 1500712319,
+	PanelDebuffStack = 1499756427,
+	PanelDebuffStatic = 1500258274,
+	PanelDuration = 1499820719,
+	PanelEquipmentItem = 1500602563,
+	PanelEquipmentSlot = 1500602695,
+	PanelHealth = 1499224205,
+	PanelInventoryItem = 1500948998,
+	PanelInventorySlot = 1500949130,
+	PanelOnMouseItem = 1500885890,
+	PanelOnMouseMarker = 1500201068,
+	PanelReload = 1499354487,
+	PanelStaticEquipment = 1500701255,
+	PanelStaticInventory = 1499293548,
+	PanelTooltip = 1500449849,
+	Terrain = 1904109643,
+
+}

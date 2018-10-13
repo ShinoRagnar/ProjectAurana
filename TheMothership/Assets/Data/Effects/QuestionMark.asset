@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e83e895b2f5434408d85786585f09ef, type: 3}
+  m_Name: QuestionMark
+  m_EditorClassIdentifier: 
+  enumName: QuestionMark
+  effectName: Question Mark
+  prefab: 1619996356
+  scaling: 20
+  duration: 1.3
+  handles: 0
+  randomZRotation: 0
+  hasYDistance: 0
+  hasXDistance: 0
+  hasZDistance: 0
+  isStatic: 0
+  cleanupInnerTransforms: 0
+  cleanupStartAt: 3
+  prefabAlterations: 

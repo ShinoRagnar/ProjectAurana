@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9349b17a71a12ef44b6035ccf106e09c, type: 3}
+  m_Name: MouseReload
+  m_EditorClassIdentifier: 
+  itemName: MouseReload
+  prefab: 1213165564
+  points:
+  - prefabNode: Pic
+    point: 44
+  - prefabNode: TopDividor
+    point: 550
+  - prefabNode: Progress
+    point: 520
+  - prefabNode: bkg
+    point: 54
+  - prefabNode: Glow
+    point: 500
+  - prefabNode: Dividor
+    point: 530
+  - prefabNode: BottomDividor
+    point: 560
+  - prefabNode: Rotate
+    point: 570
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

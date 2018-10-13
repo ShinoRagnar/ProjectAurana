@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23dc91699b100e245a98daabb10cf9a1, type: 3}
+  m_Name: TheThorProject
+  m_EditorClassIdentifier: 
+  enumName: TheThorProject
+  itemName: The Thor Project
+  itemDescription: Launches three trackers that communicate with the orbital thor
+    project cannon
+  prefab: 1907005321
+  sprite: 1907005321
+  rarity: 40
+  effectsWhen:
+  - when: 20
+    effect: 1219360264
+  bullet: 1907005321
+  sockets: []
+  buffs: 
+  points:
+  - prefabNode: Barrel_end_1
+    point: 1
+  audio: 1213097955
+  reloadTime: 10
+  isRifle: 0
+  diameter: 2
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

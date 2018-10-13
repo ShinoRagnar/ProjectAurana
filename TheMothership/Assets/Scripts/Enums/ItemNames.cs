@@ -1,0 +1,27 @@
+public enum ItemNames 
+{
+	EnemyHealthBar = 412477192,
+	EquipmentSlot = 415323341,
+	Group = 617031398,
+	InventoryItemBorder = 813538936,
+	InventorySlot = 812669776,
+	InventorySocket = 813873845,
+	InventorySocketable = 812867424,
+	JetBeamLegs = 903852387,
+	JetBeamRolling = 903529815,
+	JetBeamStandardSoldierLeft = 904654950,
+	JetBeamStandardSoldierRight = 904783466,
+	MouseReload = 1213165564,
+	ReloadFrame = 1704760127,
+	Tooltip = 1914238443,
+	TooltipBuff = 1913186625,
+	TooltipDamageTitles = 1914898887,
+	TooltipDividor = 1914800527,
+	TooltipFluff = 1914166263,
+	TooltipItemNameBorder = 1914279199,
+	TooltipMargin = 1913383817,
+	TooltipModifier = 1914943904,
+	TooltipOnHit = 1914170048,
+	TooltipTwoPartRow = 1914423075,
+
+}

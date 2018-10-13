@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1658e97ec3e0fd74388058d7ab320497, type: 3}
+  m_Name: DemonTargeter
+  m_EditorClassIdentifier: 
+  enumName: DemonTargeter
+  itemName: Targeter
+  itemDescription: Demonic targeting
+  prefab: 1899828498
+  sprite: 1899828498
+  rarity: 20
+  rows:
+  - columns: 000000000300000000000000
+  - columns: 030000000100000002000000
+  - columns: 030000000100000002000000
+  connectionPos: {x: 1, y: 0}
+  sockets: []
+  buffs: 
+  points: []
+  effectsWhen:
+  - when: 80
+    effect: 303245064
+  - when: 60
+    effect: 514208927
+  - when: 70
+    effect: 920510037
+  audio: 1203753075

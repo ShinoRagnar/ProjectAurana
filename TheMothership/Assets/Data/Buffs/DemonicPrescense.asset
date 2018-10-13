@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c9fde687c5bd9941842d78715712586, type: 3}
+  m_Name: DemonicPrescense
+  m_EditorClassIdentifier: 
+  enumName: DemonicPrescense
+  buffName: DemonicPrescense
+  buffPicture: 120441240
+  type: 30
+  duration: 0
+  isDebuff: 1
+  affectors:
+  - statAffectorName: 1% Less EMP Damage Dealth
+    stat: 90
+    condition: 
+    calculation: 0
+    amount: -0.01
+    threshold: 0
+  - statAffectorName: 2% Less Shield
+    stat: 6
+    condition: 
+    calculation: 0
+    amount: -0.02
+    threshold: 0
+  - statAffectorName: 1% more health
+    stat: 5
+    condition: 
+    calculation: 0
+    amount: 0.01
+    threshold: 0
+  - statAffectorName: 3% More Corruption Damage Dealt
+    stat: 100
+    condition: 
+    calculation: 0
+    amount: 0.03
+    threshold: 0

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49dc11c640a16942b41c8ebc005b6df, type: 3}
+  m_Name: TurretBase
+  m_EditorClassIdentifier: 
+  enumName: TurretBase
+  itemName: Turret Base
+  itemDescription: The Base of Empire Standard Turret Defence
+  prefab: 1920846719
+  sprite: 1920846719
+  rarity: 10
+  audio: 1815074794
+  sockets: []
+  buffs: 
+  points:
+  - prefabNode: EverythingMounted
+    point: 38
+  - prefabNode: Grab
+    point: 39
+  widthCapacity: 1
+  heightCapacity: 1
+  possibleMovements: 00000000
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

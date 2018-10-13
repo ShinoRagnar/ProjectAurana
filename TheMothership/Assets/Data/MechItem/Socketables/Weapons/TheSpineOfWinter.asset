@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d9615195ad9204478f6a8079e37796a, type: 3}
+  m_Name: TheSpineOfWinter
+  m_EditorClassIdentifier: 
+  enumName: TheSpineOfWinter
+  itemName: TheSpineOfWinter
+  itemDescription: The spine of a winter dragon
+  prefab: 1906212411
+  sprite: 1906212411
+  rarity: 40
+  effectsWhen:
+  - when: 90
+    effect: 1822386656
+  - when: 100
+    effect: 1821783381
+  - when: 40
+    effect: 1801341223
+  - when: 30
+    effect: 1801341223
+  sockets: []
+  buffs: 73f7b60c
+  points: []
+  audio: 1822036503
+  type: 10
+  onHit:
+  - onHit: 207029581
+    conditions:
+    - selector: 30
+      comparator: 20
+      calculation: 0
+      target: 10
+      buff: 213236731
+      stat: 5
+      threshold: 5
+  - onHit: 517960196
+    conditions:
+    - selector: 30
+      comparator: 20
+      calculation: 0
+      target: 10
+      buff: 213236731
+      stat: 5
+      threshold: 10
+  damageModifiers:
+  - conditions:
+    - selector: 50
+      comparator: 0
+      calculation: 0
+      target: 10
+      buff: 207029581
+      stat: 10
+      threshold: 0
+    damageModifier: 2
+    impactAddition: 2000
+    shakeAddition: 0.5
+  - conditions:
+    - selector: 50
+      comparator: 0
+      calculation: 0
+      target: 10
+      buff: 517960340
+      stat: 10
+      threshold: 0
+    damageModifier: 5
+    impactAddition: 2000
+    shakeAddition: 1
+  damage:
+  - type: 0
+    amount: 25
+  impact: 7000
+  inventoryItemHeight: 2
+  inventoryItemWidth: 2
+  shakeFactor: 1
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

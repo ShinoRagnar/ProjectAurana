@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e83e895b2f5434408d85786585f09ef, type: 3}
+  m_Name: ScatterSnow
+  m_EditorClassIdentifier: 
+  enumName: ScatterSnow
+  effectName: Scatter Snow
+  prefab: 1801341223
+  scaling: 10
+  duration: 4
+  handles: 0
+  randomZRotation: 0
+  hasYDistance: 0
+  hasXDistance: 0
+  hasZDistance: 0
+  isStatic: 0
+  cleanupInnerTransforms: 0
+  cleanupStartAt: 3
+  prefabAlterations: 

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef20115be1b629e45acb22f3686acf5c, type: 3}
+  m_Name: MortarBullet
+  m_EditorClassIdentifier: 
+  enumName: MortarBullet
+  bulletName: Mortar Bullet
+  type: 20
+  audio: 1213265369
+  effectsWhen:
+  - when: 10
+    effect: 1213978916
+  - when: 50
+    effect: 1213964416
+  - when: 60
+    effect: 514208927
+  - when: 70
+    effect: 920510037
+  projectiles:
+  - role: 0
+    projectile: 1213395265
+  onHit: []
+  damageModifiers: []
+  damage:
+  - type: 0
+    amount: 200
+  impact: 10000
+  explosionRadius: 2

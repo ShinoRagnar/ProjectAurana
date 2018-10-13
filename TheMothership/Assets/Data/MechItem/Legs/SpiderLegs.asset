@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49dc11c640a16942b41c8ebc005b6df, type: 3}
+  m_Name: SpiderLegs
+  m_EditorClassIdentifier: 
+  enumName: SpiderLegs
+  itemName: Mechanical Legs
+  itemDescription: Empire Walker Legs
+  prefab: 1815074794
+  sprite: 1815074794
+  rarity: 20
+  audio: 1815074794
+  sockets: []
+  buffs: 
+  points:
+  - prefabNode: BackLeftFootJet1
+    point: 99925
+  - prefabNode: BackLeftFootJet2
+    point: 99926
+  - prefabNode: BackLeftFootJet3
+    point: 99927
+  - prefabNode: BackRightFootJet1
+    point: 99922
+  - prefabNode: BackRightFootJet2
+    point: 99923
+  - prefabNode: BackRightFootJet3
+    point: 99924
+  - prefabNode: FrontLeftFootJet1
+    point: 99928
+  - prefabNode: FrontLeftFootJet2
+    point: 99929
+  - prefabNode: FrontLeftFootJet3
+    point: 99930
+  - prefabNode: FrontRightFootJet1
+    point: 99931
+  - prefabNode: FrontRightFootJet2
+    point: 99932
+  - prefabNode: FrontRightFootJet3
+    point: 99933
+  - prefabNode: ExhaustBackRightSide
+    point: 99936
+  - prefabNode: ExhaustBackLeftSide
+    point: 99937
+  - prefabNode: ExhaustFrontRightSide
+    point: 99934
+  - prefabNode: ExhaustFrontLeftSide
+    point: 99935
+  - prefabNode: EverythingMounted
+    point: 38
+  - prefabNode: Grab
+    point: 39
+  widthCapacity: 3
+  heightCapacity: 4
+  possibleMovements: 010000000200000003000000
+  effectsWhen:
+  - when: 80
+    effect: 422035261
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

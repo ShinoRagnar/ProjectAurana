@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1047c78fd402dc40b22f606f59f9273, type: 3}
+  m_Name: SpawnDemonLesser
+  m_EditorClassIdentifier: 
+  enumName: SpawnDemonLesser
+  onHitName: Spawns lesser demon
+  onHitDescription: Spawns a lesser demon
+  type: 0
+  endQualifier: 
+  effectsWhen:
+  - when: 210
+    effect: 1814149277
+  debuffs: 
+  delayedDamage:
+  - damage:
+    - type: 0
+      amount: 200
+    - type: 10
+      amount: 600
+    modifiers: []
+    delay: 1.3
+    radius: 5
+    impact: 3000

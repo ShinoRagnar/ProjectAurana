@@ -1,0 +1,338 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69c500290b804148902f318023f5e55, type: 3}
+  m_Name: BackupMainResource
+  m_EditorClassIdentifier: 
+  menues:
+  - name: MenuEquipment
+    prefab: {fileID: 224555377079285740, guid: 27195697a3abc8c41b07ff74e528d2dd, type: 2}
+  - name: MenuInventory
+    prefab: {fileID: 224438099638592618, guid: 03855140e60a2ed4282ae85a7b24d7bf, type: 2}
+  - name: MenuTooltip
+    prefab: {fileID: 224734699253203696, guid: b53faa96645d9394b982a8eb066f9cb2, type: 2}
+  cores:
+  - name: Core
+    prefab: {fileID: 4735448025591216, guid: e55fe5fafb310d34d91fd1cf02ab4d5f, type: 2}
+  - name: Demoness
+    prefab: {fileID: 4527714602750930, guid: 5fb850a0df5f4b34cb9cfecbb9bba820, type: 2}
+  - name: GothicTwoByTwo
+    prefab: {fileID: 4569559676850294, guid: d3500d7bc7b27404c91b728d4b1b9daa, type: 2}
+  - name: Targeter
+    prefab: {fileID: 4861837649601234, guid: f4be581e965e8574c8a473db5be9815f, type: 2}
+  - name: Thrusters
+    prefab: {fileID: 4319533950470654, guid: 28728df7dda98794c9b2940a6497e839, type: 2}
+  - name: TurretHead
+    prefab: {fileID: 4390556935755648, guid: 3db8a5af7a22e6d4d9e7ad4fcda65345, type: 2}
+  attachments: []
+  legs:
+  - name: SpiderLegs
+    prefab: {fileID: 4444249637349800, guid: 8961226387ab6c846b9e36afa39a1319, type: 2}
+  - name: TurretBase
+    prefab: {fileID: 4802863259980508, guid: 620299d19fd05c243af9e627e664415f, type: 2}
+  socketables:
+  - name: BloodCrystal
+    prefab: {fileID: 4276624544791328, guid: b3e01de456211384a9c92ff348fd7287, type: 2}
+  - name: DoubleMortar
+    prefab: {fileID: 4103230518169620, guid: d70eb28befb4e644782b5b3c6c288bf2, type: 2}
+  - name: GunArray
+    prefab: {fileID: 4980135399554122, guid: b11794beaa5f94040a4c537134b23bcc, type: 2}
+  - name: Mortar
+    prefab: {fileID: 4152871229689828, guid: 183e3ea80d267c241a5e7884243747cf, type: 2}
+  - name: Rifle
+    prefab: {fileID: 4867327571262128, guid: 0283612a93792b2458548010c36c2f77, type: 2}
+  inventory: []
+  ui:
+  - name: BuffStack
+    prefab: {fileID: 224873126264527200, guid: c02c5675b08991a4c99b5d457bf9e5e9, type: 2}
+  - name: BuffDuration
+    prefab: {fileID: 224418129862711972, guid: 8787282b6e078fe4283cbd8af821b153, type: 2}
+  - name: DurationBar
+    prefab: {fileID: 224164399781449248, guid: 9938c376ea5246143936d1f9ac2ce013, type: 2}
+  - name: EquipmentSlot
+    prefab: {fileID: 224413050290982788, guid: 4f72eab921d3fec49896509eb0080450, type: 2}
+  - name: HealthBar
+    prefab: {fileID: 224050478303027014, guid: ec0f79ad75c548f4ea9bf2d57684fa89, type: 2}
+  - name: InventoryAdd
+    prefab: {fileID: 224207098936115122, guid: 4758b363bc5ae5f41ae87bd5b3eaa439, type: 2}
+  - name: InventoryAddWeapon
+    prefab: {fileID: 224964341752324924, guid: a54b87bb59df249419eb87f444003e9c, type: 2}
+  - name: InventoryBlocked
+    prefab: {fileID: 224089005366036500, guid: 5609e87d5d6d9c74589e56322a9cd026, type: 2}
+  - name: InventoryItemBorder
+    prefab: {fileID: 224927447258243960, guid: ac5c00e2fe7fc7548a62613928fb3e9f, type: 2}
+  - name: InventorySlot
+    prefab: {fileID: 224639367374371642, guid: f3f77330222f110459a0032b7e7c98f7, type: 2}
+  - name: InventorySocket
+    prefab: {fileID: 224251981323872226, guid: 3237144c1bcf5ce4e8d7c974ffb9487f, type: 2}
+  - name: InventorySocketable
+    prefab: {fileID: 224415233651676750, guid: 6a302ebfa0482704085164b8cb2eea71, type: 2}
+  - name: ItemName
+    prefab: {fileID: 224559104086897868, guid: 423a0aa8420a9c7469c7b5b11edb753c, type: 2}
+  - name: ItemNameCommon
+    prefab: {fileID: 224268122851840688, guid: 65282055fafb8354ebe21778abd467dc, type: 2}
+  - name: ItemNameUncommon
+    prefab: {fileID: 224965344956577138, guid: b169c6e33995a4841b5df68d39cd6ac9, type: 2}
+  - name: ItemNameRare
+    prefab: {fileID: 224426550781804174, guid: 1b265f38e1dfc9d4291019612c7dffda, type: 2}
+  - name: ItemNameLegendary
+    prefab: {fileID: 224217886391893080, guid: 0067e6102c98fac4eae761a7e4de3a37, type: 2}
+  buffs:
+  - name: BuffConflux
+    prefab: {fileID: 224963216877785056, guid: ff7d0f7c588a7244da0b1607895d48b9, type: 2}
+  - name: BuffLeft
+    prefab: {fileID: 224780185226431480, guid: 205a6549b3bdb95458319c06500acd0a, type: 2}
+  - name: BuffRight
+    prefab: {fileID: 224159022067438478, guid: 723900ace519bf24fbb65a31d58f109f, type: 2}
+  effects:
+  - name: Exhaust
+    prefab: {fileID: 4858794666579496, guid: b9b2e0815da56c746b10735479b52d62, type: 2}
+  - name: Footmark
+    prefab: {fileID: 4920614489599710, guid: 326fd15434d4ad247b3f2b3f53eb6938, type: 2}
+  - name: Footstep
+    prefab: {fileID: 4384627538762406, guid: 0e6938f11063143498ac192b2b2c1b40, type: 2}
+  - name: ImpactRifleHealth
+    prefab: {fileID: 4567398828099890, guid: 861bc9123dae56f4a99e721b3493fde4, type: 2}
+  - name: ImpactRifleShield
+    prefab: {fileID: 4770559078314662, guid: 1fa7d718d9b74f84486706cf51d686d4, type: 2}
+  - name: JetBeamLegs
+    prefab: {fileID: 406634, guid: ea40af0b103306e45a6107ade5419c3a, type: 2}
+  - name: JetBeamRolling
+    prefab: {fileID: 410312, guid: 9360b622a27b1e643ba281d7c3e98e30, type: 2}
+  - name: JumpImpact
+    prefab: {fileID: 4251990875021232, guid: 51357f7ce485faf438d653cb45840cf5, type: 2}
+  - name: MortarExplosionGround
+    prefab: {fileID: 492284, guid: 7d76d6ec9b2c5e24da20794730a82861, type: 2}
+  - name: MortarExplosionHit
+    prefab: {fileID: 4203135993678742, guid: 9b62ca58ab278814b9bbf5c72362dfb6, type: 2}
+  - name: MortarProjectile
+    prefab: {fileID: 4754778058553728, guid: fbad560387b91ac4aafd380dfff1a75d, type: 2}
+  - name: MuzzleMortar
+    prefab: {fileID: 4224758179725818, guid: 5276f08d9cdd4a547a82bf930dc2fe3c, type: 2}
+  - name: MuzzleRifle
+    prefab: {fileID: 424018, guid: 91cae02dda1c67243ae1078e3126fbb4, type: 2}
+  - name: Skidmark
+    prefab: {fileID: 4231185677155522, guid: 8660153ddc2bdb443a3b65aa0d2ff76a, type: 2}
+  - name: DetachMetal
+    prefab: {fileID: 4014205512968618, guid: 326032537874ff24da0c7b44edce5491, type: 2}
+  - name: DetachCrystal
+    prefab: {fileID: 4193068730466590, guid: 6c5f80cc8fff0274a824b44dd8f9f1d2, type: 2}
+  - name: TextDamage
+    prefab: {fileID: 224923893729766844, guid: 16ee181d784d92d42a7544537b912351, type: 2}
+  - name: PickUpCloud
+    prefab: {fileID: 4406583976166656, guid: a817df1e10784cf40a7e75a3d7129596, type: 2}
+  characters:
+  - name: AlienSoldier
+    prefab: {fileID: 4318408460668504, guid: 1860e907d343266459e4a600bbd7d125, type: 2}
+  other:
+  - name: Focus
+    prefab: {fileID: 4891334893523958, guid: 5f544c43ad013a640b7e2c8ab2dbeeaa, type: 2}
+  - name: ForceShield
+    prefab: {fileID: 4556913453570840, guid: 91192a1deb1e13948972a6fbbf8a3669, type: 2}
+  - name: Crosshair
+    prefab: {fileID: 4502344694573690, guid: dd0be3fa84a52b64cb42c98e7567f8b8, type: 2}
+  - name: CornerCollisons
+    prefab: {fileID: 4167885692565510, guid: 206c7115e56f9cb45919f64b82987f81, type: 2}
+  inventorySounds:
+  - name: Tooltip
+    prefab:
+    - {fileID: 8300000, guid: 187ed4b6ebc2642be9557f2dfe860da3, type: 3}
+  - name: PickUpItem
+    prefab:
+    - {fileID: 8300000, guid: 98064bd470c2fa14c9188fa058497dc2, type: 3}
+  - name: PutDownItem
+    prefab:
+    - {fileID: 8300000, guid: be2f3d959b94b844da28556103ecbae1, type: 3}
+  - name: ItemBlocked
+    prefab:
+    - {fileID: 8300000, guid: 9c4d18e11b0134498bf548c0cf0e89f0, type: 3}
+  gameSounds:
+  - name: Engine
+    prefab:
+    - {fileID: 8300000, guid: 63a65416e95d50a4b992f5e8f374aa3a, type: 3}
+  - name: Jetpack
+    prefab:
+    - {fileID: 8300000, guid: 9683d941ca902a64c9f5dad65f7faa16, type: 3}
+  - name: EquipmentOpen
+    prefab:
+    - {fileID: 8300000, guid: 8ce3a76222c424f4e89a589c339f6782, type: 3}
+  - name: EquipmentClose
+    prefab:
+    - {fileID: 8300000, guid: 8f920abae030e481bbe754bb0f42a484, type: 3}
+  - name: InventoryOpen
+    prefab:
+    - {fileID: 8300000, guid: 8ce3a76222c424f4e89a589c339f6782, type: 3}
+  - name: InventoryClose
+    prefab:
+    - {fileID: 8300000, guid: 8f920abae030e481bbe754bb0f42a484, type: 3}
+  - name: Footsteps
+    prefab:
+    - {fileID: 8300000, guid: 027f7e7692b0a3e4881b7b7fcee4822b, type: 3}
+    - {fileID: 8300000, guid: 98064bd470c2fa14c9188fa058497dc2, type: 3}
+    - {fileID: 8300000, guid: 0cdd97cc506bb504ba8b92ddc983d826, type: 3}
+    - {fileID: 8300000, guid: 2ad5d2b04752cdc43a5fc3812a2712e0, type: 3}
+  - name: GearChangeRolling
+    prefab:
+    - {fileID: 8300000, guid: 77772fcc3692aae40a14a99b952c4168, type: 3}
+    - {fileID: 8300000, guid: 63f3836c15cf4de459c87f3181801d6c, type: 3}
+    - {fileID: 8300000, guid: d9eac4dfc29abe64faa49306ee4b4205, type: 3}
+  - name: HitMortar
+    prefab:
+    - {fileID: 8300000, guid: 038218c09cf65f84a847a33bc7ef7a3d, type: 3}
+    - {fileID: 8300000, guid: 415cec90f3562664ebe44017482bbc7b, type: 3}
+    - {fileID: 8300000, guid: 67f83c5ac89db4745b90b85f5d2c9509, type: 3}
+  - name: HitRifleHealth
+    prefab:
+    - {fileID: 8300000, guid: 0fc8936ede4d4c94cbc04ad25b442ebf, type: 3}
+    - {fileID: 8300000, guid: deb31dbb1a26c054891a4186c584a5d0, type: 3}
+  - name: HitRifleShield
+    prefab:
+    - {fileID: 8300000, guid: a10981fcb77f6774e8b4503ac4926910, type: 3}
+    - {fileID: 8300000, guid: 9db28af8564ff3f44ba56f1523e6561b, type: 3}
+  - name: TransformingToRoller
+    prefab:
+    - {fileID: 8300000, guid: 8364b67edc33228448aaf51d9a64ce49, type: 3}
+    - {fileID: 8300000, guid: cad7d2b5d229efa4298a42bbf096913c, type: 3}
+  - name: ShootMortar
+    prefab:
+    - {fileID: 8300000, guid: 96f2d57d972a04ad5a1e94940f8504db, type: 3}
+    - {fileID: 8300000, guid: 5d79ebcc7c23a4fa58a3da050a6a608b, type: 3}
+  - name: TransformingToSpider
+    prefab:
+    - {fileID: 8300000, guid: fdbe8e5fe058a89458cc214fc3583550, type: 3}
+  - name: LandingSpider
+    prefab:
+    - {fileID: 8300000, guid: af16eeaefc67509449256d860d32b500, type: 3}
+    - {fileID: 8300000, guid: 003c3cf7f7ae8b04cbba86df0a216469, type: 3}
+    - {fileID: 8300000, guid: c5f6b59b76b361c4691ad09bda046cf6, type: 3}
+    - {fileID: 8300000, guid: f41876bbcf36c2e469c7b75125a4be13, type: 3}
+    - {fileID: 8300000, guid: c7f81be3ef40a6342b0741c3411a84e4, type: 3}
+    - {fileID: 8300000, guid: 4fff64c59c32d1948a64b8ccff773573, type: 3}
+    - {fileID: 8300000, guid: e791d9fdc77e8144289b1ac64ba957a9, type: 3}
+    - {fileID: 8300000, guid: 5f487b9cfa65da1429b8235a5ad65834, type: 3}
+  - name: MetalCornerCollision
+    prefab:
+    - {fileID: 8300000, guid: 2589392e9aa79054aa8c23f8adfedd76, type: 3}
+    - {fileID: 8300000, guid: a615af9796db06242a84e175dec40171, type: 3}
+    - {fileID: 8300000, guid: 7ee9ede440422534192830c927230cc4, type: 3}
+  - name: MechExplosion
+    prefab:
+    - {fileID: 8300000, guid: e9aa64e973ce8e542a2475012d36ee13, type: 3}
+  - name: CrystalCornerCollision
+    prefab:
+    - {fileID: 8300000, guid: b09b22acfa5d449a6baf1c46a5dab43a, type: 3}
+  uiSounds: []
+  materials:
+  - name: Glass
+    prefab: {fileID: 2100000, guid: f4b3ed17bf0ea474eb58dcb85f20a6cd, type: 2}
+  - name: Health
+    prefab: {fileID: 2100000, guid: 2c15bf53c161add41b93f369f6642ddc, type: 2}
+  - name: Line
+    prefab: {fileID: 2100000, guid: 0e36a6bba4794194ab9b62f4d6685144, type: 2}
+  - name: Shield
+    prefab: {fileID: 2100000, guid: d92eaebc3d985ee439ac07565a0fff25, type: 2}
+  - name: Red
+    prefab: {fileID: 2100000, guid: 982944b8de307ff419fa933201735a55, type: 2}
+  - name: Yellow
+    prefab: {fileID: 2100000, guid: 4ea1d0baf09035a4db49d8d44d63bf18, type: 2}
+  - name: Green
+    prefab: {fileID: 2100000, guid: b89ded4fbb980f54bb77825ddcaff0e3, type: 2}
+  sprites:
+  - name: BloodCrystal
+    prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}
+  - name: Core
+    prefab: {fileID: 21300000, guid: 3ba4075728266414ab1838dec2601e55, type: 3}
+  - name: Demoness
+    prefab: {fileID: 21300000, guid: ec3876f52ce0592419d76105cbd92325, type: 3}
+  - name: DoubleMortar
+    prefab: {fileID: 21300000, guid: 8e9c98c0e239c0d4eb83dd0c7ef50b83, type: 3}
+  - name: GothicTwoByTwo
+    prefab: {fileID: 21300000, guid: bbfae2fa02f74ae45bed8f8fe860b147, type: 3}
+  - name: GunArray
+    prefab: {fileID: 21300000, guid: 0f59891dbeacfae43998b57efd8f25da, type: 3}
+  - name: Mortar
+    prefab: {fileID: 21300000, guid: cd50e854bd19308418c00f95d930e452, type: 3}
+  - name: Rifle
+    prefab: {fileID: 21300000, guid: 08fc9437c369ee24d8d55e3a2213e492, type: 3}
+  - name: SpiderLegs
+    prefab: {fileID: 21300000, guid: 2ccabd509b1451347b7f2dd7361e35a2, type: 3}
+  - name: Targeter
+    prefab: {fileID: 21300000, guid: 9eaa140199e03dd4fa56b00844b8435c, type: 3}
+  - name: Thrusters
+    prefab: {fileID: 21300000, guid: 729e3de8fd79d5c49a7c78883e541cb4, type: 3}
+  - name: TurretBase
+    prefab: {fileID: 21300000, guid: af97e335a3197de498d38821c4f0237e, type: 3}
+  - name: TurretHead
+    prefab: {fileID: 21300000, guid: 188aa815100222843835d98ea10b3925, type: 3}
+  items:
+  - {fileID: 11400000, guid: b071f56aa72c08a449540990a4e337b7, type: 2}
+  - {fileID: 11400000, guid: 97cc133a4323a8e48867727e0196ffdc, type: 2}
+  - {fileID: 11400000, guid: 1a87363c2896f8e4483cd6b8f818b19e, type: 2}
+  - {fileID: 11400000, guid: ebe1b5739417e5c47bd1c438dc052754, type: 2}
+  - {fileID: 11400000, guid: c2e8c48b432a2684db12011e42ef0c90, type: 2}
+  - {fileID: 11400000, guid: 9fac7e624bc8cdf4c849acde73fb80e1, type: 2}
+  - {fileID: 11400000, guid: ad85bf463efad2745b3f84ff510f93ab, type: 2}
+  - {fileID: 11400000, guid: 166ac36355c763c4989815b803a992c1, type: 2}
+  - {fileID: 11400000, guid: c137d83ba8fdebb49a72e657fcfe04a9, type: 2}
+  - {fileID: 11400000, guid: 16c5af32f3aca974f9d4e80849be6eb0, type: 2}
+  audioContainer:
+  - {fileID: 11400000, guid: 172415dae24ea6c44acabd109a209261, type: 2}
+  - {fileID: 11400000, guid: b2cce09655e049f4bace9522b1db2609, type: 2}
+  - {fileID: 11400000, guid: 00addf86d5ef0b14a8685f8ea46e5008, type: 2}
+  - {fileID: 11400000, guid: bf19f5702608ba74999b6ab88cb6a466, type: 2}
+  - {fileID: 11400000, guid: e7487f4976b93ca4e82701baf63b8616, type: 2}
+  - {fileID: 11400000, guid: e22bbb640b3e87748973e608716adf8f, type: 2}
+  - {fileID: 11400000, guid: cc3505276b2cf374eab2ae0c0b3adb22, type: 2}
+  buff:
+  - {fileID: 11400000, guid: 39d43e367b759b24c826fd52d13f123e, type: 2}
+  - {fileID: 11400000, guid: e01cd2944a632eb4884d55604b4006cc, type: 2}
+  - {fileID: 11400000, guid: ceeeb5396d208b349930e92d834dab7f, type: 2}
+  effect:
+  - {fileID: 11400000, guid: 5b0634203e01c534794515cc01137f5e, type: 2}
+  - {fileID: 11400000, guid: 7ab7a7776f54054408c1633cb54423da, type: 2}
+  - {fileID: 11400000, guid: 5c4100c08c2150848b75a830dcb3807d, type: 2}
+  - {fileID: 11400000, guid: 70e7c084751bd354a9e589542ed35846, type: 2}
+  - {fileID: 11400000, guid: 7cb8f18952786a14798268342724ec55, type: 2}
+  - {fileID: 11400000, guid: 8d5867f720458184e815649149f5fae7, type: 2}
+  - {fileID: 11400000, guid: e7365fcf1747edb4fb58101d6d4d3db4, type: 2}
+  - {fileID: 11400000, guid: 21fef29e2f7a7f64f9ef7be118bda034, type: 2}
+  - {fileID: 11400000, guid: 6816ed5a8176cec42878349f18bd37b5, type: 2}
+  - {fileID: 11400000, guid: 09532f40bd8706c43832e0bfd90c7827, type: 2}
+  - {fileID: 11400000, guid: 23c728f59e2b1444d88f563660ff9ebb, type: 2}
+  - {fileID: 11400000, guid: fe4f6fb8d8b84464887cd30be0e1a699, type: 2}
+  - {fileID: 11400000, guid: 8b3bed4bba649f4438e024f7ff039f80, type: 2}
+  - {fileID: 11400000, guid: b89f2ae5ac0452d4682fda15b4b3b070, type: 2}
+  - {fileID: 11400000, guid: cb435746e8331364b8ce8a1a742151ec, type: 2}
+  bullet:
+  - {fileID: 11400000, guid: e3640afbdc17ca043929b839d4163125, type: 2}
+  - {fileID: 11400000, guid: 1da27fbe39c24b848ad7506f4cd8e721, type: 2}
+  mechCores:
+  - {fileID: 11400000, guid: 32e3aecde878a8a46bf0f13464fbf8a2, type: 2}
+  - {fileID: 11400000, guid: 20ff8244288ab3343819530c3ee373a4, type: 2}
+  - {fileID: 11400000, guid: 26e148208cec87845a2fbc591e2614a0, type: 2}
+  - {fileID: 11400000, guid: bed38efe396cd4848a8e94e4e0b6bd24, type: 2}
+  - {fileID: 11400000, guid: a895992c7ca3b9c4baba4e690c980bc0, type: 2}
+  - {fileID: 11400000, guid: 6fcd20950ae1c524f8e1b7eec2a09532, type: 2}
+  gun:
+  - {fileID: 11400000, guid: a6f8183af48ef6846a90397a017d15c3, type: 2}
+  - {fileID: 11400000, guid: 68a8007e9d015384595ee359adb02f9c, type: 2}
+  - {fileID: 11400000, guid: 6ecb3d51e678bdb4ba16f9d1d4e4533f, type: 2}
+  crystal:
+  - {fileID: 11400000, guid: 256c5a31544bbeb4e8a2af7a3763a080, type: 2}
+  leg:
+  - {fileID: 11400000, guid: 1f986059c72140149a4c7846717b920c, type: 2}
+  - {fileID: 11400000, guid: 1c5d7e6ae662937408d6ad0953084593, type: 2}
+  mech:
+  - {fileID: 11400000, guid: 61a3c844413c0d44da424d0a79d4841c, type: 2}
+  - {fileID: 11400000, guid: 70a9ebb881673444e9cab122a29ad7e9, type: 2}
+  - {fileID: 11400000, guid: bc9de67f897bb1b4ba17193a3b0ea7bb, type: 2}
+  - {fileID: 11400000, guid: 5e54ad7354af7cb409fe4b8b978e1292, type: 2}
+  mechImports:
+  - {fileID: 0}

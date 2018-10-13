@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9349b17a71a12ef44b6035ccf106e09c, type: 3}
+  m_Name: EquipmentSlot
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemName: EquipmentSlot
+  prefab: 415323341
+  points:
+  - prefabNode: Selection
+    point: 45
+  - prefabNode: Add
+    point: 46
+  - prefabNode: MainBorder
+    point: 51
+  - prefabNode: Origin
+    point: 52
+  - prefabNode: Positive
+    point: 49
+  - prefabNode: Negative
+    point: 50
+  - prefabNode: Background
+    point: 54
+  - prefabNode: LeftCorner
+    point: 53
+  - prefabNode: InnerBorder
+    point: 55
+  position: {x: 0, y: 0, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  scale: {x: 0, y: 0, z: 0}

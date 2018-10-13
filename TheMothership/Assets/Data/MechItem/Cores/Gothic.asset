@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1658e97ec3e0fd74388058d7ab320497, type: 3}
+  m_Name: Gothic
+  m_EditorClassIdentifier: 
+  enumName: Gothic
+  itemName: Gothic
+  itemDescription: A piece of a church or something
+  prefab: 613996103
+  sprite: 613996103
+  rarity: 10
+  rows:
+  - columns: 00000000030000000300000000000000
+  - columns: 03000000010000000100000003000000
+  - columns: 03000000010000000100000003000000
+  connectionPos: {x: 2, y: 0}
+  sockets: []
+  buffs: 
+  points: []
+  effectsWhen:
+  - when: 80
+    effect: 303245064
+  audio: 1203753075

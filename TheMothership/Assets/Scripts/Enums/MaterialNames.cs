@@ -1,0 +1,28 @@
+public enum MaterialNames 
+{
+	Black = 111029211,
+	Cliff = 211029635,
+	Default = 303506587,
+	Dirt = 308000968,
+	DirtTwo = 307563920,
+	DryGround = 317281454,
+	Glass = 611031311,
+	Grass = 617031392,
+	GrassAndRocks = 617246290,
+	GrassDeadleaf = 617912887,
+	Green = 617031393,
+	GroundAndRocks = 616833424,
+	Health = 703028457,
+	HealthSelectedEnemy = 704228005,
+	Line = 1108001076,
+	OutlineFill = 1420106560,
+	OutlineMask = 1420106651,
+	Red = 1704000037,
+	Shield = 1806172967,
+	ShieldSelectedEnemy = 1807533262,
+	Terrain = 1904109643,
+	Water = 2100037886,
+	WaterBottom = 2100685343,
+	Yellow = 2103249831,
+
+}
