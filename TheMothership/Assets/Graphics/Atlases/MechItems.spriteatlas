@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: MechItems
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 4096
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings:
+    - serializedVersion: 2
+      m_BuildTarget: DefaultTexturePlatform
+      m_MaxTextureSize: 4096
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: -1
+      m_TextureCompression: 0
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 0
+      m_AndroidETC2FallbackOverride: 0
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 0
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: c61f58baa398b6e4086d2d82f44492bb, type: 3}
+    bindAsDefault: 1
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 1a08821083669334bad5c13b3b29f284, type: 3}
+  - {fileID: 21300000, guid: 2ccabd509b1451347b7f2dd7361e35a2, type: 3}
+  - {fileID: 21300000, guid: 8e9c98c0e239c0d4eb83dd0c7ef50b83, type: 3}
+  - {fileID: 21300000, guid: 9eaa140199e03dd4fa56b00844b8435c, type: 3}
+  - {fileID: 21300000, guid: 924e49e1b3b9b2e48a64e676a9a257c8, type: 3}
+  - {fileID: 21300000, guid: a2acc31338207894d97ba0a2d1996447, type: 3}
+  - {fileID: 21300000, guid: cd50e854bd19308418c00f95d930e452, type: 3}
+  - {fileID: 21300000, guid: 188aa815100222843835d98ea10b3925, type: 3}
+  - {fileID: 21300000, guid: af97e335a3197de498d38821c4f0237e, type: 3}
+  - {fileID: 21300000, guid: ec3876f52ce0592419d76105cbd92325, type: 3}
+  - {fileID: 21300000, guid: 05a7fbe6f5155ce41b75564c928653a4, type: 3}
+  - {fileID: 21300000, guid: 08fc9437c369ee24d8d55e3a2213e492, type: 3}
+  - {fileID: 21300000, guid: 3ba4075728266414ab1838dec2601e55, type: 3}
+  - {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}
+  - {fileID: 21300000, guid: 729e3de8fd79d5c49a7c78883e541cb4, type: 3}
+  - {fileID: 21300000, guid: bbfae2fa02f74ae45bed8f8fe860b147, type: 3}
+  - {fileID: 21300000, guid: c1a3cbabfb327c743af7d71f5eb2962b, type: 3}
+  - {fileID: 21300000, guid: d34739bca4cd1c34188c49be9455a95a, type: 3}
+  - {fileID: 21300000, guid: 0f59891dbeacfae43998b57efd8f25da, type: 3}
+  - {fileID: 21300000, guid: 0670989e8aa68174fa9aac2981ca03e3, type: 3}
+  - {fileID: 21300000, guid: 87ddf46f91e78fc4891ffd07fd7dbb8d, type: 3}
+  - {fileID: 21300000, guid: 9e4c79ef60bfc77459862b87e560b7a8, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - MeleeBot
+  - Legs
+  - DoubleMortar
+  - Targeter
+  - TheDemonflame
+  - TheHive
+  - Mortar
+  - TurretHead
+  - TurretBase
+  - Demoness
+  - EnergySword_small
+  - Rifle
+  - Core
+  - BloodCrystal
+  - Thrusters
+  - CoreGothic
+  - TheLastFlame
+  - TheThorProject
+  - GunArray
+  - TheSpineOfWinter
+  - MetalShield
+  - RearTurret
+  m_Tag: MechItems
+  m_IsVariant: 0

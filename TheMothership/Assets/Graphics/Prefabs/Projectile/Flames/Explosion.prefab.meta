@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5e2326b5cd604664b80a8229c1828dcb
+labels:
+- Effect
+- Smoke
+- Sequence
+- Explosion
+- Fire
+- Flame
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

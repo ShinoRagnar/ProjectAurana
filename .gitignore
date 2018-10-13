@@ -6,8 +6,9 @@
 Imports/
 Walls/
 Assets/AssetStoreTools*
-Graphics/
 Animation/
+Textures/
+Materials/
 
 # Visual Studio cache directory
 .vs/
