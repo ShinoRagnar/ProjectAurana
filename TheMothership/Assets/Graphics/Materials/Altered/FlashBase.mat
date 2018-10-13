@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: FlashBase
+  m_Shader: {fileID: 4800000, guid: 093fd61d2c340c944a83de4970101dde, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _AlbedoMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Cube:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Emission:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicSmoothness:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ramp:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RampMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ShadowTex:
+        m_Texture: {fileID: 2800000, guid: 6c6639f2e1ff8584b9bc4609ed0ee50f, type: 3}
+        m_Scale: {x: 5, y: 5}
+        m_Offset: {x: 0, y: 0}
+    - _TranslucencyMask:
+        m_Texture: {fileID: 2800000, guid: 22b584c77f05d9d4ebfee0927c2f659a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _texcoord:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _EmissionPower: 2
+    - _Fade: 0.6
+    - _FresMult: 5
+    - _FresMultOut: 0.15
+    - _FresPow: 14
+    - _FresPowOut: 5
+    - _InvFade: 0.01
+    - _Metallic: 1
+    - _RampEnabled: 0
+    - _RampInverted: 0
+    - _Smoothness: 1
+    - _TransAmbient: 0.2
+    - _TransDirect: 1
+    - _TransNormalDistortion: 0.1
+    - _TransScattering: 2
+    - _TransShadow: 0.9
+    - _Translucency: 1
+    - _TranslucencyMaskPower: 1
+    - __dirty: 1
+    m_Colors:
+    - _Color: {r: 1, g: 0, b: 0, a: 1}
+    - _ColorTint1: {r: 1, g: 1, b: 1, a: 1}
+    - _ColorTint2: {r: 1, g: 1, b: 1, a: 1}
+    - _DiffuseColor1: {r: 1, g: 0.5586207, b: 0, a: 1}
+    - _DiffuseColor2: {r: 1, g: 0, b: 0, a: 1}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Inter: {r: 0.1, g: 200, b: 100, a: 40}
+    - _InterScale: {r: 0.1, g: 200, b: 100, a: 0}
+    - _LightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ReflectColor: {r: 1, g: 0.79585356, b: 0.4575472, a: 1}
+    - _TintColor: {r: 1, g: 0, b: 0.13315526, a: 1}
+    - _bLayerColorA: {r: 0.6886792, g: 0, b: 0.07541689, a: 0.5254902}
+    - _bLayerColorB: {r: 1, g: 0.3993749, b: 0, a: 0.5019608}
+    - _bLayerColorC: {r: 1, g: 0.6723655, b: 0.13679248, a: 0.5019608}

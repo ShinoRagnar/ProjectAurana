@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: Fire
+  m_Shader: {fileID: 4800000, guid: 4b1ff492067829d47b3275f1cb16d875, type: 3}
+  m_ShaderKeywords: _FX2BLEND_ON _FX3BLEND_ON
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FX1Mask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FX2Mask:
+        m_Texture: {fileID: 2800000, guid: f25daa2dfd8530c48ab4447845e5868f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FX3Mask:
+        m_Texture: {fileID: 2800000, guid: f298a73263da4774b9fec5142494b5b6, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer1:
+        m_Texture: {fileID: 2800000, guid: f298a73263da4774b9fec5142494b5b6, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer2:
+        m_Texture: {fileID: 2800000, guid: 9fb1f75b5e29dd94ead4f1a176911f3a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer3:
+        m_Texture: {fileID: 2800000, guid: d75dce9d3cfa77b42a2ecbd7b233e851, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainMask:
+        m_Texture: {fileID: 2800000, guid: 7b938377ea3cb6d418d72ee8892a91fd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MultichannelDistortion:
+        m_Texture: {fileID: 2800000, guid: f25daa2dfd8530c48ab4447845e5868f, type: 3}
+        m_Scale: {x: 0.25, y: 0.09}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _BaseIntensity: 1
+    - _BaseRotation: 0
+    - _BaseXMov: 0
+    - _BaseYMov: 0
+    - _Cutoff: 0.5
+    - _DistChannelFX1R: 0
+    - _DistChannelFX2G: -1.04
+    - _DistChannelFX3B: 1.23
+    - _FX1Blend: 0
+    - _FX1Distortion: 0
+    - _FX1Intensity: 0.57
+    - _FX1Intensity_copy: 1
+    - _FX1MIPBlur: 3.49
+    - _FX1PivotX: 0.5
+    - _FX1PivotY: 0.5
+    - _FX1Rotation: 0.11
+    - _FX1XMov: 0
+    - _FX1YMov: 0
+    - _FX2Blend: 1
+    - _FX2Distortion: 0
+    - _FX2Intensity: 1
+    - _FX2Intensity_copy: 0.2
+    - _FX2MIPBlur: 0.06
+    - _FX2PivotX: 0.5
+    - _FX2PivotY: 0.5
+    - _FX2Rotation: 0
+    - _FX2XMov: 0
+    - _FX2YMov: -0.11
+    - _FX3Blend: 1
+    - _FX3Distortion: 0
+    - _FX3Intensity: 0.37
+    - _FX3MIPBlur: 3.55
+    - _FX3PivotX: 0.5
+    - _FX3PivotY: 0.5
+    - _FX3Rotation: 0
+    - _FX3XMov: 0
+    - _FX3YMov: -0.03
+    - _MainMaskRotation: 0
+    - _MainMaskXMov: 0
+    - _MainMaskYMov: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FX1Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FX2Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FX3Color: {r: 1, g: 1, b: 1, a: 1}

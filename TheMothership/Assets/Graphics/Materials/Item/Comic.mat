@@ -1,0 +1,152 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: Comic
+  m_Shader: {fileID: 4800000, guid: 9661a88ac42757e42bb158549b9cddc7, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FX1Mask:
+        m_Texture: {fileID: 2800000, guid: 206b14f876404a549bb35b52a5f2b458, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FX2Mask:
+        m_Texture: {fileID: 2800000, guid: d970ab11de1bb674cbade94f84a21682, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FX3Mask:
+        m_Texture: {fileID: 2800000, guid: 44f97da20d4915747bf3d2d9726e64ef, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer1:
+        m_Texture: {fileID: 2800000, guid: 40d9902be5303214caa25137d8247714, type: 3}
+        m_Scale: {x: 5, y: 5}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer2:
+        m_Texture: {fileID: 2800000, guid: 40d9902be5303214caa25137d8247714, type: 3}
+        m_Scale: {x: 10, y: 10}
+        m_Offset: {x: 0, y: 0}
+    - _FXLayer3:
+        m_Texture: {fileID: 2800000, guid: 70f4d668d17bac44a8c3c185f54e5522, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MultichannelDistortion:
+        m_Texture: {fileID: 2800000, guid: eb04748a7e40f274da67671fffffa88b, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _BaseIntensity: 1
+    - _BaseRotation: 0
+    - _BaseXMov: 0
+    - _BaseYMov: 0
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DistChannelFX1R: 0.39
+    - _DistChannelFX2G: -0.44
+    - _DistChannelFX3B: -0.53
+    - _DstBlend: 0
+    - _EmissionScaleUI: 0
+    - _FX1Blend: 1
+    - _FX1Distortion: 0.085
+    - _FX1Intensity: 0.79
+    - _FX1Intensity_copy: 1
+    - _FX1MIPBlur: 4.63
+    - _FX1PivotX: 0.5
+    - _FX1PivotY: 0.5
+    - _FX1Rotation: 0
+    - _FX1XMov: 0
+    - _FX1YMov: 0.03
+    - _FX2Blend: 0
+    - _FX2Distortion: 0.211
+    - _FX2Intensity: 3.09
+    - _FX2Intensity_copy: 0.2
+    - _FX2MIPBlur: 5
+    - _FX2PivotX: 0.5
+    - _FX2PivotY: 0.5
+    - _FX2Rotation: 0
+    - _FX2XMov: -0.03
+    - _FX2YMov: 0
+    - _FX3Blend: 1
+    - _FX3Distortion: 0
+    - _FX3Intensity: 1.52
+    - _FX3MIPBlur: 1.9
+    - _FX3PivotX: 0.5
+    - _FX3PivotY: 0.5
+    - _FX3Rotation: 0
+    - _FX3XMov: 0
+    - _FX3YMov: -0.12
+    - _Glossiness: 0.5
+    - _MainMaskRotation: 0
+    - _MainMaskXMov: 0
+    - _MainMaskYMov: 0
+    - _MaskRotation: 0
+    - _MaskXMov: 0
+    - _MaskYMov: 0
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _SrcBlend: 1
+    - _UVSec: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _EmissionColorUI: {r: 1, g: 1, b: 1, a: 1}
+    - _FX1Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FX2Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FX3Color: {r: 1, g: 1, b: 1, a: 1}
