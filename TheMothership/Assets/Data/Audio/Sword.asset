@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bd1077bfbaa8d741bb99d49a485c592, type: 3}
+  m_Name: Sword
+  m_EditorClassIdentifier: 
+  enumName: Sword
+  audioFiles:
+  - when: 50
+    audio: 1822632305
+    volume: 0.2
+    pitch: 1
+  - when: 2
+    audio: 1822067860
+    volume: 0.5
+    pitch: 1
+  - when: 18
+    audio: 1821211804
+    volume: 0.2
+    pitch: 1
+  - when: 19
+    audio: 1821155762
+    volume: 0.2
+    pitch: 1
+  - when: 70
+    audio: 1821244548
+    volume: 0.5
+    pitch: 1
+  - when: 80
+    audio: 1822318166
+    volume: 0.4
+    pitch: 1
+  - when: 1
+    audio: 1806475782
+    volume: 1
+    pitch: 1
+  - when: 100
+    audio: 410241365
+    volume: 0.5
+    pitch: 1

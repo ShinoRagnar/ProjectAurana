@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bd1077bfbaa8d741bb99d49a485c592, type: 3}
+  m_Name: Inventory
+  m_EditorClassIdentifier: 
+  enumName: Inventory
+  audioFiles:
+  - when: 18
+    audio: 1508050913
+    volume: 0.1
+    pitch: 1
+  - when: 19
+    audio: 1519427579
+    volume: 0.1
+    pitch: 1
+  - when: 20
+    audio: 819505687
+    volume: 0.1
+    pitch: 1
+  - when: 21
+    audio: 812669724
+    volume: 0.1
+    pitch: 1
+  - when: 23
+    audio: 812517629
+    volume: 0.1
+    pitch: 1
+  - when: 24
+    audio: 416491672
+    volume: 0.1
+    pitch: 1
+  - when: 22
+    audio: 415323288
+    volume: 0.1
+    pitch: 1
+  - when: 25
+    audio: 1914238443
+    volume: 0.1
+    pitch: 1
