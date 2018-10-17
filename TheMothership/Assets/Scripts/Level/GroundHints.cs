@@ -8,7 +8,8 @@ public enum GroundType
     Branch,
     Roof,
     Blockage,
-    Wall
+    Wall,
+    Door
 }
 public enum EnclosureType
 {

@@ -25,8 +25,8 @@ TagManager:
   - DroppedItems
   - DroppedItemsCorners
   - OnlyGroundInteraction
-  - 
-  - 
+  - Avoidance
+  - Triggers
   - 
   - 
   - 

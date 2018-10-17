@@ -120,12 +120,14 @@ public class TerrainGenerator {
 
 
     DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
+    //DictionaryList<int, List<Transform>> placedTrees = new DictionaryList<int, List<Transform>>();
 
 
 
     public List<Vector3> zSeam = new List<Vector3>();
     public List<Ground> gSurfaces = new List<Ground>();
     public List<GeneratedTerrain> terrain = new List<GeneratedTerrain>();
+    public DictionaryList<string, Transform> treeNodes = new DictionaryList<string, Transform>();
 
     private DictionaryList<Ground, SurfaceGroup> surfaceGroups = new DictionaryList<Ground, SurfaceGroup>();
 
@@ -445,8 +447,28 @@ public class TerrainGenerator {
                         Vector3 worldPos = new Vector3(xPos + yTerrain * resolution, -HEIGHT / 2 + height, worldZPos);
                         bool canPlace = true;
 
-                        foreach (Vector3 pos in placedTrees){
-                            if (Vector3.Distance(pos, worldPos) < treeDistance)
+
+                        /*for (int i = (int)worldZPos; i > worldZPos - treeDistance; i--)
+                        {
+                            if (placedTrees.Contains(i))
+                            {
+                                foreach (Transform placed in placedTrees[i])
+                                {
+                                    if (Vector3.Distance(placed.position, worldPos) < treeDistance)
+                                    {
+                                        canPlace = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!canPlace)
+                            {
+                                break;
+                            }
+                        }*/
+                        foreach (Vector3 placed in placedTrees)
+                        {
+                            if (Vector3.Distance(placed, worldPos) < treeDistance)
                             {
                                 canPlace = false;
                                 break;
@@ -459,13 +481,17 @@ public class TerrainGenerator {
 
                             bool hue = rnd.NextDouble() > 0.5d;
 
-                           /* PrefabNames pf = row == 0 ? PrefabNames.TreeBroadleaf : 
+                            PrefabNames pf = row == 0 ? PrefabNames.TreeBroadleaf :
                                             (hue ? PrefabNames.TreeBroadleafImpostorHue : PrefabNames.TreeBroadleafImpostor);
-                            
-                            placedTrees.Add(worldPos, SpawnTree(pf, worldPos, trees,
-                                worldZPos > FAR_Z_DISTANCE ? 1 : 0
-                                ));    
-                                */
+
+                           
+
+                            /*if (!placedTrees.Contains((int)worldZPos))
+                            {
+                                placedTrees.Add((int)worldZPos, new List<Transform>());
+                            }*/
+                            placedTrees.Add(worldPos,SpawnTree(pf, worldPos, trees, worldZPos > FAR_Z_DISTANCE && row == 0 ? 1 : 0 ));    
+                                
                         }
                     }
 
@@ -509,7 +535,22 @@ public class TerrainGenerator {
     {
         float scaleChange = (float) rnd.NextDouble() * (1f - TREE_MIN_SCALE) + TREE_MIN_SCALE;
 
-        Transform created = Global.Create(Global.Resources[nam], trees.transform);
+        Transform addTo = null;
+        string name = nam.ToString() + removeLodsUntil.ToString();
+
+        //Create one node for each type of tree
+        if (treeNodes.Contains(name))
+        {
+            addTo = treeNodes[name];
+        }
+        else
+        {
+            addTo = new GameObject(name).transform;
+            addTo.parent = trees.transform;
+            treeNodes.Add(name, addTo);
+        }
+
+        Transform created = Global.Create(Global.Resources[nam], addTo.transform);
         created.position = position;
         created.localScale = new Vector3(created.localScale.x* scaleChange, created.localScale.y* scaleChange, created.localScale.z* scaleChange);
         created.localEulerAngles = new Vector3(created.localEulerAngles.x, (float)(360*rnd.NextDouble()), created.localEulerAngles.z);
@@ -517,6 +558,8 @@ public class TerrainGenerator {
         RemoveLODS(created, removeLodsUntil);
 
         created.gameObject.isStatic = true;
+
+        addTo.name = name + "(" + addTo.childCount + ")";
 
         return created;
     }
@@ -789,12 +832,6 @@ public class TerrainGenerator {
 
                         seamHeight = zSeam[i].y * (1f - progress) + zSeam[i + 1].y * progress;
 
-                        if(terr.name == "Terrain <0,3>") //seamHeight == 0 && (zSeam[i].y != 0 || zSeam[i + 1].y != 0))
-                        {
-                            Debug.Log(terr.name + " seamHeight: " + seamHeight + " seamPos:" + seamPos
-                                + "seamLeft: " + seamLeft + " seamRight: " + seamRight);
-
-                        }
                         break;
                     }
                 }

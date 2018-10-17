@@ -3,6 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+
+public enum GameEvent
+{
+    CaveEnter = 0,
+    CaveExit = 1
+}
 public interface Initiates
 {
     void Initiate();
@@ -146,6 +152,7 @@ public class Global : MonoBehaviour {
     public static readonly string LAYER_GROUND = "Ground";
     public static readonly string LAYER_PLAYER = "Player";
     public static readonly string LAYER_ENEMY = "Enemy";
+    public static readonly string LAYER_AVOIDANCE = "Avoidance";
     public static readonly string LAYER_DROPPED_ITEM = "DroppedItems";
     public static readonly string LAYER_DROPPED_ITEM_CORNER = "DroppedItemsCorners";
     public static readonly string LAYER_NO_INTERACTION = "No Interaction";
@@ -342,6 +349,14 @@ public class Global : MonoBehaviour {
         Destroy(go);
     }
 
+    public static void TriggerEnter(GameUnit gu, GameObject from, GameEvent gameEvent)
+    {
+        Debug.Log("ENTER: "+gu.uniqueName + " caused event: " + gameEvent.ToString());
+    }
+    public static void TriggerExit(GameUnit gu, GameObject from, GameEvent gameEvent)
+    {
+        Debug.Log("EXIT: " + gu.uniqueName + " caused event: " + gameEvent.ToString());
+    }
 
     public void Materialize(Item i, Transform parent)
     {
