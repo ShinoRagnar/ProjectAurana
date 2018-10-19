@@ -272,6 +272,14 @@ MonoBehaviour:
     prefab: {fileID: 4994275235622692, guid: 378dd608776217c4f8f15205d881f489, type: 2}
   - name: TreeBroadleafImpostorHue
     prefab: {fileID: 4320709265175170, guid: 686baf169d2813343bc99e9fe61e3701, type: 2}
+  - name: CliffTall
+    prefab: {fileID: 4819846315288510, guid: 8196f2ae32e2e96488ddad5890f0b0e9, type: 2}
+  - name: CliffBroad
+    prefab: {fileID: 4716231252975516, guid: f130ba80f30741d479b8d8864281e4ec, type: 2}
+  - name: CliffBroad2
+    prefab: {fileID: 4418679950492482, guid: c1a597e33610e854c90ac265c1204099, type: 2}
+  - name: CliffTall2
+    prefab: {fileID: 4950762980296980, guid: cf3d3fb786963cd40b2a673ba13b0b03, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:
@@ -451,7 +459,7 @@ MonoBehaviour:
   - name: DirtTwo
     prefab: {fileID: 2100000, guid: 540af216924c5124bb94f30fec2667cd, type: 2}
   - name: Cliff
-    prefab: {fileID: 2100000, guid: cb6f31cb8c5d8de49b74d7bc7165f0ab, type: 2}
+    prefab: {fileID: 2100000, guid: aed7cb646aaf6e14fb43f0489173b72d, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

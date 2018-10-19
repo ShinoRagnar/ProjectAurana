@@ -2,6 +2,14 @@
 using System.Linq;
 using UnityEngine;
 
+
+public enum TerrainGenerationPass
+{
+    SplatMapGeneration = 0,
+    Cliffs = 1,
+    Trees = 2
+}
+
 public class TerrainGenerator {
 
     public struct GeneratedTerrain
@@ -57,6 +65,40 @@ public class TerrainGenerator {
         public float rightCurvePoint = 0;
     }
 
+    private class PlacedProp
+    {
+        public Transform transform;
+        public PropDistance distances;
+
+        public PlacedProp(Transform tr)
+        {
+            this.transform = tr;
+            this.distances = tr.GetComponent<PropDistance>();
+        }
+    }
+
+
+    private struct XTerrainDetail
+    {
+        public float groupEndLeftDistance;
+        public float groupEndRightDistance;
+        public float groupPercentage;
+
+        public float groundLeftDistance;
+        public float groundRightDistance;
+
+        
+
+        public XTerrainDetail(float groupEndLeftDistance, float groupEndRightDistance, float groupPercentage, float groundLeftDistance, float groundRightDistance)
+        {
+            this.groupEndLeftDistance = groupEndLeftDistance;
+            this.groupEndRightDistance = groupEndRightDistance;
+            this.groupPercentage = groupPercentage;
+            this.groundLeftDistance = groundLeftDistance;
+            this.groundRightDistance = groundRightDistance;
+        }
+    }
+
 
     public static int ROWS = 2;
 
@@ -104,9 +146,14 @@ public class TerrainGenerator {
     public static float TREE_SEPARATION_MAX_DISTANCE = 15;
 
     public static float TREE_TERRAIN_MARGIN = 1;
+    public static float CLIFF_TERRAIN_MARGIN = 10;
     public static float TREE_GRASS_THRESHOLD = 0.7f;
     public static float TREE_MIN_SCALE = 0.7f;
     public static float TREE_HEIGHT_REQUIREMENT = 0.2f*HEIGHT;
+
+    //PROPS GENERAL
+    public static float GROUP_EDGE_DISTANCE = 20;
+    public static float CLIFF_EDGE_DISTANCE = 10;
 
     public static float WETTNESS_MARGIN = 0.1f;
 
@@ -120,6 +167,10 @@ public class TerrainGenerator {
 
 
     DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
+    DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
+
+    DictionaryList<int, XTerrainDetail> xDetails = new DictionaryList<int, XTerrainDetail>();
+
     //DictionaryList<int, List<Transform>> placedTrees = new DictionaryList<int, List<Transform>>();
 
 
@@ -127,7 +178,7 @@ public class TerrainGenerator {
     public List<Vector3> zSeam = new List<Vector3>();
     public List<Ground> gSurfaces = new List<Ground>();
     public List<GeneratedTerrain> terrain = new List<GeneratedTerrain>();
-    public DictionaryList<string, Transform> treeNodes = new DictionaryList<string, Transform>();
+    public DictionaryList<string, Transform> propNodes = new DictionaryList<string, Transform>();
 
     private DictionaryList<Ground, SurfaceGroup> surfaceGroups = new DictionaryList<Ground, SurfaceGroup>();
 
@@ -144,6 +195,9 @@ public class TerrainGenerator {
         fog.transform.parent = Global.References[SceneReferenceNames.Terrain];
         GameObject trees = new GameObject();
         trees.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        GameObject cliffs = new GameObject();
+        cliffs.transform.parent = Global.References[SceneReferenceNames.Terrain];
+
         GameObject backgroundTerrain = new GameObject();
         backgroundTerrain.transform.parent = Global.References[SceneReferenceNames.Terrain];
 
@@ -162,6 +216,18 @@ public class TerrainGenerator {
             new Vector2(10,10),
             new Vector2(10,10)
         };
+
+        List<PrefabNames> treesToAdd = new List<PrefabNames>(){ { PrefabNames.TreeBroadleaf } };
+        List<PrefabNames> imposterTreesToAdd = new List<PrefabNames>() { { PrefabNames.TreeBroadleafImpostor }, { PrefabNames.TreeBroadleafImpostorHue } };
+        List<PrefabNames> cliffsToAdd = new List<PrefabNames>() {
+            { PrefabNames.CliffTall },
+            { PrefabNames.CliffBroad },
+            { PrefabNames.CliffBroad2 },
+            { PrefabNames.CliffTall2 }
+
+        };
+
+
 
         Transform fogPrefab = Global.Resources[PrefabNames.Fog];
         rnd = new System.Random(seed);
@@ -186,7 +252,7 @@ public class TerrainGenerator {
 
         FindStartEndOfSurfaces();
 
-        GenerateTerrain(seed,terra,fog,trees, materials, tileSizes);
+        GenerateTerrain(seed,terra,fog,trees,cliffs, materials, tileSizes,treesToAdd,imposterTreesToAdd,cliffsToAdd);
         //GenerateBackgroundTerrain(seed, gSurfaces[0], backgroundTerrain, materials, tileSizes);
 
         foreach (GeneratedTerrain gt in terrain)
@@ -204,6 +270,8 @@ public class TerrainGenerator {
         terra.name = "Terrain (" + terra.transform.childCount + ")";
         fog.name = "Fog (" + fog.transform.childCount + ")";
         trees.name = "Trees (" + trees.transform.childCount + ")";
+        cliffs.name = "Cliffs (" + cliffs.transform.childCount + ")";
+
         backgroundTerrain.name = "Background Terrain (" + backgroundTerrain.transform.childCount + ")";
 
     }
@@ -309,7 +377,22 @@ public class TerrainGenerator {
 
 
 
-    void GenererateSplatMapAndProps(Terrain terrain, float resolution, GameObject trees, float xPos, float zPos, int row, float[,] wettnessMap, int wetnessXInit, int wetnessYInit)
+    void GenererateSplatMapAndProps(
+        Terrain terrain, 
+        float resolution, 
+        GameObject trees,
+        GameObject cliffs,
+        float xPos, 
+        float zPos, 
+        int row, 
+        float[,] 
+        wettnessMap, 
+        int wetnessXInit, 
+        int wetnessYInit,
+        List<PrefabNames> treesToAdd,
+        List<PrefabNames> impostorTreesToAdd,
+        List<PrefabNames> cliffsToAdd
+        )
     {
 
         // Get a reference to the terrain data
@@ -322,232 +405,273 @@ public class TerrainGenerator {
         int lastYTerrain = -1;
         float steps = 0;
 
-        for (int y = 0; y < terrainData.alphamapHeight; y++)
+        TerrainGenerationPass[] tgpList = (TerrainGenerationPass[])TerrainGenerationPass.GetValues(typeof(TerrainGenerationPass));
+
+        foreach (TerrainGenerationPass tgp in tgpList)
         {
-            for (int x = 0; x < terrainData.alphamapWidth; x++)
+            for (int y = 0; y < terrainData.alphamapHeight; y++)
             {
-                // Normalise x/y coordinates to range 0-1 
-                float y_01 = (float)y / (float)terrainData.alphamapHeight;
-                float x_01 = (float)x / (float)terrainData.alphamapWidth;
-
-                // Sample the height at this location (note GetHeight expects int coordinates corresponding to locations in the heightmap array)
-
-                Mathf.RoundToInt(x_01 * terrainData.heightmapWidth);
-
-
-                int yTerrain = Mathf.RoundToInt(y_01 * terrainData.heightmapHeight);
-                int xTerrain = Mathf.RoundToInt(x_01 * terrainData.heightmapWidth);
-
-
-                float height = terrainData.GetHeight(yTerrain, xTerrain);
-
-                // Calculate the normal of the terrain (note this is in normalised coordinates relative to the overall terrain dimensions)
-                Vector3 normal = terrainData.GetInterpolatedNormal(y_01, x_01);
-
-                // Calculate the steepness of the terrain
-                float steepness = terrainData.GetSteepness(y_01, x_01);
-
-                // Setup an array to record the mix of texture weights at this point
-                float[] splatWeights = new float[terrainData.alphamapLayers];
-
-                // CHANGE THE RULES BELOW TO SET THE WEIGHTS OF EACH TEXTURE ON WHATEVER RULES YOU WANT
-
-                // Texture[0] has constant influence
-
-
-                // Texture[1] is stronger at lower altitudes
-                //splatWeights[1] = Mathf.Clamp01((terrainData.heightmapHeight - height));
-
-                // Texture[2] stronger on flatter terrain
-                // Note "steepness" is unbounded, so we "normalise" it by dividing by the extent of heightmap height and scale factor
-                // Subtract result from 1.0 to give greater weighting to flat surfaces
-                float completeFlatness = 1-Mathf.Clamp01(steepness * steepness / (terrainData.heightmapHeight / 0.06f));
-
-                // Make sure wetness only occurs where feasible
-                float wettnessTerrainMargin = 5;
-                float wettnessSeamMargin = 10;
-                float wettnessCompabilityByFlatness = 1 - Mathf.Clamp01(steepness * steepness / (terrainData.heightmapHeight / 0.5f));
-                float wettnessCompabilityByTerrainBorder = row != 0 ? 1 : Mathf.Min(Mathf.Max(((float)xTerrain-1) / wettnessTerrainMargin, 0),1);
-
-                
-                float wettnessCompabilityBySeam = y < wettnessSeamMargin ?
-                                                            y / wettnessSeamMargin
-                                                            :
-                                                            y > terrainData.alphamapHeight - wettnessSeamMargin ?
-                                                                ((terrainData.alphamapHeight - y) / wettnessSeamMargin) : 1;
-
-                float margin = terrainData.alphamapWidth * (1 - WETTNESS_MARGIN);
-
-                float wettnessCompabilityByEndOfTerrain = row == 0 ? Mathf.Cos(x_01 * Mathf.PI * 0.5f) : Mathf.Sin(x_01 * Mathf.PI * 0.5f); ;
-
-
-                   // (Mathf.Clamp01((float)y - (terrainData.alphamapHeight * (1 - WETTNESS_MARGIN) / (float)terrainData.alphamapHeight * WETTNESS_MARGIN)));
-
-                //     (Mathf.Clamp01((float)x - (terrainData.alphamapWidth * (1 - WETTNESS_MARGIN) / (float)terrainData.alphamapWidth* WETTNESS_MARGIN)));
-
-
-                float wetnessCompability = wettnessCompabilityByFlatness * wettnessCompabilityByTerrainBorder * wettnessCompabilityBySeam * wettnessCompabilityByEndOfTerrain;
-
-                //Steepness from 0 - 90
-                float t = Mathf.Max(steepness - 45f, 0)/45;
-
-                t += t > 0 ? t*0.3f : 0;
-
-                t = Mathf.Min(t, 1);
-
-                float hillyLike = 1f - Mathf.Cos(t * Mathf.PI * 0.5f);
-
-
-
-                //X and Y intentionally flipped
-                float w = Mathf.Min(Mathf.Max(wettnessMap[y + wetnessXInit, x + wetnessYInit] - 0.5f, 0) * 5,1) * wetnessCompability;
-
-                float wetness = 1f - Mathf.Cos(w * Mathf.PI * 0.5f);
-
-                wetness *= 2;
-                wetness = Mathf.Min(wetness, 1);
-
-                //float wetness = wettnessMap[y + wetnessXInit, x + wetnessYInit];
-
-                float grassFactor = hillyLike == 0 ? completeFlatness : 0;
-
-                float dirtlike = (1 - hillyLike) * (1 - grassFactor);
-
-                splatWeights[1] = hillyLike; //Cliffs
-                splatWeights[0] = dirtlike; // Dirt
-                splatWeights[2] = grassFactor*(1f- wetness); //Grass
-                splatWeights[3] = grassFactor * wetness; //Water
-
-                float worldZPos = zPos + xTerrain * resolution;
-
-                //Only check for prop placement on new xPositions
-                if ((yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                for (int x = 0; x < terrainData.alphamapWidth; x++)
                 {
+                    // Normalise x/y coordinates to range 0-1 
+                    float y_01 = (float)y / (float)terrainData.alphamapHeight;
+                    float x_01 = (float)x / (float)terrainData.alphamapWidth;
 
-                    steps--;
+                    // Sample the height at this location (note GetHeight expects int coordinates corresponding to locations in the heightmap array)
 
-                    float treeDistance = row !=  0 ? TREE_SEPARATION_MIN_DISTANCE :
-                        TREE_SEPARATION_MIN_DISTANCE +
-                        (1- x_01) *(TREE_SEPARATION_MAX_DISTANCE-TREE_SEPARATION_MIN_DISTANCE);
+                    Mathf.RoundToInt(x_01 * terrainData.heightmapWidth);
 
-                    //ool frontTree = false;
-                                /*(worldZPos < -TERRAIN_Z_WIDTH - TERRAIN_Z_MARGIN * 0.4f
-                                && worldZPos > -TERRAIN_Z_WIDTH - TERRAIN_Z_MARGIN * 0.6f
-                                && dirtlike > 0.9f);*/
 
-                    if (
-                        steps <= 0 && height > TREE_HEIGHT_REQUIREMENT //&& row == 0
-                        &&
-                        ((grassFactor > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
-                        ||
-                        (row != 0 && hillyLike < 0.3f)
-                        )
-                    )
+                    int yTerrain = Mathf.RoundToInt(y_01 * terrainData.heightmapHeight);
+                    int xTerrain = Mathf.RoundToInt(x_01 * terrainData.heightmapWidth);
+
+
+                    float height = terrainData.GetHeight(yTerrain, xTerrain);
+
+                    // Calculate the normal of the terrain (note this is in normalised coordinates relative to the overall terrain dimensions)
+                    Vector3 normal = terrainData.GetInterpolatedNormal(y_01, x_01);
+
+                    // Calculate the steepness of the terrain
+                    float steepness = terrainData.GetSteepness(y_01, x_01);
+
+                    // Setup an array to record the mix of texture weights at this point
+                    float[] splatWeights = new float[terrainData.alphamapLayers];
+
+                    // CHANGE THE RULES BELOW TO SET THE WEIGHTS OF EACH TEXTURE ON WHATEVER RULES YOU WANT
+
+                    // Texture[0] has constant influence
+
+
+                    // Texture[1] is stronger at lower altitudes
+                    //splatWeights[1] = Mathf.Clamp01((terrainData.heightmapHeight - height));
+
+                    // Texture[2] stronger on flatter terrain
+                    // Note "steepness" is unbounded, so we "normalise" it by dividing by the extent of heightmap height and scale factor
+                    // Subtract result from 1.0 to give greater weighting to flat surfaces
+                    float completeFlatness = 1 - Mathf.Clamp01(steepness * steepness / (terrainData.heightmapHeight / 0.06f));
+
+                    // Make sure wetness only occurs where feasible
+                    float wettnessTerrainMargin = 5;
+                    float wettnessSeamMargin = 10;
+                    float wettnessCompabilityByFlatness = 1 - Mathf.Clamp01(steepness * steepness / (terrainData.heightmapHeight / 0.5f));
+                    float wettnessCompabilityByTerrainBorder = row != 0 ? 1 : Mathf.Min(Mathf.Max(((float)xTerrain - 1) / wettnessTerrainMargin, 0), 1);
+
+
+                    float wettnessCompabilityBySeam = y < wettnessSeamMargin ?
+                                                                y / wettnessSeamMargin
+                                                                :
+                                                                y > terrainData.alphamapHeight - wettnessSeamMargin ?
+                                                                    ((terrainData.alphamapHeight - y) / wettnessSeamMargin) : 1;
+
+                    float margin = terrainData.alphamapWidth * (1 - WETTNESS_MARGIN);
+
+                    float wettnessCompabilityByEndOfTerrain = row == 0 ? Mathf.Cos(x_01 * Mathf.PI * 0.5f) : Mathf.Sin(x_01 * Mathf.PI * 0.5f); ;
+
+                    float wetnessCompability = wettnessCompabilityByFlatness * wettnessCompabilityByTerrainBorder * wettnessCompabilityBySeam * wettnessCompabilityByEndOfTerrain;
+
+                    //Steepness from 0 - 90
+                    float t = Mathf.Max(steepness - 45f, 0) / 45;
+
+                    t += t > 0 ? t * 0.3f : 0;
+
+                    t = Mathf.Min(t, 1);
+
+                    float hillyLike = 1f - Mathf.Cos(t * Mathf.PI * 0.5f);
+
+
+
+                    //X and Y intentionally flipped
+                    float w = Mathf.Min(Mathf.Max(wettnessMap[y + wetnessXInit, x + wetnessYInit] - 0.5f, 0) * 5, 1) * wetnessCompability;
+
+                    float wetness = 1f - Mathf.Cos(w * Mathf.PI * 0.5f);
+
+                    wetness *= 2;
+                    wetness = Mathf.Min(wetness, 1);
+
+                    //float wetness = wettnessMap[y + wetnessXInit, x + wetnessYInit];
+
+                   
+
+                    bool notTooCloseToEdges = false;
+                    int currentPos = (int)(xPos + yTerrain * resolution);
+
+                    if (xDetails.Contains(currentPos))
                     {
-                        Vector3 worldPos = new Vector3(xPos + yTerrain * resolution, -HEIGHT / 2 + height, worldZPos);
-                        bool canPlace = true;
+                        XTerrainDetail xDet = xDetails[currentPos];
+                        notTooCloseToEdges = xDet.groupEndLeftDistance > GROUP_EDGE_DISTANCE
+                                       && xDet.groupEndRightDistance > GROUP_EDGE_DISTANCE
+                                       && xDet.groundLeftDistance > CLIFF_EDGE_DISTANCE
+                                       && xDet.groundRightDistance > CLIFF_EDGE_DISTANCE;
+                       // cliffWithinBounds = xDet.groupPercentage > 0.5f;
+                    }
+                    
+
+                    float grassFactor = hillyLike == 0 ? completeFlatness : 0;
+
+                    float dirtlike = (1 - hillyLike) * (1 - grassFactor);
+
+                    float worldZPos = zPos + xTerrain * resolution;
+
+                    Vector3 worldPos = new Vector3(xPos + yTerrain * resolution, -HEIGHT / 2 + height, worldZPos);
+
+                    bool canPlaceProp = steps <= 0 && height > TREE_HEIGHT_REQUIREMENT;
+
+                    bool canPlaceTrees = ((grassFactor > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
+                                ||
+                                (row != 0 && hillyLike < 0.3f));
+
+                    bool canPlaceCliff = notTooCloseToEdges && dirtlike > 0.2f &&  worldZPos > TERRAIN_Z_WIDTH + CLIFF_TERRAIN_MARGIN;
 
 
-                        /*for (int i = (int)worldZPos; i > worldZPos - treeDistance; i--)
+                    bool isFar = worldZPos > FAR_Z_DISTANCE;
+
+                    if (tgp == TerrainGenerationPass.SplatMapGeneration)
+                    {
+                        splatWeights[1] = hillyLike; //Cliffs
+                        splatWeights[0] = dirtlike; // Dirt
+                        splatWeights[2] = grassFactor * (1f - wetness); //Grass
+                        splatWeights[3] = grassFactor * wetness; //Water
+
+
+                        // Sum of all textures weights must add to 1, so calculate normalization factor from sum of weights
+                        float z = splatWeights.Sum();
+
+                        // Loop through each terrain texture
+                        for (int i = 0; i < terrainData.alphamapLayers; i++)
                         {
-                            if (placedTrees.Contains(i))
+
+                            // Normalize so that sum of all texture weights = 1
+                            splatWeights[i] /= z;
+
+                            // Assign this point to the splatmap array
+                            splatmapData[x, y, i] = splatWeights[i];
+                        }
+
+                    }
+                    else if(tgp == TerrainGenerationPass.Cliffs)
+                    {
+                        steps--;
+
+                        //Only check for prop placement on new xPositions
+                        if (canPlaceProp && canPlaceCliff  && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                        {
+
+                            foreach (Transform placed in placedProps)
                             {
-                                foreach (Transform placed in placedTrees[i])
+                                if (Vector3.Distance(placed.position, worldPos) < placedProps[placed].distances.CliffSizePropDistance)
                                 {
-                                    if (Vector3.Distance(placed.position, worldPos) < treeDistance)
+                                    
+                                    canPlaceProp = false;
+                                    break;
+                                }
+                            }
+
+                            if (canPlaceProp)
+                            {
+                                PrefabNames pf = cliffsToAdd[rnd.Next(cliffsToAdd.Count)];
+
+                                Transform spawnedProp = SpawnProp(pf, worldPos, cliffs, row > 0 ? 1 : 99);
+
+                                PlacedProp pp = new PlacedProp(spawnedProp);
+
+                                steps = pp.distances.CliffSizePropDistance;
+
+                                placedProps.Add(spawnedProp, pp);
+
+                            }
+
+                        }
+
+                    }
+                    else if(tgp == TerrainGenerationPass.Trees)
+                    {
+                        //Only check for prop placement on new xPositions
+                        if ((yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                        {
+
+                            steps--;
+
+                            float treeDistance = row != 0 ? TREE_SEPARATION_MIN_DISTANCE :
+                                TREE_SEPARATION_MIN_DISTANCE +
+                                (1 - x_01) * (TREE_SEPARATION_MAX_DISTANCE - TREE_SEPARATION_MIN_DISTANCE);
+
+                            if (canPlaceProp && canPlaceTrees){
+
+                                foreach (Vector3 placed in placedTrees)
+                                {
+                                    if (Vector3.Distance(placed, worldPos) < treeDistance)
                                     {
-                                        canPlace = false;
+                                        canPlaceProp = false;
                                         break;
                                     }
                                 }
+
+                                foreach (Transform placed in placedProps)
+                                {
+                                    if (Vector3.Distance(placed.position, worldPos) < placedProps[placed].distances.TreeSizePropDistance)
+                                    {
+                                        canPlaceProp = false;
+                                        break;
+                                    }
+                                }
+
+                                if (canPlaceProp)
+                                {
+                                    steps = treeDistance;
+
+                                    //bool hue = rnd.NextDouble() > 0.5d;
+
+                                    PrefabNames pf;
+
+                                    if (row == 0)
+                                    {
+                                        pf = treesToAdd[rnd.Next(treesToAdd.Count)];
+                                    }
+                                    else
+                                    {
+                                        pf = impostorTreesToAdd[rnd.Next(impostorTreesToAdd.Count)];
+                                    }
+
+                                    //PrefabNames pf = row == 0 ? PrefabNames.TreeBroadleaf :
+                                    //                (hue ? PrefabNames.TreeBroadleafImpostorHue : PrefabNames.TreeBroadleafImpostor);
+
+                                    placedTrees.Add(worldPos, SpawnProp(pf, worldPos, trees, isFar ?  1 : 99));
+
+                                }
                             }
-                            if (!canPlace)
-                            {
-                                break;
-                            }
-                        }*/
-                        foreach (Vector3 placed in placedTrees)
-                        {
-                            if (Vector3.Distance(placed, worldPos) < treeDistance)
-                            {
-                                canPlace = false;
-                                break;
-                            }
-                        }
-
-                        if (canPlace)
-                        {
-                            steps = treeDistance;
-
-                            bool hue = rnd.NextDouble() > 0.5d;
-
-                            PrefabNames pf = row == 0 ? PrefabNames.TreeBroadleaf :
-                                            (hue ? PrefabNames.TreeBroadleafImpostorHue : PrefabNames.TreeBroadleafImpostor);
-
-                           
-
-                            /*if (!placedTrees.Contains((int)worldZPos))
-                            {
-                                placedTrees.Add((int)worldZPos, new List<Transform>());
-                            }*/
-                            placedTrees.Add(worldPos,SpawnTree(pf, worldPos, trees, worldZPos > FAR_Z_DISTANCE && row == 0 ? 1 : 0 ));    
-                                
                         }
                     }
 
-
+                    // Texture[3] increases with height but only on surfaces facing positive Z axis 
+                    //splatWeights[3] = height * Mathf.Clamp01(normal.z);
+                    lastYTerrain = yTerrain;
+                    lastXTerrain = xTerrain;
                 }
-
-
-
-                //splatWeights[2] = ;
-
-
-
-                // Texture[3] increases with height but only on surfaces facing positive Z axis 
-                //splatWeights[3] = height * Mathf.Clamp01(normal.z);
-
-                // Sum of all textures weights must add to 1, so calculate normalization factor from sum of weights
-                float z = splatWeights.Sum();
-
-                // Loop through each terrain texture
-                for (int i = 0; i < terrainData.alphamapLayers; i++)
-                {
-
-                    // Normalize so that sum of all texture weights = 1
-                    splatWeights[i] /= z;
-
-                    // Assign this point to the splatmap array
-                    splatmapData[x, y, i] = splatWeights[i];
-                }
-                            
-
-                lastYTerrain = yTerrain;
-                lastXTerrain = xTerrain;
             }
+
         }
 
         // Finally assign the new splatmap to the terrainData:
         terrainData.SetAlphamaps(0, 0, splatmapData);
     }
 
-    public Transform SpawnTree(PrefabNames nam, Vector3 position, GameObject trees, int removeLodsUntil)
+    public Transform SpawnProp(PrefabNames nam, Vector3 position, GameObject propParent, int keepOnly)
     {
         float scaleChange = (float) rnd.NextDouble() * (1f - TREE_MIN_SCALE) + TREE_MIN_SCALE;
 
         Transform addTo = null;
-        string name = nam.ToString() + removeLodsUntil.ToString();
+        string name = nam.ToString() + keepOnly.ToString();
 
         //Create one node for each type of tree
-        if (treeNodes.Contains(name))
+        if (propNodes.Contains(name))
         {
-            addTo = treeNodes[name];
+            addTo = propNodes[name];
         }
         else
         {
             addTo = new GameObject(name).transform;
-            addTo.parent = trees.transform;
-            treeNodes.Add(name, addTo);
+            addTo.parent = propParent.transform;
+            propNodes.Add(name, addTo);
         }
 
         Transform created = Global.Create(Global.Resources[nam], addTo.transform);
@@ -555,7 +679,7 @@ public class TerrainGenerator {
         created.localScale = new Vector3(created.localScale.x* scaleChange, created.localScale.y* scaleChange, created.localScale.z* scaleChange);
         created.localEulerAngles = new Vector3(created.localEulerAngles.x, (float)(360*rnd.NextDouble()), created.localEulerAngles.z);
 
-        RemoveLODS(created, removeLodsUntil);
+        RemoveLODS(created, keepOnly);
 
         created.gameObject.isStatic = true;
 
@@ -564,7 +688,7 @@ public class TerrainGenerator {
         return created;
     }
 
-    private void RemoveLODS(Transform created, int until)
+    private void RemoveLODS(Transform created, int keepOnly)
     {
         LODGroup ldg = created.GetComponent<LODGroup>();
 
@@ -572,10 +696,14 @@ public class TerrainGenerator {
         {
             LOD[] lods = ldg.GetLODs();
             List<LOD> list = new List<LOD>();
-            int i = 0;
-            foreach (LOD l in lods)
+
+            int limit = Mathf.Max(lods.Length - keepOnly,0);
+
+            for(int i = 0; i < lods.Length; i++)
             {
-                if (i >= until)
+                LOD l = lods[i];
+
+                if(i >= limit)
                 {
                     list.Add(l);
                 }
@@ -586,7 +714,6 @@ public class TerrainGenerator {
                         Global.Destroy(r.gameObject);
                     }
                 }
-                i++;
             }
             ldg.SetLODs(list.ToArray());
         }
@@ -628,7 +755,19 @@ public class TerrainGenerator {
         backgroundTerrrain.Add(trr);
     }*/
 
-    public void GenerateTerrain(int seed, GameObject terra, GameObject fog, GameObject trees, Material[] materials, Vector2[] tileSizes)
+    public void GenerateTerrain(
+        int seed, 
+        GameObject terra, 
+        GameObject fog, 
+        GameObject trees,
+        GameObject cliffs,
+
+        Material[] materials, 
+        Vector2[] tileSizes,
+        List<PrefabNames> treesToAdd,
+        List<PrefabNames> impostorTreesToAdd,
+        List<PrefabNames> cliffsToAdd
+        )
     {
         int maxLength = 0;
         int iterations = 0;
@@ -705,7 +844,7 @@ public class TerrainGenerator {
                         seed, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
 
                 }
-                GenererateSplatMapAndProps(iter.terrain, resolution, trees, x, zPos, row, wettnessMap, wetnessWidth* (int)xIterations, wetnessHeight*row);
+                GenererateSplatMapAndProps(iter.terrain, resolution, trees,cliffs, x, zPos, row, wettnessMap, wetnessWidth* (int)xIterations, wetnessHeight*row,treesToAdd,impostorTreesToAdd,cliffsToAdd);
 
                 //SetTerrainSplatMap(iter,)
             }
@@ -813,6 +952,18 @@ public class TerrainGenerator {
 
 
             float seamPos = currentPos + seamOffsetX;
+
+            if (!xDetails.Contains((int)currentPos))
+            {
+                xDetails.Add((int)currentPos, new XTerrainDetail(
+                    Mathf.Abs(currentPos - surfaceGroups[iter].leftCurvePoint),
+                    Mathf.Abs(surfaceGroups[iter].rightCurvePoint - currentPos),
+                    groupProgressHeight,
+                    currentPos - iter.GetLeftSide().x,
+                    iter.GetRightSide().x - currentPos
+                    ));
+            }
+
 
 
             //Stitch terrain on Z
@@ -928,7 +1079,7 @@ public class TerrainGenerator {
                                     lastHeight * inversePercentage
                                 )
                                //Adds noise
-                               + noiseHeight * noisePercentage
+                               + Mathf.Abs(noiseHeight * noisePercentage)
                                )
                                //Adds extra cliff height 
                                + cliffHeight * zProg * finalFallOffPercentage
