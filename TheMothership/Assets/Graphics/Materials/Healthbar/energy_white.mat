@@ -39,7 +39,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Gradient:
-        m_Texture: {fileID: 2800000, guid: fd799a2ba24f60e4b98e95a789a803a7, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -55,7 +55,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Overlay:
-        m_Texture: {fileID: 2800000, guid: 5e2ee554afd938146ad1cd198ada2c7a, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
@@ -63,7 +63,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Particles:
-        m_Texture: {fileID: 2800000, guid: 6118e48faaf6f73458e0248cb1fc2712, type: 3}
+        m_Texture: {fileID: 2800000, guid: 8029b2e399ecad64abd073cc0565e809, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SAlphaTex:
@@ -75,7 +75,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Smoke:
-        m_Texture: {fileID: 2800000, guid: adc3518309a403f4cb98809a2761e11f, type: 3}
+        m_Texture: {fileID: 2800000, guid: 45769ad528017dc46bb26372e6a9180c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SurfaceTexture:
@@ -83,7 +83,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _uva:
-        m_Texture: {fileID: 2800000, guid: 3aac3087967ea4fae858ec0494fd24d9, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7bd63cb33cdc0664abdd263f08ee9136, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
@@ -98,25 +98,25 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _P1Mul: 0.846
-    - _P2Mul: 1
+    - _P1Mul: 0.364
+    - _P2Mul: 0.569
     - _Parallax: 0.02
-    - _Particles1OffsetX: 18.899105
-    - _Particles1OffsetY: 9.613108
+    - _Particles1OffsetX: 4.484989
+    - _Particles1OffsetY: 2.6357057
     - _Particles1Tiling: 1
-    - _Particles2OffsetX: 18.899105
-    - _Particles2OffsetY: 9.613108
+    - _Particles2OffsetX: 4.484989
+    - _Particles2OffsetY: 2.6357057
     - _Particles2Tiling: 0.5
-    - _Smoke1OffsetX: 4.9193726
-    - _Smoke1OffsetY: 9.562378
+    - _Smoke1OffsetX: 1.0335447
+    - _Smoke1OffsetY: 1.9581854
     - _Smoke1Tiling: 0.8
-    - _Smoke2OffsetX: 10.222664
-    - _Smoke2OffsetY: 10.222664
+    - _Smoke2OffsetX: 2.166033
+    - _Smoke2OffsetY: 2.166033
     - _Smoke2Tiling: 0.75
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _SurfaceOffsetX: 9.417488
+    - _SurfaceOffsetX: 2.2309115
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:

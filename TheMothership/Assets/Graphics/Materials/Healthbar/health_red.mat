@@ -39,7 +39,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Gradient:
-        m_Texture: {fileID: 2800000, guid: 031ffbb1a5f7d65429d79e077836488b, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -63,7 +63,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Particles:
-        m_Texture: {fileID: 2800000, guid: 6f7b424838a7dba4e9ca7edb5b7e1d51, type: 3}
+        m_Texture: {fileID: 2800000, guid: 6118e48faaf6f73458e0248cb1fc2712, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SAlphaTex:
@@ -75,7 +75,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Smoke:
-        m_Texture: {fileID: 2800000, guid: adc3518309a403f4cb98809a2761e11f, type: 3}
+        m_Texture: {fileID: 2800000, guid: 6f56e0bedf62f2d48b4dd713116cea30, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SurfaceTexture:
@@ -83,7 +83,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _uva:
-        m_Texture: {fileID: 2800000, guid: 3aac3087967ea4fae858ec0494fd24d9, type: 3}
+        m_Texture: {fileID: 2800000, guid: f1397a0ff96dfd2439aa1414eaf24a66, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
@@ -98,25 +98,25 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _P1Mul: 0.314
-    - _P2Mul: 0.463
+    - _P1Mul: 0.276
+    - _P2Mul: 0.502
     - _Parallax: 0.02
-    - _Particles1OffsetX: 19.017647
-    - _Particles1OffsetY: 9.731649
+    - _Particles1OffsetX: 3.9396415
+    - _Particles1OffsetY: 2.09036
     - _Particles1Tiling: 1
-    - _Particles2OffsetX: 19.017647
-    - _Particles2OffsetY: 9.731649
+    - _Particles2OffsetX: 3.9396415
+    - _Particles2OffsetY: 2.09036
     - _Particles2Tiling: 0.5
-    - _Smoke1OffsetX: 5.2504015
-    - _Smoke1OffsetY: 9.893412
+    - _Smoke1OffsetX: 1.5265865
+    - _Smoke1OffsetY: 2.45123
     - _Smoke1Tiling: 0.8
-    - _Smoke2OffsetX: 10.128143
-    - _Smoke2OffsetY: 10.128143
+    - _Smoke2OffsetX: 1.9530509
+    - _Smoke2OffsetY: 1.9530509
     - _Smoke2Tiling: 0.75
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _SurfaceOffsetX: 10.012493
+    - _SurfaceOffsetX: 2.2216623
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:

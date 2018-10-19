@@ -280,6 +280,14 @@ MonoBehaviour:
     prefab: {fileID: 4418679950492482, guid: c1a597e33610e854c90ac265c1204099, type: 2}
   - name: CliffTall2
     prefab: {fileID: 4950762980296980, guid: cf3d3fb786963cd40b2a673ba13b0b03, type: 2}
+  - name: SmallRock1
+    prefab: {fileID: 4177596277469328, guid: 71ae44b7ab5093f478a9d1439564c7d6, type: 2}
+  - name: SmallRock2
+    prefab: {fileID: 4642447366294228, guid: ddf50b19a9894d74f88ff8a124adb3e2, type: 2}
+  - name: SmallRock3
+    prefab: {fileID: 4853482124494936, guid: 37235cab8682af94b979fa8473bac526, type: 2}
+  - name: SmallRock4
+    prefab: {fileID: 4612470886920838, guid: bc00b1f11e7ca5549a09e49251975d54, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:
@@ -460,6 +468,10 @@ MonoBehaviour:
     prefab: {fileID: 2100000, guid: 540af216924c5124bb94f30fec2667cd, type: 2}
   - name: Cliff
     prefab: {fileID: 2100000, guid: aed7cb646aaf6e14fb43f0489173b72d, type: 2}
+  - name: GrassDarker
+    prefab: {fileID: 2100000, guid: 15654a743eccf384fb2312048db767f0, type: 2}
+  - name: GrassLighter
+    prefab: {fileID: 2100000, guid: 2c6f5ab601d22834883d3c7e18f8be41, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

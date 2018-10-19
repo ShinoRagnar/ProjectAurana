@@ -206,13 +206,17 @@ public class TerrainGenerator {
             Global.Resources[MaterialNames.Dirt],
             Global.Resources[MaterialNames.Cliff],
             Global.Resources[MaterialNames.Grass],
-            Global.Resources[MaterialNames.Water]
+            Global.Resources[MaterialNames.Water],
+            Global.Resources[MaterialNames.GrassLighter],
+            Global.Resources[MaterialNames.GrassDarker],
 
            // (Texture2D)Global.Resources[MaterialNames.Black].mainTexture
         };
         Vector2[] tileSizes = new Vector2[] {
             new Vector2(10,10),
             new Vector2(15,15),
+            new Vector2(10,10),
+            new Vector2(10,10),
             new Vector2(10,10),
             new Vector2(10,10)
         };
@@ -257,6 +261,8 @@ public class TerrainGenerator {
 
         foreach (GeneratedTerrain gt in terrain)
         {
+            //gt.terrain.drawInstanced = true;
+            
             gt.terrain.Flush();
             //gt.terrain.terrainData.treePrototypes
             //gt.terrain.bakeLightProbesForTrees = false;
@@ -385,10 +391,12 @@ public class TerrainGenerator {
         float xPos, 
         float zPos, 
         int row, 
-        float[,] 
-        wettnessMap, 
+        float[,] wettnessMap, 
         int wetnessXInit, 
         int wetnessYInit,
+        float[,] drynessMap,
+        int drynessXInit,
+        int drynessYInit,
         List<PrefabNames> treesToAdd,
         List<PrefabNames> impostorTreesToAdd,
         List<PrefabNames> cliffsToAdd
@@ -444,6 +452,18 @@ public class TerrainGenerator {
 
                     // Texture[1] is stronger at lower altitudes
                     //splatWeights[1] = Mathf.Clamp01((terrainData.heightmapHeight - height));
+                    bool notTooCloseToEdges = false;
+                    int currentPos = (int)(xPos + yTerrain * resolution);
+
+                    if (xDetails.Contains(currentPos))
+                    {
+                        XTerrainDetail xDet = xDetails[currentPos];
+                        notTooCloseToEdges = xDet.groupEndLeftDistance > GROUP_EDGE_DISTANCE
+                                       && xDet.groupEndRightDistance > GROUP_EDGE_DISTANCE
+                                       && xDet.groundLeftDistance > CLIFF_EDGE_DISTANCE
+                                       && xDet.groundRightDistance > CLIFF_EDGE_DISTANCE;
+                        // cliffWithinBounds = xDet.groupPercentage > 0.5f;
+                    }
 
                     // Texture[2] stronger on flatter terrain
                     // Note "steepness" is unbounded, so we "normalise" it by dividing by the extent of heightmap height and scale factor
@@ -478,6 +498,7 @@ public class TerrainGenerator {
 
                     float hillyLike = 1f - Mathf.Cos(t * Mathf.PI * 0.5f);
 
+                    hillyLike = hillyLike > 0.1f ? 1 : 0;
 
 
                     //X and Y intentionally flipped
@@ -488,49 +509,41 @@ public class TerrainGenerator {
                     wetness *= 2;
                     wetness = Mathf.Min(wetness, 1);
 
-                    //float wetness = wettnessMap[y + wetnessXInit, x + wetnessYInit];
 
-                   
+                    float flatness = hillyLike == 0 ? completeFlatness : 0;
 
-                    bool notTooCloseToEdges = false;
-                    int currentPos = (int)(xPos + yTerrain * resolution);
-
-                    if (xDetails.Contains(currentPos))
-                    {
-                        XTerrainDetail xDet = xDetails[currentPos];
-                        notTooCloseToEdges = xDet.groupEndLeftDistance > GROUP_EDGE_DISTANCE
-                                       && xDet.groupEndRightDistance > GROUP_EDGE_DISTANCE
-                                       && xDet.groundLeftDistance > CLIFF_EDGE_DISTANCE
-                                       && xDet.groundRightDistance > CLIFF_EDGE_DISTANCE;
-                       // cliffWithinBounds = xDet.groupPercentage > 0.5f;
-                    }
-                    
-
-                    float grassFactor = hillyLike == 0 ? completeFlatness : 0;
-
-                    float dirtlike = (1 - hillyLike) * (1 - grassFactor);
+                    float slopelike = (1 - hillyLike) * (1 - flatness);
 
                     float worldZPos = zPos + xTerrain * resolution;
-
                     Vector3 worldPos = new Vector3(xPos + yTerrain * resolution, -HEIGHT / 2 + height, worldZPos);
 
                     bool canPlaceProp = steps <= 0 && height > TREE_HEIGHT_REQUIREMENT;
-
-                    bool canPlaceTrees = ((grassFactor > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
+                    bool canPlaceTrees = ((flatness > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
                                 ||
                                 (row != 0 && hillyLike < 0.3f));
-
-                    bool canPlaceCliff = notTooCloseToEdges && dirtlike > 0.2f &&  worldZPos > TERRAIN_Z_WIDTH + CLIFF_TERRAIN_MARGIN;
-
-
+                    bool canPlaceCliff = notTooCloseToEdges && slopelike > 0.2f &&  worldZPos > TERRAIN_Z_WIDTH + CLIFF_TERRAIN_MARGIN;
                     bool isFar = worldZPos > FAR_Z_DISTANCE;
 
                     if (tgp == TerrainGenerationPass.SplatMapGeneration)
                     {
+
+                        float dirtlike =(1- hillyLike)*drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < -0.1f ? 1 : 0;
+
+                        float grasslike = (1 - dirtlike) * flatness * (1f - wetness);
+
+                        int grasstype = drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < 0 ? 0 :
+                                        drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < 0.2 ? 1 : 2;
+
+
+
                         splatWeights[1] = hillyLike; //Cliffs
-                        splatWeights[0] = dirtlike; // Dirt
-                        splatWeights[2] = grassFactor * (1f - wetness); //Grass
-                        splatWeights[3] = grassFactor * wetness; //Water
+                        splatWeights[0] = slopelike + dirtlike; // Dirt
+                        splatWeights[3] = flatness * wetness; //Water
+
+                        splatWeights[5] = grasslike * (grasstype == 0 ? 1 : 0); //GrassDarker
+                        splatWeights[2] = grasslike * (grasstype == 1 ? 1 : 0); //Grass
+                        splatWeights[4] = grasslike * (grasstype == 2 ? 1 : 0); //GrassLighter
+                        
 
 
                         // Sum of all textures weights must add to 1, so calculate normalization factor from sum of weights
@@ -786,11 +799,13 @@ public class TerrainGenerator {
 
         float[,] noiseMap = GenerateNoiseMap(maxWidth, maxLength, seed, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
         float[,] cliffMap = GenerateNoiseMap(maxWidth, maxLength, seed, NOISE_SCALE* CLIFF_SCALE_MULTIPLIER, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
-
         float[,] wettnessMap = null;
+        float[,] drynessMap = null;
 
         int wetnessWidth = 0;
         int wetnessHeight = 0;
+        int drynessWidth = 0;
+        int drynessHeight = 0;
 
         for (int row = ROWS-1; row >= 0; row--)
         {
@@ -841,10 +856,20 @@ public class TerrainGenerator {
                     wettnessMap = GenerateNoiseMap(
                         wetnessWidth * iterations,
                         wetnessHeight * ROWS, 
-                        seed, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
+                        seed+1337, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
+
+                    drynessWidth = iter.terrain.terrainData.alphamapWidth;
+                    drynessHeight = iter.terrain.terrainData.alphamapHeight;
+                    drynessMap = GenerateNoiseMap(
+                        drynessWidth * iterations,
+                        drynessHeight * ROWS,
+                        seed+142, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
 
                 }
-                GenererateSplatMapAndProps(iter.terrain, resolution, trees,cliffs, x, zPos, row, wettnessMap, wetnessWidth* (int)xIterations, wetnessHeight*row,treesToAdd,impostorTreesToAdd,cliffsToAdd);
+                GenererateSplatMapAndProps(iter.terrain, resolution, trees,cliffs, x, zPos, row, 
+                    wettnessMap, wetnessWidth* (int)xIterations, wetnessHeight*row,
+                    drynessMap, drynessWidth * (int)xIterations, drynessHeight * row,
+                    treesToAdd,impostorTreesToAdd,cliffsToAdd);
 
                 //SetTerrainSplatMap(iter,)
             }
