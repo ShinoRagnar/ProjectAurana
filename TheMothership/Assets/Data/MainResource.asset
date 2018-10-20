@@ -473,7 +473,7 @@ MonoBehaviour:
   - name: GrassLighter
     prefab: {fileID: 2100000, guid: 2c6f5ab601d22834883d3c7e18f8be41, type: 2}
   - name: GrassVertexShader
-    prefab: {fileID: 2100000, guid: dd18842a4fdd6574f9cbed3853f1ab8b, type: 2}
+    prefab: {fileID: 2100000, guid: ba17b1ce6e90ba648b13b42551152a2b, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

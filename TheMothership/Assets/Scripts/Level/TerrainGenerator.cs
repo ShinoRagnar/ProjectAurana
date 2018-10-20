@@ -461,6 +461,7 @@ public class TerrainGenerator {
                     // Texture[1] is stronger at lower altitudes
                     //splatWeights[1] = Mathf.Clamp01((terrainData.heightmapHeight - height));
                     bool notTooCloseToEdges = false;
+                    bool grassNotAtEdge = false;
                     int currentPos = (int)(xPos + yTerrain * resolution);
 
                     if (xDetails.Contains(currentPos))
@@ -470,6 +471,7 @@ public class TerrainGenerator {
                                        && xDet.groupEndRightDistance > GROUP_EDGE_DISTANCE
                                        && xDet.groundLeftDistance > CLIFF_EDGE_DISTANCE
                                        && xDet.groundRightDistance > CLIFF_EDGE_DISTANCE;
+                        grassNotAtEdge = xDet.groundLeftDistance > 1 && xDet.groundRightDistance > 1;
                         // cliffWithinBounds = xDet.groupPercentage > 0.5f;
                     }
 
@@ -544,7 +546,7 @@ public class TerrainGenerator {
 
                         float grassHeight = Mathf.Clamp01(Mathf.Clamp01((drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f)) * 5);
 
-                        if (grasslike > 0.3f && grassHeight > 0.3f && row == 0 && worldZPos < GRASS_RENDER_Z_DISTANCE)
+                        if (grassNotAtEdge && grasslike > 0.3f && grassHeight > 0.3f && row == 0 && worldZPos < GRASS_RENDER_Z_DISTANCE)
                         {
 
                             hasGrass[xTerrain, yTerrain] = true;
@@ -685,11 +687,11 @@ public class TerrainGenerator {
         terrainData.SetAlphamaps(0, 0, splatmapData);
 
         //
-        if(row == 0 && terrain.gameObject.name == "Terrain <0,2>")
+        if(row == 0) //&& terrain.gameObject.name == "Terrain <0,2>")
         {
             grassColorAndHeight.Apply();
             MeshRenderer renderer = GenerateTerrainMesh(terrain, Global.Resources[MaterialNames.GrassVertexShader], hasGrass);
-          //  renderer.material.SetTexture("_ColorMap", grassColorAndHeight);
+           // renderer.material.SetTexture("_ColorMap", grassColorAndHeight);
         }
 
     }
