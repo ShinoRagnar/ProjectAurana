@@ -12,6 +12,7 @@ public enum MaterialNames
 	GrassDarker = 617314384,
 	GrassDeadleaf = 617912887,
 	GrassLighter = 616406848,
+	GrassVertexShader = 617248701,
 	Green = 617031393,
 	GroundAndRocks = 616833424,
 	Health = 703028457,

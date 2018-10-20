@@ -161,8 +161,13 @@ public class TerrainGenerator {
 
     //DISTANCE
     public static float FAR_Z_DISTANCE = 15;
-    //public static float NO_SHADOW_Z_DISTANCE = 15;
+    public static float GRASS_RENDER_Z_DISTANCE = 25;
 
+    public static Color COLOR_DRY = new Color(0.8588235f, 0.7933786f, 0.5686274f, 0.25f);
+    public static Color COLOR_WET = new Color(0.8588235f, 0.8588235f, 0.5686274f, 1);
+
+    //public static float NO_SHADOW_Z_DISTANCE = 15;
+    //0.09558818
     //public static float TREE_HILL_THRESHOLD = 0.7f;
 
 
@@ -384,15 +389,15 @@ public class TerrainGenerator {
 
 
     void GenererateSplatMapAndProps(
-        Terrain terrain, 
-        float resolution, 
+        Terrain terrain,
+        float resolution,
         GameObject trees,
         GameObject cliffs,
-        float xPos, 
-        float zPos, 
-        int row, 
-        float[,] wettnessMap, 
-        int wetnessXInit, 
+        float xPos,
+        float zPos,
+        int row,
+        float[,] wettnessMap,
+        int wetnessXInit,
         int wetnessYInit,
         float[,] drynessMap,
         int drynessXInit,
@@ -414,6 +419,9 @@ public class TerrainGenerator {
         float steps = 0;
 
         TerrainGenerationPass[] tgpList = (TerrainGenerationPass[])TerrainGenerationPass.GetValues(typeof(TerrainGenerationPass));
+        bool[,] hasGrass = new bool[terrainData.heightmapWidth+1, terrainData.heightmapHeight+1];
+        Texture2D grassColorAndHeight = new Texture2D(terrainData.heightmapWidth + 1, terrainData.heightmapHeight + 1,TextureFormat.ARGB32,false);
+
 
         foreach (TerrainGenerationPass tgp in tgpList)
         {
@@ -529,12 +537,21 @@ public class TerrainGenerator {
 
                         float dirtlike =(1- hillyLike)*drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < -0.1f ? 1 : 0;
 
-                        float grasslike = (1 - dirtlike) * flatness * (1f - wetness);
+                        float grasslike = (1 - hillyLike) * (1 - dirtlike) * flatness * (1f - wetness);
 
                         int grasstype = drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < 0 ? 0 :
                                         drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < 0.2 ? 1 : 2;
 
+                        float grassHeight = Mathf.Clamp01(Mathf.Clamp01((drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f)) * 5);
 
+                        if (grasslike > 0.3f && grassHeight > 0.3f && row == 0 && worldZPos < GRASS_RENDER_Z_DISTANCE)
+                        {
+
+                            hasGrass[xTerrain, yTerrain] = true;
+                            grassColorAndHeight.SetPixel(xTerrain, yTerrain, new Color(1,1,1,grassHeight));
+
+
+                        }
 
                         splatWeights[1] = hillyLike; //Cliffs
                         splatWeights[0] = slopelike + dirtlike; // Dirt
@@ -666,6 +683,15 @@ public class TerrainGenerator {
 
         // Finally assign the new splatmap to the terrainData:
         terrainData.SetAlphamaps(0, 0, splatmapData);
+
+        //
+        if(row == 0 && terrain.gameObject.name == "Terrain <0,2>")
+        {
+            grassColorAndHeight.Apply();
+            MeshRenderer renderer = GenerateTerrainMesh(terrain, Global.Resources[MaterialNames.GrassVertexShader], hasGrass);
+          //  renderer.material.SetTexture("_ColorMap", grassColorAndHeight);
+        }
+
     }
 
     public Transform SpawnProp(PrefabNames nam, Vector3 position, GameObject propParent, int keepOnly)
@@ -1277,6 +1303,176 @@ public class TerrainGenerator {
         }
 
         return noiseMap;
+    }
+
+
+
+    // Used to create a mesh from a terrain with a custom material
+
+    private List<Vector3> vertices = new List<Vector3>();
+    private List<Vector3> normals = new List<Vector3>();
+    private List<Vector2> uvs = new List<Vector2>();
+    private List<int> triangles = new List<int>();
+
+    private Dictionary<Coordinate, int> indexLookup = new Dictionary<Coordinate, int>();
+
+    private float[,] heights;
+
+    private int width;
+    private int length;
+    private float height;
+    private float sampleWidth;
+    private float sampleLength;
+
+
+    private MeshRenderer GenerateTerrainMesh(Terrain terrain, Material mat, bool[,] shouldUse)
+    {
+        var terrainData = terrain.terrainData;
+        heights = terrainData.GetHeights(0, 0, terrainData.heightmapWidth, terrainData.heightmapHeight);
+
+        width = heights.GetLength(0);
+        length = heights.GetLength(1);
+        sampleWidth = terrainData.size.x / width;
+        sampleLength = terrainData.size.z / length;
+        height = terrainData.size.y;
+
+        var parent = new GameObject(terrain.name + " Mesh").transform;
+
+        for (int x = 0; x + 1 < width; x++)
+        {
+            for (int y = 0; y + 1 < length; y++)
+            {
+                if (shouldUse[x, y])
+                {
+                    if (vertices.Count + 4 > 65535)
+                    {
+                        GenerateSubMesh(parent, mat);
+                    }
+
+                    var v0 = GetOrCreateVertex(x, y);
+                    var v1 = GetOrCreateVertex(x + 1, y);
+                    var v2 = GetOrCreateVertex(x + 1, y + 1);
+                    var v3 = GetOrCreateVertex(x, y + 1);
+
+                    triangles.Add(v0);
+                    triangles.Add(v1);
+                    triangles.Add(v2);
+
+                    triangles.Add(v0);
+                    triangles.Add(v2);
+                    triangles.Add(v3);
+                }
+            }
+        }
+
+        MeshRenderer renderer = GenerateSubMesh(parent,mat);
+
+        var terrainTransform = terrain.transform;
+        parent.position = terrainTransform.position;
+        parent.rotation = terrainTransform.rotation;
+        parent.localScale = terrainTransform.localScale;
+        parent.parent = terrainTransform;
+
+        return renderer;
+    }
+
+    private MeshRenderer GenerateSubMesh(Transform parent, Material mat)
+    {
+        var mesh = new Mesh();
+        mesh.name = "SubTerrain Mesh";
+#if UNITY_5_2_OR_NEWER
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uvs);
+            mesh.SetNormals(normals);
+            mesh.SetTriangles(triangles, 0);
+#else
+        mesh.vertices = vertices.ToArray();
+        mesh.uv = uvs.ToArray();
+        mesh.normals = normals.ToArray();
+        mesh.triangles = triangles.ToArray();
+#endif
+        ;
+        mesh.RecalculateBounds();
+
+        var obj = new GameObject("SubTerrain");
+        obj.transform.parent = parent;
+        obj.AddComponent<MeshFilter>().mesh = mesh;
+        MeshRenderer renderer = obj.AddComponent<MeshRenderer>();
+        renderer.material = mat;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
+        vertices.Clear();
+        uvs.Clear();
+        normals.Clear();
+        triangles.Clear();
+        indexLookup.Clear();
+
+        return renderer;
+    }
+
+    private int GetOrCreateVertex(int x, int y)
+    {
+        var coord = new Coordinate(x, y);
+        if (indexLookup.ContainsKey(coord))
+        {
+            return indexLookup[coord];
+        }
+
+        var center = GetHeight(x, y);
+        vertices.Add(center);
+        //I don't know why exactly, but x and y are swapped here... 
+        uvs.Add(new Vector2((float)y / length, (float)x / width));
+
+        //Calculate normal
+        var left = x > 0 ? GetHeight(x - 1, y) : center;
+        var right = x + 1 < width ? GetHeight(x + 1, y) : center;
+        var front = y > 0 ? GetHeight(x, y - 1) : center;
+        var back = y + 1 < length ? GetHeight(x, y + 1) : center;
+
+        var widthDiff = right - left;
+        var lengthDiff = front - back;
+        normals.Add(Vector3.Cross(lengthDiff, widthDiff));
+
+        int index = vertices.Count - 1;
+        indexLookup[coord] = index;
+        return index;
+    }
+
+    private Vector3 GetHeight(int x, int y)
+    {
+        //I don't know why exactly, but x and y are swapped here... 
+        return new Vector3(y * sampleLength, heights[x, y] * height, x * sampleWidth);
+    }
+
+    private struct Coordinate
+    {
+        public readonly int x, y;
+
+        public Coordinate(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public bool Equals(Coordinate other)
+        {
+            return x == other.x && y == other.y;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is Coordinate && Equals((Coordinate)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (x * 397) ^ y;
+            }
+        }
     }
 
 }
