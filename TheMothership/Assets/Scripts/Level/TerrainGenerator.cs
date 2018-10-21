@@ -7,7 +7,8 @@ public enum TerrainGenerationPass
 {
     SplatMapGeneration = 0,
     Cliffs = 1,
-    Trees = 2
+    Trees = 2,
+    Litter = 3
 }
 
 public class TerrainGenerator {
@@ -154,6 +155,7 @@ public class TerrainGenerator {
     //PROPS GENERAL
     public static float GROUP_EDGE_DISTANCE = 20;
     public static float CLIFF_EDGE_DISTANCE = 10;
+    public static float LITTER_DISTANCE = 5;
 
     public static float WETTNESS_MARGIN = 0.1f;
 
@@ -163,8 +165,8 @@ public class TerrainGenerator {
     public static float FAR_Z_DISTANCE = 15;
     public static float GRASS_RENDER_Z_DISTANCE = 25;
 
-    public static Color COLOR_DRY = new Color(0.8588235f, 0.7933786f, 0.5686274f, 0.25f);
-    public static Color COLOR_WET = new Color(0.8588235f, 0.8588235f, 0.5686274f, 1);
+    //public static Color COLOR_DRY = new Color(0.8588235f, 0.7933786f, 0.5686274f, 0.25f);
+    //public static Color COLOR_WET = new Color(0.8588235f, 0.8588235f, 0.5686274f, 1);
 
     //public static float NO_SHADOW_Z_DISTANCE = 15;
     //0.09558818
@@ -173,6 +175,7 @@ public class TerrainGenerator {
 
     DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
     DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
+    DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
 
     DictionaryList<int, XTerrainDetail> xDetails = new DictionaryList<int, XTerrainDetail>();
 
@@ -184,8 +187,9 @@ public class TerrainGenerator {
     public List<Ground> gSurfaces = new List<Ground>();
     public List<GeneratedTerrain> terrain = new List<GeneratedTerrain>();
     public DictionaryList<string, Transform> propNodes = new DictionaryList<string, Transform>();
-
     private DictionaryList<Ground, SurfaceGroup> surfaceGroups = new DictionaryList<Ground, SurfaceGroup>();
+
+
 
 
    // public List<Terrain> backgroundTerrrain = new List<Terrain>();
@@ -202,6 +206,8 @@ public class TerrainGenerator {
         trees.transform.parent = Global.References[SceneReferenceNames.Terrain];
         GameObject cliffs = new GameObject();
         cliffs.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        GameObject litter = new GameObject();
+        litter.transform.parent = Global.References[SceneReferenceNames.Terrain];
 
         GameObject backgroundTerrain = new GameObject();
         backgroundTerrain.transform.parent = Global.References[SceneReferenceNames.Terrain];
@@ -233,7 +239,14 @@ public class TerrainGenerator {
             { PrefabNames.CliffBroad },
             { PrefabNames.CliffBroad2 },
             { PrefabNames.CliffTall2 }
-
+        };
+        List<PrefabNames> litterToAdd = new List<PrefabNames>() {
+            { PrefabNames.LitterLogOne },
+            { PrefabNames.LitterLogTwo },
+            { PrefabNames.LitterRockFour },
+            { PrefabNames.LitterRockOne },
+            { PrefabNames.LitterRockThree },
+            { PrefabNames.LitterRockTwo }
         };
 
 
@@ -261,7 +274,7 @@ public class TerrainGenerator {
 
         FindStartEndOfSurfaces();
 
-        GenerateTerrain(seed,terra,fog,trees,cliffs, materials, tileSizes,treesToAdd,imposterTreesToAdd,cliffsToAdd);
+        GenerateTerrain(seed,terra,fog,trees,cliffs,litter, materials, tileSizes,treesToAdd,imposterTreesToAdd,cliffsToAdd,litterToAdd);
         //GenerateBackgroundTerrain(seed, gSurfaces[0], backgroundTerrain, materials, tileSizes);
 
         foreach (GeneratedTerrain gt in terrain)
@@ -282,6 +295,7 @@ public class TerrainGenerator {
         fog.name = "Fog (" + fog.transform.childCount + ")";
         trees.name = "Trees (" + trees.transform.childCount + ")";
         cliffs.name = "Cliffs (" + cliffs.transform.childCount + ")";
+        litter.name = "Litter (" + litter.transform.childCount + ")";
 
         backgroundTerrain.name = "Background Terrain (" + backgroundTerrain.transform.childCount + ")";
 
@@ -371,20 +385,34 @@ public class TerrainGenerator {
     private void SpawnFog(GameObject fog, Transform fogPrefab, Vector3 pos, float xLength, float zDepth, string name)
     {
         Transform t = Global.Create(fogPrefab, fog.transform);
-        ParticleSystem.ShapeModule sh = t.GetComponent<ParticleSystem>().shape;
-        sh.scale = new Vector3(xLength, zDepth, 1);
+        LODGroup lg = t.GetComponent<LODGroup>();
+
+        foreach(LOD lod in lg.GetLODs())
+        {
+            foreach(Renderer r in lod.renderers)
+            {
+                ParticleSystem ps = r.gameObject.GetComponent<ParticleSystem>();
+
+                if(ps != null)
+                {
+                    ParticleSystem.ShapeModule sh = ps.shape;
+                    sh.scale = new Vector3(xLength, zDepth, 1);
+                }
+            }
+        }
+
         t.position = pos;
         t.name = name;
     }
 
-    public  TreePrototype GetTreePrototype(PrefabNames name)
+   /* public  TreePrototype GetTreePrototype(PrefabNames name)
     {
         //gt.terrain.terrainData.treePrototypes
 
         TreePrototype tp = new TreePrototype();
         tp.prefab = Global.Resources[name].gameObject;
         return tp;
-    }
+    }*/
 
 
 
@@ -393,6 +421,7 @@ public class TerrainGenerator {
         float resolution,
         GameObject trees,
         GameObject cliffs,
+        GameObject litter,
         float xPos,
         float zPos,
         int row,
@@ -404,7 +433,8 @@ public class TerrainGenerator {
         int drynessYInit,
         List<PrefabNames> treesToAdd,
         List<PrefabNames> impostorTreesToAdd,
-        List<PrefabNames> cliffsToAdd
+        List<PrefabNames> cliffsToAdd,
+        List<PrefabNames> litterToAdd
         )
     {
 
@@ -420,7 +450,7 @@ public class TerrainGenerator {
 
         TerrainGenerationPass[] tgpList = (TerrainGenerationPass[])TerrainGenerationPass.GetValues(typeof(TerrainGenerationPass));
         bool[,] hasGrass = new bool[terrainData.heightmapWidth+1, terrainData.heightmapHeight+1];
-        Texture2D grassColorAndHeight = new Texture2D(terrainData.heightmapWidth + 1, terrainData.heightmapHeight + 1,TextureFormat.ARGB32,false);
+        //Texture2D grassColorAndHeight = new Texture2D(terrainData.heightmapWidth + 1, terrainData.heightmapHeight + 1,TextureFormat.ARGB32,false);
 
 
         foreach (TerrainGenerationPass tgp in tgpList)
@@ -527,7 +557,12 @@ public class TerrainGenerator {
                     float worldZPos = zPos + xTerrain * resolution;
                     Vector3 worldPos = new Vector3(xPos + yTerrain * resolution, -HEIGHT / 2 + height, worldZPos);
 
+                    float dirtlike = (1 - hillyLike) * drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < -0.1f ? 1 : 0;
+
+
                     bool canPlaceProp = steps <= 0 && height > TREE_HEIGHT_REQUIREMENT;
+                    bool canPlaceLitter = worldZPos < TERRAIN_Z_WIDTH && flatness > 0.5 && dirtlike > 0.5f && grassNotAtEdge && worldZPos > -TERRAIN_Z_WIDTH-TERRAIN_Z_MARGIN+2;
+
                     bool canPlaceTrees = ((flatness > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
                                 ||
                                 (row != 0 && hillyLike < 0.3f));
@@ -537,7 +572,6 @@ public class TerrainGenerator {
                     if (tgp == TerrainGenerationPass.SplatMapGeneration)
                     {
 
-                        float dirtlike =(1- hillyLike)*drynessMap[y + drynessXInit, x + drynessYInit] - 0.5f < -0.1f ? 1 : 0;
 
                         float grasslike = (1 - hillyLike) * (1 - dirtlike) * flatness * (1f - wetness);
 
@@ -550,7 +584,7 @@ public class TerrainGenerator {
                         {
 
                             hasGrass[xTerrain, yTerrain] = true;
-                            grassColorAndHeight.SetPixel(xTerrain, yTerrain, new Color(1,1,1,grassHeight));
+                           // grassColorAndHeight.SetPixel(xTerrain, yTerrain, new Color(1,1,1,grassHeight));
 
 
                         }
@@ -585,7 +619,7 @@ public class TerrainGenerator {
                         steps--;
 
                         //Only check for prop placement on new xPositions
-                        if (canPlaceProp && canPlaceCliff  && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                        if (steps <= 0 && canPlaceProp && canPlaceCliff  && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
                         {
 
                             foreach (Transform placed in placedProps)
@@ -617,12 +651,12 @@ public class TerrainGenerator {
                     }
                     else if(tgp == TerrainGenerationPass.Trees)
                     {
+
+                        steps--;
+
                         //Only check for prop placement on new xPositions
-                        if ((yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                        if (steps <= 0 && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
                         {
-
-                            steps--;
-
                             float treeDistance = row != 0 ? TREE_SEPARATION_MIN_DISTANCE :
                                 TREE_SEPARATION_MIN_DISTANCE +
                                 (1 - x_01) * (TREE_SEPARATION_MAX_DISTANCE - TREE_SEPARATION_MIN_DISTANCE);
@@ -672,11 +706,34 @@ public class TerrainGenerator {
                                 }
                             }
                         }
-                    }
+                    }else if (tgp == TerrainGenerationPass.Litter)
+                    {
+                        steps--;
 
-                    // Texture[3] increases with height but only on surfaces facing positive Z axis 
-                    //splatWeights[3] = height * Mathf.Clamp01(normal.z);
-                    lastYTerrain = yTerrain;
+                        //Only check for prop placement on new xPositions
+                        if (steps <= 0 && canPlaceLitter && canPlaceProp && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
+                        {
+                            foreach (Vector3 placed in placedLitter)
+                            {
+                                if (Vector3.Distance(placed, worldPos) < LITTER_DISTANCE)
+                                {
+                                    canPlaceProp = false;
+                                    break;
+                                }
+                            }
+
+                            if (canPlaceProp)
+                            {
+                                steps = LITTER_DISTANCE;
+                                placedLitter.Add(worldPos, SpawnProp(litterToAdd[rnd.Next(litterToAdd.Count)], worldPos, litter, 99));
+                            }
+
+                        }
+                  }
+
+                        // Texture[3] increases with height but only on surfaces facing positive Z axis 
+                        //splatWeights[3] = height * Mathf.Clamp01(normal.z);
+                        lastYTerrain = yTerrain;
                     lastXTerrain = xTerrain;
                 }
             }
@@ -689,7 +746,7 @@ public class TerrainGenerator {
         //
         if(row == 0) //&& terrain.gameObject.name == "Terrain <0,2>")
         {
-            grassColorAndHeight.Apply();
+        //    grassColorAndHeight.Apply();
             MeshRenderer renderer = GenerateTerrainMesh(terrain, Global.Resources[MaterialNames.GrassVertexShader], hasGrass);
            // renderer.material.SetTexture("_ColorMap", grassColorAndHeight);
         }
@@ -802,12 +859,14 @@ public class TerrainGenerator {
         GameObject fog, 
         GameObject trees,
         GameObject cliffs,
+        GameObject litter,
 
         Material[] materials, 
         Vector2[] tileSizes,
         List<PrefabNames> treesToAdd,
         List<PrefabNames> impostorTreesToAdd,
-        List<PrefabNames> cliffsToAdd
+        List<PrefabNames> cliffsToAdd,
+        List<PrefabNames> litterToAdd
         )
     {
         int maxLength = 0;
@@ -894,10 +953,10 @@ public class TerrainGenerator {
                         seed+142, NOISE_SCALE, NOISE_OCTAVE, NOISE_PERSISTANCE, NOISE_LACUNARITY, Vector2.zero);
 
                 }
-                GenererateSplatMapAndProps(iter.terrain, resolution, trees,cliffs, x, zPos, row, 
+                GenererateSplatMapAndProps(iter.terrain, resolution, trees,cliffs,litter, x, zPos, row, 
                     wettnessMap, wetnessWidth* (int)xIterations, wetnessHeight*row,
                     drynessMap, drynessWidth * (int)xIterations, drynessHeight * row,
-                    treesToAdd,impostorTreesToAdd,cliffsToAdd);
+                    treesToAdd,impostorTreesToAdd,cliffsToAdd, litterToAdd);
 
                 //SetTerrainSplatMap(iter,)
             }

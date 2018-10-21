@@ -280,14 +280,18 @@ MonoBehaviour:
     prefab: {fileID: 4418679950492482, guid: c1a597e33610e854c90ac265c1204099, type: 2}
   - name: CliffTall2
     prefab: {fileID: 4950762980296980, guid: cf3d3fb786963cd40b2a673ba13b0b03, type: 2}
-  - name: SmallRockOne
-    prefab: {fileID: 4177596277469328, guid: 71ae44b7ab5093f478a9d1439564c7d6, type: 2}
-  - name: SmallRockTwo
-    prefab: {fileID: 4642447366294228, guid: ddf50b19a9894d74f88ff8a124adb3e2, type: 2}
-  - name: SmallRockThree
-    prefab: {fileID: 4853482124494936, guid: 37235cab8682af94b979fa8473bac526, type: 2}
-  - name: SmallRockFour
-    prefab: {fileID: 4612470886920838, guid: bc00b1f11e7ca5549a09e49251975d54, type: 2}
+  - name: LitterRockOne
+    prefab: {fileID: 4219278217331944, guid: 14d72119097cac64cba322c191570443, type: 2}
+  - name: LitterRockTwo
+    prefab: {fileID: 4397570541854574, guid: 010bab0258a030649bc99965c70898f3, type: 2}
+  - name: LitterRockThree
+    prefab: {fileID: 4382508598944044, guid: 3412c34eff6a3f34aa33ed081a5b9edb, type: 2}
+  - name: LitterRockFour
+    prefab: {fileID: 4537075975152454, guid: e5b3a1642cda42443bcb55a9115fe6fc, type: 2}
+  - name: LitterLogOne
+    prefab: {fileID: 4949634666436164, guid: 067a77c78479c22498969feebbbe4469, type: 2}
+  - name: LitterLogTwo
+    prefab: {fileID: 4473165586386656, guid: cde700dcc676e2c49ac662e1dff600c8, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:
