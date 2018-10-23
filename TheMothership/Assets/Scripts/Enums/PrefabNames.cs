@@ -27,6 +27,7 @@ public enum PrefabNames
 	DismemberedTPose = 308093479,
 	DoubleMortar = 314470186,
 	DurationBar = 320540806,
+	DustEmber = 320804220,
 	EnemyHealthBar = 412477192,
 	EquipmentSlot = 415323341,
 	ExclamationMark = 422448233,

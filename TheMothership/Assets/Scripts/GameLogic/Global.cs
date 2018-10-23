@@ -59,6 +59,15 @@ public class Global : MonoBehaviour {
         }
     }
 
+    //IDS
+    //public static readonly int ABOVE_GROUND = 0;
+    //public static readonly int UNDER_GROUND = 1;
+    //public static int SHOWING = ABOVE_GROUND;
+    //public static DictionaryList<int, SceneReferenceNames> GroundNodes = new DictionaryList<int, SceneReferenceNames>() { { ABOVE_GROUND, Sce} }
+    public static SceneReferenceNames[] ALL_GROUNDS = new SceneReferenceNames[] { SceneReferenceNames.NodeAboveGround, SceneReferenceNames.NodeUnderground };
+    public static SceneReferenceNames SHOWING = SceneReferenceNames.NodeAboveGround;
+
+
     //------- SELF
 
     public static Global instance;
@@ -70,8 +79,9 @@ public class Global : MonoBehaviour {
     public static DictionaryList<DelayedOnHitDamage,float> delayedDamage = new DictionaryList<DelayedOnHitDamage,float>();
 
 
-    public static DictionaryList<Transform, Ground> Grounds = new DictionaryList<Transform, Ground>();
+   // public static DictionaryList<Transform, Ground> Grounds = new DictionaryList<Transform, Ground>();
 
+    public static DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>> Grounds = new DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>>();
 
     public static bool IsAwake = false;
 
@@ -88,7 +98,7 @@ public class Global : MonoBehaviour {
     private InventoryHandler handler;
     //References to prefabs etc
     public Resources resources;
-    public TerrainGenerator terrain;
+    public static DictionaryList<SceneReferenceNames, TerrainGenerator> Terrain = new DictionaryList<SceneReferenceNames, TerrainGenerator>();
 
     //Static version
     public static Resources Resources
@@ -181,12 +191,12 @@ public class Global : MonoBehaviour {
 
     //Enemies
     //public static Health ENEMY_SOLDIER_STANDARD_HEALTH = new Health(100, 200, 0, 1);
-    public static readonly GameUnit ENEMY_SOLDIER_STANDARD = new GameUnit("Standard Enemy Soldier ", FACTION_ENEMY, STANDARD_HUMANOID_SENSES,ENEMY_STANDARD_STATS, false);
-    public static readonly GameUnit ENEMY_MECH = new GameUnit("Mortar Turret", FACTION_ENEMY, STANDARD_ROBOT_SENSES, ENEMY_MECH_STANDARD_STATS, false);
+    public static readonly GameUnit ENEMY_SOLDIER_STANDARD = new GameUnit("Standard Enemy Soldier ",SceneReferenceNames.NodeAboveGround, FACTION_ENEMY, STANDARD_HUMANOID_SENSES,ENEMY_STANDARD_STATS, false);
+    public static readonly GameUnit ENEMY_MECH = new GameUnit("Mortar Turret", SceneReferenceNames.NodeAboveGround, FACTION_ENEMY, STANDARD_ROBOT_SENSES, ENEMY_MECH_STANDARD_STATS, false);
 
     //Player
     //public static Health PLAYER_STANDARD_HEALTH = new Health(500, 1000, 1, 10);
-    public static readonly GameUnit PLAYER_STANDARD_SETUP = new GameUnit("Player", FACTION_PLAYER,/* PLAYER_STANDARD_HEALTH,*/ STANDARD_ROBOT_SENSES,PLAYER_STANDARD_STATS,/*, 1000, 1,*/true);
+    public static readonly GameUnit PLAYER_STANDARD_SETUP = new GameUnit("Player", SceneReferenceNames.NodeAboveGround, FACTION_PLAYER,/* PLAYER_STANDARD_HEALTH,*/ STANDARD_ROBOT_SENSES,PLAYER_STANDARD_STATS,/*, 1000, 1,*/true);
 
     //Conditions
     public static readonly ListHash<int> ALWAYS = new ListHash<int> { };
@@ -229,6 +239,9 @@ public class Global : MonoBehaviour {
         {
             initiate.Initiate();
         }
+
+        SHOWING = SceneReferenceNames.NodeAboveGround;
+        RestoreScene();
 
         Cursor.SetCursor(defaultCursor, Vector2.zero, CursorMode.Auto);
 
@@ -349,8 +362,47 @@ public class Global : MonoBehaviour {
         Destroy(go);
     }
 
+    public static void ShowOnly(SceneReferenceNames slot, bool hideTerrain)
+    {
+        Debug.Log("SHOWONLY Count: "+Terrain.Count);
+
+        foreach(SceneReferenceNames nam in Terrain)
+        {
+            if(slot == nam)
+            {
+                Debug.Log("Showing only: " + nam + " hideTerrain: " + hideTerrain);
+
+                Terrain[nam].Show(hideTerrain);
+            }
+            else
+            {
+                Debug.Log("Hiding: " + nam + " hideTerrain: " + hideTerrain);
+                Terrain[nam].Hide(hideTerrain);
+            }
+        }
+    }
+    public static void RestoreScene(bool restoreTerrain = true)
+    {
+        ShowOnly(SHOWING,restoreTerrain);
+    }
+
     public static void TriggerEnter(GameUnit gu, GameObject from, GameEvent gameEvent)
     {
+        if (gu.isPlayer && gameEvent == GameEvent.CaveEnter && SHOWING == SceneReferenceNames.NodeAboveGround)
+        {
+            SHOWING = SceneReferenceNames.NodeUnderground;
+            RestoreScene();
+            gu.slot = SHOWING;
+        }
+        else if(gu.isPlayer && gameEvent == GameEvent.CaveExit && SHOWING == SceneReferenceNames.NodeUnderground)
+        {
+            SHOWING = SceneReferenceNames.NodeAboveGround;
+            RestoreScene();
+            gu.slot = SHOWING;
+        }
+
+        
+
         Debug.Log("ENTER: "+gu.uniqueName + " caused event: " + gameEvent.ToString());
     }
     public static void TriggerExit(GameUnit gu, GameObject from, GameEvent gameEvent)

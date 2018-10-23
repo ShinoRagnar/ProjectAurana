@@ -66,14 +66,14 @@ public class Senses {
         return SeeOrHear(Sense.Hearing, target,true);
 
     }
-    public static Ground GetGroundBelow(Vector3 fromPosition, float distance)
+    public static Ground GetGroundBelow(Vector3 fromPosition, SceneReferenceNames slot,  float distance)
     {
         Hit hit = SeeGroundBelow(fromPosition, distance);
         if(hit.didHit)
         {
             if(hit.hit.collider.transform != null)
             {
-                return Global.Grounds[hit.hit.collider.transform];
+                return Global.Grounds[slot][hit.hit.collider.transform];
             }
         }
         return null;

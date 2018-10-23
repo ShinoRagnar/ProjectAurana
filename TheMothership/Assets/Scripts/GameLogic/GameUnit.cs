@@ -76,14 +76,17 @@ public class GameUnit{
     //Acrtive effects
     public ListHash<OnHit.ActiveEffect> activeEffecs = new ListHash<OnHit.ActiveEffect>();
 
+    public SceneReferenceNames slot;
+
     //By default gameunits are not active
-    public GameUnit(string unitNameVal, Faction f, Senses s, Stats stat, bool isPlayerVal, bool isActive = false)
+    public GameUnit(string unitNameVal, SceneReferenceNames currentSlot, Faction f, Senses s, Stats stat, bool isPlayerVal, bool isActive = false)
     {
         this.isActive = isActive;
         this.stats = stat;
         this.belongsToFaction = f;
         this.senses = s;
         this.unitName = unitNameVal;
+        this.slot = currentSlot;
 
         //Active units
         if (isActive)
@@ -128,7 +131,7 @@ public class GameUnit{
     //Clones are always active
     public GameUnit Clone()
     {
-        return new GameUnit(unitName, belongsToFaction, senses.Clone(), stats.Clone(), isPlayer, true);
+        return new GameUnit(unitName,slot, belongsToFaction, senses.Clone(), stats.Clone(), isPlayer, true);
     }
     public void AddToInventory(MechItem mi, Vector2 vec)
     {

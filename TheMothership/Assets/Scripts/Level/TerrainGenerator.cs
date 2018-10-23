@@ -138,9 +138,9 @@ public class TerrainGenerator {
     public static float CLIFF_SMOOTHENING = 0.05f;
     public static float CLIFF_ROUND_AT = 0.75f;
 
-    //FOG
+    //Ambient
     public static float FOG_MAX_LENGTH = 40;
-    public static float FOG_HEIGHT = 1f;
+    public static float DUST_MAX_LENGTH = 80;
 
     //TREE
     public static float TREE_SEPARATION_MIN_DISTANCE = 8;
@@ -159,30 +159,14 @@ public class TerrainGenerator {
 
     public static float WETTNESS_MARGIN = 0.1f;
 
-    //public static float TREE_CLIFF_DISTANCE = 3f;
-
     //DISTANCE
     public static float FAR_Z_DISTANCE = 15;
     public static float GRASS_RENDER_Z_DISTANCE = 25;
 
-    //public static Color COLOR_DRY = new Color(0.8588235f, 0.7933786f, 0.5686274f, 0.25f);
-    //public static Color COLOR_WET = new Color(0.8588235f, 0.8588235f, 0.5686274f, 1);
-
-    //public static float NO_SHADOW_Z_DISTANCE = 15;
-    //0.09558818
-    //public static float TREE_HILL_THRESHOLD = 0.7f;
-
-
-    DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
-    DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
-    DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
-
-    DictionaryList<int, XTerrainDetail> xDetails = new DictionaryList<int, XTerrainDetail>();
-
-    //DictionaryList<int, List<Transform>> placedTrees = new DictionaryList<int, List<Transform>>();
-
-
-
+    private DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
+    private DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
+    private DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
+    private DictionaryList<int, XTerrainDetail> xDetails = new DictionaryList<int, XTerrainDetail>();
     public List<Vector3> zSeam = new List<Vector3>();
     public List<Ground> gSurfaces = new List<Ground>();
     public List<GeneratedTerrain> terrain = new List<GeneratedTerrain>();
@@ -190,18 +174,93 @@ public class TerrainGenerator {
     private DictionaryList<Ground, SurfaceGroup> surfaceGroups = new DictionaryList<Ground, SurfaceGroup>();
 
 
+    public List<GameObject> visibleObjects = null;
 
-
-   // public List<Terrain> backgroundTerrrain = new List<Terrain>();
-
+    public SceneReferenceNames slot;
     public System.Random rnd;
 
-    public TerrainGenerator(int seed)
+    public GameObject groundParent;
+
+    public TerrainGenerator(int seed, SceneReferenceNames slot)
+    {
+        this.slot = slot;
+        this.groundParent = Global.References[slot].gameObject;
+
+        if(slot == SceneReferenceNames.NodeAboveGround)
+        {
+            GenerateOverGroundTerrain(seed);
+
+        }else if(slot == SceneReferenceNames.NodeUnderground)
+        {
+            GenerateUndergroundTerrain(seed);
+        }
+
+    }
+    public SceneReferenceNames Hide(bool hideTerrain)
+    {
+        if (hideTerrain)
+        {
+            if (terrain != null)
+            {
+                foreach (GeneratedTerrain gt in terrain)
+                {
+                    gt.terrain.drawHeightmap = false;
+                }
+            }
+
+            if(visibleObjects != null)
+            {
+                foreach(GameObject go in visibleObjects)
+                {
+                    go.SetActive(false);
+                }
+            }
+        }
+
+        Global.References[slot].gameObject.SetActive(false);
+
+        return slot;
+    }
+
+    public SceneReferenceNames Show(bool showTerrain)
+    {
+        if (showTerrain)
+        {
+            if (terrain != null)
+            {
+                foreach (GeneratedTerrain gt in terrain)
+                {
+                    gt.terrain.drawHeightmap = true;
+                }
+            }
+
+            if (visibleObjects != null)
+            {
+                foreach (GameObject go in visibleObjects)
+                {
+                    go.SetActive(true);
+                }
+            }
+        }
+
+        Global.References[slot].gameObject.SetActive(true);
+
+        return slot;
+    }
+
+    public void GenerateUndergroundTerrain(int seed)
+    {
+
+
+    }
+    public void GenerateOverGroundTerrain(int seed)
     {
         GameObject terra = new GameObject();
         terra.transform.parent = Global.References[SceneReferenceNames.Terrain];
         GameObject fog = new GameObject();
         fog.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        GameObject dust = new GameObject();
+        dust.transform.parent = Global.References[SceneReferenceNames.Terrain];
         GameObject trees = new GameObject();
         trees.transform.parent = Global.References[SceneReferenceNames.Terrain];
         GameObject cliffs = new GameObject();
@@ -232,7 +291,7 @@ public class TerrainGenerator {
             new Vector2(10,10)
         };
 
-        List<PrefabNames> treesToAdd = new List<PrefabNames>(){ { PrefabNames.TreeBroadleaf } };
+        List<PrefabNames> treesToAdd = new List<PrefabNames>() { { PrefabNames.TreeBroadleaf } };
         List<PrefabNames> imposterTreesToAdd = new List<PrefabNames>() { { PrefabNames.TreeBroadleafImpostor }, { PrefabNames.TreeBroadleafImpostorHue } };
         List<PrefabNames> cliffsToAdd = new List<PrefabNames>() {
             { PrefabNames.CliffTall },
@@ -249,38 +308,41 @@ public class TerrainGenerator {
             { PrefabNames.LitterRockTwo }
         };
 
-
-
         Transform fogPrefab = Global.Resources[PrefabNames.Fog];
+        Transform dustPrefab = Global.Resources[PrefabNames.DustEmber];
+
+
+
         rnd = new System.Random(seed);
 
         //Add hints
-        foreach (Transform t in Global.Grounds)
+        foreach (Transform t in Global.Grounds[slot])
         {
-            Global.Grounds[t].hints = t.GetComponent<GroundHints>();
-            GroundHints h = Global.Grounds[t].hints;
+            Global.Grounds[slot][t].hints = t.GetComponent<GroundHints>();
+            GroundHints h = Global.Grounds[slot][t].hints;
 
-            if(h.enclosure == EnclosureType.Ground && h.type == GroundType.Floor)
+            if (h.enclosure == EnclosureType.Ground && h.type == GroundType.Floor)
             {
-                gSurfaces.Add(Global.Grounds[t]);
+                gSurfaces.Add(Global.Grounds[slot][t]);
                 t.GetComponent<Renderer>().enabled = false;
 
                 //Adds fog for the ground
-                AddFog(Global.Grounds[t], fog, fogPrefab);
+                AddAmbient(Global.Grounds[slot][t], fog, fogPrefab, FOG_MAX_LENGTH, 2, 1, "Fog");
+                AddAmbient(Global.Grounds[slot][t], dust, dustPrefab, DUST_MAX_LENGTH, 3, 8, "Dust");
             }
         }
-        
+
         gSurfaces.Sort((a, b) => a.obj.position.x.CompareTo(b.obj.position.x));
 
         FindStartEndOfSurfaces();
 
-        GenerateTerrain(seed,terra,fog,trees,cliffs,litter, materials, tileSizes,treesToAdd,imposterTreesToAdd,cliffsToAdd,litterToAdd);
+        GenerateTerrain(seed, terra, fog, trees, cliffs, litter, materials, tileSizes, treesToAdd, imposterTreesToAdd, cliffsToAdd, litterToAdd);
         //GenerateBackgroundTerrain(seed, gSurfaces[0], backgroundTerrain, materials, tileSizes);
 
         foreach (GeneratedTerrain gt in terrain)
         {
             //gt.terrain.drawInstanced = true;
-            
+
             gt.terrain.Flush();
             //gt.terrain.terrainData.treePrototypes
             //gt.terrain.bakeLightProbesForTrees = false;
@@ -296,9 +358,11 @@ public class TerrainGenerator {
         trees.name = "Trees (" + trees.transform.childCount + ")";
         cliffs.name = "Cliffs (" + cliffs.transform.childCount + ")";
         litter.name = "Litter (" + litter.transform.childCount + ")";
+        dust.name = "Dust (" + dust.transform.childCount + ")";
+
+        visibleObjects = new List<GameObject>(){terra,fog,trees,cliffs,litter,dust};
 
         backgroundTerrain.name = "Background Terrain (" + backgroundTerrain.transform.childCount + ")";
-
     }
 
     private void FindStartEndOfSurfaces()
@@ -356,18 +420,18 @@ public class TerrainGenerator {
     */
 
 
-    private void AddFog(Ground g, GameObject fog, Transform fogPrefab)
+    private void AddAmbient(Ground g, GameObject fog, Transform fogPrefab, float maxLength, float depthMultiplier, float height, string name)
     {
-        float fogDepth = TERRAIN_Z_MARGIN + g.GetDepth() * 2;
-        float fogY = g.GetSurfaceY() + FOG_HEIGHT;
+        float fogDepth = TERRAIN_Z_MARGIN + g.GetDepth() * depthMultiplier;
+        float fogY = g.GetSurfaceY() + +0.5f+height/2;
 
-        if (g.GetLength() < FOG_MAX_LENGTH)
+        if (g.GetLength() < maxLength)
         {
-            SpawnFog(fog, fogPrefab, new Vector3(g.GetMidPoint().x, fogY , TERRAIN_Z_MARGIN/2) , g.GetLength(), fogDepth, "Fog<0," + g.obj.name + ">");
+            SpawnAmbient(fog, fogPrefab, new Vector3(g.GetMidPoint().x, fogY , TERRAIN_Z_MARGIN/2) , g.GetLength(), fogDepth,height, name+"<0," + g.obj.name + ">");
         }
         else
         {
-            int splits = Mathf.CeilToInt(g.GetLength() / FOG_MAX_LENGTH);
+            int splits = Mathf.CeilToInt(g.GetLength() / maxLength);
             float length = g.GetLength() / splits;
             float xPos = g.GetLeftSide().x;
 
@@ -375,14 +439,14 @@ public class TerrainGenerator {
             {
                 xPos += length/2;
 
-                SpawnFog(fog, fogPrefab, new Vector3(xPos, fogY, TERRAIN_Z_MARGIN/2), length,fogDepth, "Fog<"+i+"," + g.obj.name + ">");
+                SpawnAmbient(fog, fogPrefab, new Vector3(xPos, fogY, TERRAIN_Z_MARGIN/2), length,fogDepth, height, name+"<" +i+"," + g.obj.name + ">");
 
                 xPos += length / 2;
             }
         } 
     }
 
-    private void SpawnFog(GameObject fog, Transform fogPrefab, Vector3 pos, float xLength, float zDepth, string name)
+    private void SpawnAmbient(GameObject fog, Transform fogPrefab, Vector3 pos, float xLength, float zDepth, float yDepth, string name)
     {
         Transform t = Global.Create(fogPrefab, fog.transform);
         LODGroup lg = t.GetComponent<LODGroup>();
@@ -396,7 +460,7 @@ public class TerrainGenerator {
                 if(ps != null)
                 {
                     ParticleSystem.ShapeModule sh = ps.shape;
-                    sh.scale = new Vector3(xLength, zDepth, 1);
+                    sh.scale = new Vector3(xLength, zDepth, yDepth);
                 }
             }
         }

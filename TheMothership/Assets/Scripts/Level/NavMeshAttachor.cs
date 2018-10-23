@@ -31,6 +31,8 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
     public static float MULTI_LINK_DISTANCE = 1;
     public static float MULTI_INNER_LINK_DISTANCE = 0.1f;
 
+    public SceneReferenceNames slot;
+
     public void Start()
     {
         Initiate();
@@ -53,14 +55,17 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
 
         if (DevelopmentSettings.ACTIVATE_NAVMESH)
         {
+            Global.ShowOnly(slot,false);
 
-            Debug.Log("Creating navmesh");
+            Debug.Log("Creating navmesh for: "+slot.ToString());
 
             nav = transform.GetComponent<NavMeshSurface>();
             //children = new System.Collections.ArrayList();
             heightSortedLinks = new System.Collections.Generic.SortedDictionary<float, System.Collections.Generic.Dictionary<Transform, System.Collections.Generic.Dictionary<string,GameObject>>>();
             linkToGround = new DictionaryList<Transform, Transform>();
             alreadyLinked = new DictionaryList<Transform, Transform>();
+
+            Global.Grounds.Add(slot, new DictionaryList<Transform, Ground>());
 
             ListChildren(transform);
            
@@ -74,20 +79,22 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
                 nav.BuildNavMesh();
             }
             //Make grounds static
-            foreach(Transform t in Global.Grounds)
+            foreach(Transform t in Global.Grounds[slot])
             {
                 t.gameObject.isStatic = true;
             }
 
-            Global.instance.terrain = new TerrainGenerator(1337);
+            Global.Terrain.Add(slot, new TerrainGenerator(1337, slot));
+
+            Global.RestoreScene(false);
         }
 
 	}
     private void GenerateDistancesBetweenGrounds()
     {
-        foreach(Transform t in Global.Grounds)// Ground g in generated)
+        foreach(Transform t in Global.Grounds[slot])// Ground g in generated)
         {
-            Global.Grounds[t].GenerateDistanceLists();
+            Global.Grounds[slot][t].GenerateDistanceLists();
         }
     }
 
@@ -233,15 +240,16 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
         //Debug.Log(navLink.width+" " + name);
 
         // Add generated links to list
-        if (Global.Grounds.Contains(linkToGround[from])  && Global.Grounds.Contains(linkToGround[to])) {
+        if (Global.Grounds[slot].Contains(linkToGround[from])  && Global.Grounds[slot].Contains(linkToGround[to])) {
+
             Vector3 fromPoint = new Vector3(from.position.x, from.position.y, 0);
             Vector3 toPoint = new Vector3(to.position.x, to.position.y, 0);
 
 
-            Global.Grounds[linkToGround[from]].links.Add(fromPoint, Global.Grounds[linkToGround[to]]);
-            Global.Grounds[linkToGround[to]].links.Add(toPoint, Global.Grounds[linkToGround[from]]);
-            Global.Grounds[linkToGround[from]].startPointToEndPoint.Add(fromPoint, toPoint);
-            Global.Grounds[linkToGround[to]].startPointToEndPoint.Add(toPoint, fromPoint);
+            Global.Grounds[slot][linkToGround[from]].links.Add(fromPoint, Global.Grounds[slot][linkToGround[to]]);
+            Global.Grounds[slot][linkToGround[to]].links.Add(toPoint, Global.Grounds[slot][linkToGround[from]]);
+            Global.Grounds[slot][linkToGround[from]].startPointToEndPoint.Add(fromPoint, toPoint);
+            Global.Grounds[slot][linkToGround[to]].startPointToEndPoint.Add(toPoint, fromPoint);
 
         }
         else
@@ -255,7 +263,7 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
     
     private void CreateLinkGameObjects()
     {
-        foreach (Transform child in Global.Grounds)//children)
+        foreach (Transform child in Global.Grounds[slot])//children)
         {
             System.Collections.Generic.Dictionary<string, GameObject> linkList = new System.Collections.Generic.Dictionary<string, GameObject>();
             float yPos = child.position.y + child.localScale.y / 2;
@@ -293,7 +301,8 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
         {
             if (child.GetComponent<BoxCollider>() != null)
             {
-                Global.Grounds.Add(child, new Ground(child));
+                Global.Grounds[slot].Add(child, new Ground(child));
+               // Global.Grounds.Add(child, new Ground(child));
             }
             ListChildren(child);
         }

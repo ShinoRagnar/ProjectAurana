@@ -1,11 +1,14 @@
 public enum SceneReferenceNames 
 {
 	Main = 1200001086,
+	NodeAboveGround = 1314735171,
+	NodeBackground = 1314270144,
 	NodeClone = 1313158513,
 	NodeDroppedItems = 1314304615,
 	NodeLinks = 1313162250,
 	NodeMarkers = 1313552661,
 	NodeProjectiles = 1313387766,
+	NodeUnderground = 1314176287,
 	PanelAttachmentItem = 1500401133,
 	PanelAttachmentSlot = 1500401265,
 	PanelDebuffDuration = 1500712319,

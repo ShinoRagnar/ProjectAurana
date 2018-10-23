@@ -217,13 +217,13 @@ public class LegMovement : AnimationEventReceiver{
             {
                 if (!walkingOn.IsOn(owner.body.position))
                 {
-                    walkingOn = Senses.GetGroundBelow(owner.body.position,owner.body.localScale.y);
+                    walkingOn = Senses.GetGroundBelow(owner.body.position, owner.slot, owner.body.localScale.y);
                     if (walkingOn != null) { lastWalkedOn = walkingOn; }
                 }
             }
             else
             {
-                walkingOn = Senses.GetGroundBelow(owner.body.position, owner.body.localScale.y);
+                walkingOn = Senses.GetGroundBelow(owner.body.position, owner.slot, owner.body.localScale.y);
                 if (walkingOn != null) { lastWalkedOn = walkingOn; }
             }
         }

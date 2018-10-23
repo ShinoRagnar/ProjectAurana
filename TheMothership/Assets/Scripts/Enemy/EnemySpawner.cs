@@ -14,6 +14,7 @@ public class EnemySpawner : Spawner, Initiates {
 
     public EnemyType unitTypeToSpawn = EnemyType.Character;
     public MechNames unitToSpawn;
+    public SceneReferenceNames slot = SceneReferenceNames.NodeAboveGround;
 
     public int numberToSpawn = 1;
     public float spawnDistance = 1f;
@@ -49,7 +50,7 @@ public class EnemySpawner : Spawner, Initiates {
 
                 if(unitTypeToSpawn == EnemyType.Character)
                 {
-                    AISquad ai = SpawnUnitsInFormation(unitTypeToSpawn, Global.Grounds[hit.hit.collider.transform], hit.pos.x);
+                    AISquad ai = SpawnUnitsInFormation(unitTypeToSpawn, Global.Grounds[slot][hit.hit.collider.transform], hit.pos.x);
                     ai.squad.EquipAllMembersWith(
                         Global.Resources[GunNames.StandardRifle]
                         //o.GUN_STANDARD_RIFLE

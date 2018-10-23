@@ -33,6 +33,8 @@ public class AISquad : AIBasic{
     bool movedLastFrame = false;
     bool allAimingForTarget = false;
 
+    SceneReferenceNames slot = SceneReferenceNames.NodeAboveGround;
+
     public AISquad()
     {
         squad = new Squad();
@@ -168,9 +170,9 @@ public class AISquad : AIBasic{
 
             foreach (Collider c in considerations)
             {
-                if (Global.Grounds.Contains(c.transform))
+                if (Global.Grounds[slot].Contains(c.transform))
                 {
-                    Ground consideration = Global.Grounds[c.transform];
+                    Ground consideration = Global.Grounds[slot][c.transform];
 
                     foreach (Vector3 link in currentGround.links)
                     {

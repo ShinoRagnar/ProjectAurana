@@ -9,7 +9,8 @@ public enum GroundType
     Roof,
     Blockage,
     Wall,
-    Door
+    Door,
+    EntranceFloor
 }
 public enum EnclosureType
 {
@@ -21,5 +22,6 @@ public class GroundHints : MonoBehaviour {
 
     public EnclosureType enclosure = EnclosureType.Ground;
     public GroundType type = GroundType.Branch;
+    public int roomnr = 0;
 
 }
