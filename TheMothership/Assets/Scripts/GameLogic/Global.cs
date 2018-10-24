@@ -85,6 +85,8 @@ public class Global : MonoBehaviour {
 
     public static bool IsAwake = false;
 
+    public static List<Transform> BirdWaypoints = new List<Transform>();
+
     //Cursors
     public Texture2D defaultCursor;
     public Texture2D pickUpItemCursor;
@@ -203,6 +205,23 @@ public class Global : MonoBehaviour {
     public static readonly ListHash<int> CONDITION_MOVING_LEFT = new ListHash<int> { (int)Condition.MovingLeft };
     public static readonly ListHash<int> CONDITION_MOVING_RIGHT = new ListHash<int> { (int)Condition.MovingRight };
 
+
+    public static Vector3 GetBirdWaypoint()
+    {
+        Vector3 ret = Vector3.zero;
+
+        if(BirdWaypoints.Count > 0)
+        {
+            Transform t = BirdWaypoints[Random.Range(0, BirdWaypoints.Count)];
+            ret.x = Random.Range(-t.localScale.x/2, t.localScale.x / 2) + t.position.x;
+            ret.z = Random.Range(-t.localScale.y / 2, t.localScale.y / 2) + t.position.z;
+            ret.y = Random.Range(-t.localScale.z / 2, t.localScale.z / 2) + t.position.y;
+        }
+
+        return ret;
+    }
+
+    
     //Dictionary
     //
     // private System.Collections.Generic.Dictionary<string, Transform> prefabs;

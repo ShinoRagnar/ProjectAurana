@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 1540300379333606}
+  m_IsPrefabAsset: 1
+--- !u!1 &1540300379333606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4204942241419404}
+  - component: {fileID: 114762314409345612}
+  m_Layer: 0
+  m_Name: Crow Flock - Wild
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4204942241419404
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1540300379333606}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 92.2, y: 27.4, z: 32.45681}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114762314409345612
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1540300379333606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5564f499341508a43819ce17743cd92b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _childPrefab: {fileID: 11400000, guid: 6a771cf16c609eb4393634b02485db2d, type: 2}
+  _childAmount: 30
+  _slowSpawn: 0
+  _spawnSphere: 10
+  _spawnSphereHeight: 10
+  _spawnSphereDepth: 10
+  _minSpeed: 10
+  _maxSpeed: 14
+  _minScale: 1
+  _maxScale: 1
+  _soarFrequency: 0.15
+  _soarAnimation: CrowSoar
+  _flapAnimation: CrowFlap
+  _idleAnimation: CrowIdle
+  _diveValue: 7
+  _diveFrequency: 0.15
+  _minDamping: 1
+  _maxDamping: 2
+  _waypointDistance: 5
+  _minAnimationSpeed: 0.8
+  _maxAnimationSpeed: 1.2
+  _randomPositionTimer: 3
+  _positionSphere: 100
+  _positionSphereHeight: 14.1
+  _positionSphereDepth: 12.97
+  _childTriggerPos: 0
+  _forceChildWaypoints: 1
+  _forcedRandomDelay: 3
+  _flatFly: 1
+  _flatSoar: 1
+  _birdAvoid: 1
+  _birdAvoidHorizontalForce: 1000
+  _birdAvoidDown: 1
+  _birdAvoidUp: 1
+  _birdAvoidVerticalForce: 300
+  _birdAvoidDistanceMax: 4.12069
+  _birdAvoidDistanceMin: 4.62069
+  _soarMaxTime: 0
+  _avoidanceMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _roamers: []
+  _posBuffer: {x: 94.3571, y: 27.853996, z: 32.6}
+  _updateDivisor: 1
+  _newDelta: 0
+  _updateCounter: 0
+  _activeChildren: 0
+  _groupChildToNewTransform: 0
+  _groupTransform: {fileID: 0}
+  _groupName: 
+  _groupChildToFlock: 1
+  _startPosOffset: {x: 0, y: 0, z: 0}
+  _thisT: {fileID: 4204942241419404}

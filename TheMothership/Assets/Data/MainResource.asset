@@ -294,6 +294,14 @@ MonoBehaviour:
     prefab: {fileID: 4473165586386656, guid: cde700dcc676e2c49ac662e1dff600c8, type: 2}
   - name: DustEmber
     prefab: {fileID: 4446909341529756, guid: 24014791696cca849b396efb14ac2dcf, type: 2}
+  - name: WallOne
+    prefab: {fileID: 4326230391917862, guid: e78b1ba3f0e9b2e4480f4f1dcd8b6b61, type: 2}
+  - name: WallOneCorner
+    prefab: {fileID: 4989905884091968, guid: e16777c6b95fb2b45b28b4304a21aca6, type: 2}
+  - name: WallPropLight
+    prefab: {fileID: 4532950424384948, guid: c02fd91a318fa45408631f80c8abaf22, type: 2}
+  - name: Crow
+    prefab: {fileID: 4204942241419404, guid: 54c90bbe541e4e348b63307b05ab4017, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:

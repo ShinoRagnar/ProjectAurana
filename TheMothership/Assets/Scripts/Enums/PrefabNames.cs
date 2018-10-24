@@ -21,6 +21,7 @@ public enum PrefabNames
 	Core = 214000957,
 	CornerCollisons = 214786717,
 	Crosshair = 216594075,
+	Crow = 217000958,
 	Demoness = 304419110,
 	DetachCrystal = 303198885,
 	DetachMetal = 303298261,
@@ -136,5 +137,8 @@ public enum PrefabNames
 	TreeBroadleafImpostorHue = 1917748421,
 	TurretBase = 1920846719,
 	TurretHead = 1920846802,
+	WallOne = 2099312958,
+	WallOneCorner = 2099173809,
+	WallPropLight = 2100269097,
 
 }

@@ -163,6 +163,19 @@ public class TerrainGenerator {
     public static float FAR_Z_DISTANCE = 15;
     public static float GRASS_RENDER_Z_DISTANCE = 25;
 
+    //WALLS
+    public static float WALL_DISTANCE = 300;
+    public static float WALL_LENGTH = 60;
+    public static int WALL_EXTRA_LENGTH = 4;
+    public static int WALL_PROP_DISTANCE = 6;
+
+    //Birds
+    public static float BIRD_AREA_DEPTH = 50;
+    public static float BIRD_AREA_HEIGHT = HEIGHT;
+    public static float BIRD_WAYPOINT_HEIGHT = 10;
+
+
+
     private DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
     private DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
     private DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
@@ -174,17 +187,17 @@ public class TerrainGenerator {
     private DictionaryList<Ground, SurfaceGroup> surfaceGroups = new DictionaryList<Ground, SurfaceGroup>();
 
 
-    public List<GameObject> visibleObjects = null;
+    //public List<GameObject> visibleObjects = null;
 
     public SceneReferenceNames slot;
     public System.Random rnd;
 
-    public GameObject groundParent;
+    public Transform parent;
 
     public TerrainGenerator(int seed, SceneReferenceNames slot)
     {
         this.slot = slot;
-        this.groundParent = Global.References[slot].gameObject;
+        this.parent = Global.References[slot];
 
         if(slot == SceneReferenceNames.NodeAboveGround)
         {
@@ -198,25 +211,6 @@ public class TerrainGenerator {
     }
     public SceneReferenceNames Hide(bool hideTerrain)
     {
-        if (hideTerrain)
-        {
-            if (terrain != null)
-            {
-                foreach (GeneratedTerrain gt in terrain)
-                {
-                    gt.terrain.drawHeightmap = false;
-                }
-            }
-
-            if(visibleObjects != null)
-            {
-                foreach(GameObject go in visibleObjects)
-                {
-                    go.SetActive(false);
-                }
-            }
-        }
-
         Global.References[slot].gameObject.SetActive(false);
 
         return slot;
@@ -224,28 +218,101 @@ public class TerrainGenerator {
 
     public SceneReferenceNames Show(bool showTerrain)
     {
-        if (showTerrain)
-        {
-            if (terrain != null)
-            {
-                foreach (GeneratedTerrain gt in terrain)
-                {
-                    gt.terrain.drawHeightmap = true;
-                }
-            }
-
-            if (visibleObjects != null)
-            {
-                foreach (GameObject go in visibleObjects)
-                {
-                    go.SetActive(true);
-                }
-            }
-        }
-
         Global.References[slot].gameObject.SetActive(true);
 
         return slot;
+    }
+
+    public void PlaceWalls(
+        List<PrefabNames> walls, 
+        List<PrefabNames> corners, 
+        List<PrefabNames> props, 
+        GameObject wall,
+        GameObject wallProps)
+
+    {
+        float maxX = 0;
+        foreach(GeneratedTerrain gt in terrain)
+        {
+            if(gt.maxX > maxX)
+            {
+                maxX = gt.maxX;
+            }
+        }
+
+
+        int iter = 0;
+        for (float x = gSurfaces[0].GetLeftSide().x - WALL_LENGTH * WALL_EXTRA_LENGTH;
+            x < maxX + WALL_LENGTH * WALL_EXTRA_LENGTH;
+            x += WALL_LENGTH,
+            iter++
+            )
+        {
+            if(iter > WALL_PROP_DISTANCE)
+            {
+                iter = 0;
+                Transform pp = SpawnProp(props[rnd.Next(props.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 99, false, false);
+                pp.Rotate(new Vector3(0, 90, 0));
+            }
+            Transform prop = SpawnProp(walls[rnd.Next(walls.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 99, false, false);
+            prop.Rotate(new Vector3(0, 90, 0));
+        }
+    }
+
+    public void SpawnBirds(List<PrefabNames> birds, GameObject bird, GameObject birdAvoidance)
+    {
+        float flocheight = 10;
+        //Spawn birds
+        foreach(PrefabNames pref in birds)
+        {
+            Transform created = Global.Create(Global.Resources[pref], bird.transform);
+
+            FlockController floc = created.GetComponent<FlockController>();
+
+            float length = gSurfaces[gSurfaces.Count - 1].GetRightSide().x- gSurfaces[0].GetLeftSide().x;
+            float midX = gSurfaces[0].GetLeftSide().x + length / 2;
+
+            floc._positionSphere = length/2;
+            floc._positionSphereDepth = BIRD_AREA_DEPTH/2;
+            floc._positionSphereHeight = BIRD_AREA_HEIGHT/2;
+
+            flocheight = floc._spawnSphereHeight;
+
+            created.position = new Vector3(midX, 0, +BIRD_AREA_DEPTH - flocheight);
+
+
+        }
+
+        //Spawn avoidance areas
+        foreach(Ground g in gSurfaces)
+        {
+            GameObject avoidance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            avoidance.gameObject.name = "Avoidance for " + g.obj.name;
+            GameObject adherance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            adherance.gameObject.name = "Adherance for " + g.obj.name;
+
+            float height = (g.GetSurfaceY() + HEIGHT / 2);
+            float inverseHeight = Mathf.Min(HEIGHT - height,BIRD_WAYPOINT_HEIGHT);
+
+            float y = g.GetSurfaceY() - height / 2;
+            float inverseY = g.GetSurfaceY() + inverseHeight / 2+ flocheight;
+
+            avoidance.transform.localScale = new Vector3(g.obj.localScale.x, height, BIRD_AREA_DEPTH*2);
+            avoidance.transform.position = new Vector3(g.GetMidPoint().x, y, TERRAIN_Z_WIDTH+BIRD_AREA_DEPTH);
+            avoidance.layer = LayerMask.NameToLayer(Global.LAYER_AVOIDANCE);
+            avoidance.transform.parent = birdAvoidance.transform;
+            avoidance.GetComponent<Renderer>().enabled = false;
+
+            adherance.transform.localScale = new Vector3(g.obj.localScale.x, inverseHeight, BIRD_AREA_DEPTH/2);
+            adherance.transform.position = new Vector3(g.GetMidPoint().x, inverseY, TERRAIN_Z_WIDTH + BIRD_AREA_DEPTH/4);
+            adherance.layer = LayerMask.NameToLayer(Global.LAYER_AVOIDANCE);
+            adherance.transform.parent = birdAvoidance.transform;
+            adherance.GetComponent<Renderer>().enabled = false;
+            adherance.GetComponent<BoxCollider>().enabled = false;
+
+            Global.BirdWaypoints.Add(adherance.transform);
+
+        }
     }
 
     public void GenerateUndergroundTerrain(int seed)
@@ -255,21 +322,33 @@ public class TerrainGenerator {
     }
     public void GenerateOverGroundTerrain(int seed)
     {
+        
+
         GameObject terra = new GameObject();
-        terra.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        terra.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
         GameObject fog = new GameObject();
-        fog.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        fog.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
         GameObject dust = new GameObject();
-        dust.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        dust.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
         GameObject trees = new GameObject();
-        trees.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        trees.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
         GameObject cliffs = new GameObject();
-        cliffs.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        cliffs.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
         GameObject litter = new GameObject();
-        litter.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        litter.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
+        GameObject walls = new GameObject();
+        walls.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
+        GameObject wallProps = new GameObject();
+        wallProps.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
+        GameObject birds = new GameObject();
+        birds.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
+        GameObject birdAvoidance = new GameObject();
+        birdAvoidance.transform.parent = parent; // Global.References[SceneReferenceNames.Terrain];
+
+
 
         GameObject backgroundTerrain = new GameObject();
-        backgroundTerrain.transform.parent = Global.References[SceneReferenceNames.Terrain];
+        backgroundTerrain.transform.parent = parent; //Global.References[SceneReferenceNames.Terrain];
 
 
         Material[] materials = new Material[] {
@@ -307,6 +386,11 @@ public class TerrainGenerator {
             { PrefabNames.LitterRockThree },
             { PrefabNames.LitterRockTwo }
         };
+        List<PrefabNames> wallsToAdd = new List<PrefabNames>() { { PrefabNames.WallOne } };
+        List<PrefabNames> wallsCorners = new List<PrefabNames>() { { PrefabNames.WallOneCorner } };
+        List<PrefabNames> wallsProps = new List<PrefabNames>() { { PrefabNames.WallPropLight } };
+        List<PrefabNames> birdsProps = new List<PrefabNames>() { { PrefabNames.Crow } };
+
 
         Transform fogPrefab = Global.Resources[PrefabNames.Fog];
         Transform dustPrefab = Global.Resources[PrefabNames.DustEmber];
@@ -353,14 +437,20 @@ public class TerrainGenerator {
 
         }
 
+        PlaceWalls(wallsToAdd, wallsCorners, wallsProps, walls, wallProps);
+        SpawnBirds(birdsProps, birds, birdAvoidance);
+
         terra.name = "Terrain (" + terra.transform.childCount + ")";
         fog.name = "Fog (" + fog.transform.childCount + ")";
         trees.name = "Trees (" + trees.transform.childCount + ")";
         cliffs.name = "Cliffs (" + cliffs.transform.childCount + ")";
         litter.name = "Litter (" + litter.transform.childCount + ")";
         dust.name = "Dust (" + dust.transform.childCount + ")";
+        walls.name = "Walls (" + walls.transform.childCount + ")";
+        wallProps.name = "WallProps (" + wallProps.transform.childCount + ")";
+        birds.name = "Birds (" + birds.transform.childCount + ")";
+        birdAvoidance.name = "BirdAvoidance (" + birds.transform.childCount + ")";
 
-        visibleObjects = new List<GameObject>(){terra,fog,trees,cliffs,litter,dust};
 
         backgroundTerrain.name = "Background Terrain (" + backgroundTerrain.transform.childCount + ")";
     }
@@ -817,7 +907,14 @@ public class TerrainGenerator {
 
     }
 
-    public Transform SpawnProp(PrefabNames nam, Vector3 position, GameObject propParent, int keepOnly)
+    public Transform SpawnProp(
+        PrefabNames nam, 
+        Vector3 position, 
+        GameObject propParent, 
+        int keepOnly = 99, 
+        bool randomScale = true,
+        bool randomRotation = true
+        )
     {
         float scaleChange = (float) rnd.NextDouble() * (1f - TREE_MIN_SCALE) + TREE_MIN_SCALE;
 
@@ -838,10 +935,19 @@ public class TerrainGenerator {
 
         Transform created = Global.Create(Global.Resources[nam], addTo.transform);
         created.position = position;
-        created.localScale = new Vector3(created.localScale.x* scaleChange, created.localScale.y* scaleChange, created.localScale.z* scaleChange);
-        created.localEulerAngles = new Vector3(created.localEulerAngles.x, (float)(360*rnd.NextDouble()), created.localEulerAngles.z);
 
-        RemoveLODS(created, keepOnly);
+        if (randomScale)
+        {
+            created.localEulerAngles = new Vector3(created.localEulerAngles.x, (float)(360 * rnd.NextDouble()), created.localEulerAngles.z);
+        }
+        if (randomRotation)
+        {
+            created.localScale = new Vector3(created.localScale.x * scaleChange, created.localScale.y * scaleChange, created.localScale.z * scaleChange);
+        }
+        if(keepOnly != 99)
+        {
+            RemoveLODS(created, keepOnly);
+        }
 
         created.gameObject.isStatic = true;
 
