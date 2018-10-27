@@ -210,8 +210,8 @@ public class TerrainGenerator {
     public static float WIDTH = 65;
     public static float SEAM_Z_STITCH_PERCENTAGE = 0.60f;
 
-    public static float TERRAIN_FINAL_FALLOFF_TO = 270;
-    public static float TERRAIN_FINAL_FALLOFF_FROM = 100;
+    public static float TERRAIN_FINAL_FALLOFF_TO = 300;
+    public static float TERRAIN_FINAL_FALLOFF_FROM = 200;
 
 
     public static float TERRAIN_Z_WIDTH = 5;
@@ -235,7 +235,7 @@ public class TerrainGenerator {
 
     public static float CAMERA_FALLOFF_SMOOTHENING = 0.98f;
     public static float CLIFF_SMOOTHENING = 0.05f;
-    public static float CLIFF_ROUND_AT = 0.75f;
+    public static float CLIFF_ROUND_AT = 0.35f;
 
     //Ambient
     public static float FOG_MAX_LENGTH = 40;
@@ -748,16 +748,16 @@ public class TerrainGenerator {
         }
     }
 
-    /*private void PrintGroup(SurfaceGroup sg)
+    private void PrintGroup(SurfaceGroup sg)
     {
-        Debug.Log("GroupStart");
+        Debug.Log("GroupStart Last Member"+sg.lastMember.obj.name+" first member "+sg.firstMember.obj.name);
         foreach(Ground g in sg.members)
         {
             Debug.Log(g.obj.name);
         }
         Debug.Log("GroupEnd");
     }
-    */
+    
 
 
     private void AddAmbient(Ground g, GameObject fog, Transform fogPrefab, float maxLength, float depthMultiplier, float height, string name)
@@ -840,6 +840,29 @@ public class TerrainGenerator {
         return steepmap;
     }
 
+
+    Vector3[,] GetNormalMap(Terrain terrain)
+    {
+        TerrainData t = terrain.terrainData;
+        int terrainDataAlphamapHeight = terrain.terrainData.alphamapHeight;
+        int terrainDataAlphamapWidth = terrain.terrainData.alphamapWidth;
+
+        Vector3[,] normalMap = new Vector3[terrainDataAlphamapWidth, terrainDataAlphamapHeight];
+
+        for (int y = 0; y < terrainDataAlphamapHeight; y++)
+        {
+            float y_01 = (float)y / (float)terrainDataAlphamapHeight;
+
+            for (int x = 0; x < terrainDataAlphamapWidth; x++)
+            {
+                float x_01 = (float)x / (float)terrainDataAlphamapWidth;
+
+                normalMap[x, y] = t.GetInterpolatedNormal(y_01, x_01);
+            }
+        }
+        return normalMap;
+    }
+
     /*float[,] GetHeightMap(Terrain terrain)
     {
         TerrainData t = terrain.terrainData;
@@ -893,7 +916,8 @@ public class TerrainGenerator {
         int terrainDataHeightmapWidth,
         int terrainDataHeightmapHeight,
         float[,] heightmap,
-        float[,] steepmap
+        float[,] steepmap,
+        Vector3[,] normalMap
 
         )
     {
@@ -1017,10 +1041,14 @@ public class TerrainGenerator {
 
                         float dirtlike = (1 - hillyLike) * drynessAtCurrentPos - 0.5f < -0.1f ? 1 : 0;
 
-                        float hillySlopeBreakpoint = 0.9f;
+                        
+                        Vector3 normal = normalMap[x, y];
+                        float angle = Vector3.Angle(Vector3.up, normal);
+                        float angleBreakpoint = 30;
+                        //float hillySlopeBreakpoint = 0.7f;
 
-                        hillyLike = slopelike > hillySlopeBreakpoint ? 1 : hillyLike;
-                        slopelike = slopelike <= hillySlopeBreakpoint ? slopelike : 0;
+                        hillyLike = angle > angleBreakpoint ? 1 : hillyLike; //slopelike > hillySlopeBreakpoint ? 1 : hillyLike;
+                        slopelike = angle <= angleBreakpoint ? slopelike : 0;  //slopelike <= hillySlopeBreakpoint ? slopelike : 0;
 
 
                         if (tgp == TerrainGenerationPass.SplatMapGenerationAndCliffs)
@@ -1517,6 +1545,8 @@ public class TerrainGenerator {
                     );
                     */
 
+                Vector3[,] normalMap = GetNormalMap(iter.terrain);
+
                 float[,] heightmap = iter.heightmap; //GetHeightMap(iter.terrain);
                 float[,] steepmap = GetSteepMap(iter.terrain);
                 int terrainDataAlphamapWidth = td.alphamapWidth;
@@ -1532,7 +1562,7 @@ public class TerrainGenerator {
                     treesToAdd, impostorTreesToAdd, cliffsToAdd, litterToAdd, lsc, terrainDataAlphamapWidth,
                     terrainDataAlphamapHeight, terrainDataAlphamapLayers, terrainDataHeightmapWidth, 
                     terrainDataHeightmapHeight,
-                    heightmap,steepmap));
+                    heightmap,steepmap, normalMap));
                
 
 
@@ -1572,13 +1602,15 @@ public class TerrainGenerator {
         int terrainDataHeightmapWidth,
         int terrainDataHeightmapHeight,
         float[,] heightmap,
-        float[,] steepmap
+        float[,] steepmap,
+        Vector3[,] normalMap
         )
     {
         var t = new Thread(() => GenererateSplatMapAndProps(terrain,resolution,trees,cliffs,litter,xPos,  zPos,
          row, wettnessMap, wetnessXInit, wetnessYInit, drynessMap, drynessXInit,
          drynessYInit, treesToAdd, impostorTreesToAdd, cliffsToAdd, litterToAdd, lsc, terrainDataAlphamapWidth,
-         terrainDataAlphamapHeight, terrainDataAlphamapLayers, terrainDataHeightmapWidth, terrainDataHeightmapHeight, heightmap, steepmap));
+         terrainDataAlphamapHeight, terrainDataAlphamapLayers, terrainDataHeightmapWidth, terrainDataHeightmapHeight, 
+         heightmap, steepmap, normalMap));
 
         t.Start();
         return t;
@@ -1678,6 +1710,10 @@ public class TerrainGenerator {
 
             float groupProgress = Mathf.Clamp01((currentPos - surfaceGroups[iter].leftCurvePoint) / (surfaceGroups[iter].rightCurvePoint - surfaceGroups[iter].leftCurvePoint));
             float groupProgressHeight = Mathf.Sin(groupProgress * Mathf.PI);
+
+            //float rightSideGroupProgress = groupProgressHeight;// Mathf.Clamp01(groupProgress - 0.9f)/0.1f;
+
+
 
             float seamHeight = 1;
 
@@ -1796,28 +1832,43 @@ public class TerrainGenerator {
 
                     float seamNess = smn * smn * (3f - 2f * smn);
 
+                    //float partOfGroupPercentage = percentage * rightSideGroupProgress;
+
+                    //float partPartOfGroupPercentage = Mathf.Clamp01(percentage * (1 - rightSideGroupProgress) + rightSideGroupProgress);
+
+                    float we = Mathf.Clamp01(groupProgressHeight * 2);
+                    float groupEndSmoothening = we * we * we * (we * (6f * we - 15f) + 10f);
+                    float groupSmoothZ = Mathf.Clamp01((pos - TERRAIN_Z_WIDTH - TERRAIN_Z_MARGIN) / (TERRAIN_FINAL_FALLOFF_TO * 0.2f));
+                    float groupEndTotal = groupEndSmoothening * groupSmoothZ + 1 * (1 - groupSmoothZ);
+
+                    float switchToPureNoise = row == 0 ? 0 : Mathf.Clamp01(z / (width / 2));
 
 
                     initHeights[z, x] =
                             Mathf.Clamp01(
                             seamNess * seamHeight
                             +
-                            (1 - seamNess)*
+                            (1 - seamNess) *
                             (
-                                totalZProgress * finalFallOffPercentage * (
-                                row == 0 && z == 0 ? 0 :
                                 (
-                                    (hasGround ? height : (lastHeight+nextHeight)/4)
-                                    * percentage * ((row == 0 && z == 1) ? CAMERA_FALLOFF_SMOOTHENING : 1f) 
-                                    +
-                                    lastHeight * inversePercentage
-                                )
-                               //Adds noise
-                               + Mathf.Abs(noiseHeight * noisePercentage)
-                               )
-                               //Adds extra cliff height 
-                               + cliffHeight * zProg * finalFallOffPercentage
-                           )
+                                    (
+                                        totalZProgress *  (
+                                        row == 0 && z == 0 ? 0 :
+                                        (
+                                            (hasGround ? height : (lastHeight + nextHeight) / 4)
+                                            * percentage
+                                            * ((row == 0 && z == 1) ? CAMERA_FALLOFF_SMOOTHENING : 1f)
+                                            +
+                                            lastHeight * inversePercentage
+                                        )
+                                       //Adds noise
+                                       + Mathf.Abs(noiseHeight * noisePercentage)
+                                       )
+                                       //Adds extra cliff height 
+                                       + cliffHeight * zProg
+                                   ) * groupEndTotal
+                               ) * (1 - switchToPureNoise) + switchToPureNoise * cliffMap[zNoiseInitPos + z, xNoiseInitPos + x]*1.25f
+                             )* finalFallOffPercentage
                            );
 
 
