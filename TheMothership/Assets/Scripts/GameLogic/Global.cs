@@ -82,6 +82,9 @@ public class Global : MonoBehaviour {
    // public static DictionaryList<Transform, Ground> Grounds = new DictionaryList<Transform, Ground>();
 
     public static DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>> Grounds = new DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>>();
+    public static DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>> NonNavigateableGrounds = new DictionaryList<SceneReferenceNames, DictionaryList<Transform, Ground>>();
+
+
 
     public static bool IsAwake = false;
 

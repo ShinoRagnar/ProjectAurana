@@ -66,9 +66,12 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
             alreadyLinked = new DictionaryList<Transform, Transform>();
 
             Global.Grounds.Add(slot, new DictionaryList<Transform, Ground>());
+            Global.NonNavigateableGrounds.Add(slot, new DictionaryList<Transform, Ground>());
 
             ListChildren(transform);
-           
+            ListNonNavigateableGrounds(Global.References[slot]);
+
+
             CreateLinkGameObjects();
             CreateNavMeshLinksAndGrounds();
             GenerateDistancesBetweenGrounds();
@@ -302,9 +305,27 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
             if (child.GetComponent<BoxCollider>() != null)
             {
                 Global.Grounds[slot].Add(child, new Ground(child));
-               // Global.Grounds.Add(child, new Ground(child));
+                Global.Grounds[slot][child].hints = child.GetComponent<GroundHints>();
+                // Global.Grounds.Add(child, new Ground(child));
             }
             ListChildren(child);
+        }
+    }
+
+    private void ListNonNavigateableGrounds(Transform t)
+    {
+        foreach (Transform child in t)
+        {
+            if (!Global.NonNavigateableGrounds[slot].Contains(child)){
+
+                if (child.GetComponent<BoxCollider>() != null)
+                {
+                    Global.NonNavigateableGrounds[slot].Add(child, new Ground(child));
+                    Global.NonNavigateableGrounds[slot][child].hints = child.GetComponent<GroundHints>();
+                    // Global.Grounds.Add(child, new Ground(child));
+                }
+            }
+            ListNonNavigateableGrounds(child);
         }
     }
 
