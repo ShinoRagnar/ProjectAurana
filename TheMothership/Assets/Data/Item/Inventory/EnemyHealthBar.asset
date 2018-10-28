@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Name: EnemyHealthBar
   m_EditorClassIdentifier: 
   itemName: EnemyHealthBar
-  prefab: 412477192
+  prefab: 413480341
   points:
   - prefabNode: EnergyLine
     point: 580

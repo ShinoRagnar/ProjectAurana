@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enumName: BloodSplash
   effectName: Blood Splash
-  prefab: 110376243
+  prefab: 111324767
   scaling: 20
   duration: 2
   handles: 0
@@ -22,4 +22,6 @@ MonoBehaviour:
   hasXDistance: 0
   hasZDistance: 0
   isStatic: 0
-  prefabAlterations: 35359406c0699c062e90a0062c90a006
+  cleanupInnerTransforms: 0
+  cleanupStartAt: 3
+  prefabAlterations: 5bcfa506ee919106e2b6ab068036a106

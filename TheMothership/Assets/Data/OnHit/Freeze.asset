@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -18,7 +18,8 @@ MonoBehaviour:
   endQualifier: 140000000a000000
   effectsWhen:
   - when: 200
-    effect: 801766723
+    effect: 801604000
   - when: 250
-    effect: 802501566
-  debuffs: 9472df1e
+    effect: 801571482
+  debuffs: 33fcd71e
+  delayedDamage: []

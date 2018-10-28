@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,13 +14,13 @@ MonoBehaviour:
   enumName: DoubleMissileLauncher
   itemName: Double Missile Launcher
   itemDescription: Launches two missiles
-  prefab: 314470186
-  sprite: 314470186
+  prefab: 313351746
+  sprite: 313351746
   rarity: 30
   effectsWhen:
   - when: 20
-    effect: 1219360264
-  bullet: 1208842158
+    effect: 1219638509
+  bullet: 1208765859
   sockets: []
   buffs: 
   points:
@@ -28,7 +28,7 @@ MonoBehaviour:
     point: 1
   - prefabNode: Barrel_end_2
     point: 2
-  audio: 1213097955
+  audio: 1214786853
   reloadTime: 6
   isRifle: 0
   diameter: 2

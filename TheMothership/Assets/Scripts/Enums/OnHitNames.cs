@@ -1,10 +1,10 @@
 public enum OnHitNames 
 {
-	Chill = 207029581,
-	Freeze = 517960196,
-	OrbitalBombardment = 1416574478,
-	Root = 1714001160,
-	SpawnDemonLesser = 1814149277,
-	SpawnDragon = 1814659109,
+	Chill = 206914015,
+	Freeze = 516080598,
+	OrbitalBombardment = 1417711600,
+	Root = 1714800105,
+	SpawnDemonLesser = 1815617108,
+	SpawnDragon = 1814904395,
 
 }

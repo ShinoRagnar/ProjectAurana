@@ -14,10 +14,10 @@ MonoBehaviour:
   enumName: SpiderLegs
   itemName: Mechanical Legs
   itemDescription: Empire Walker Legs
-  prefab: 1815074794
-  sprite: 1815074794
+  prefab: 1814405144
+  sprite: 1814405144
   rarity: 20
-  audio: 1815074794
+  audio: 1814405144
   sockets: []
   buffs: 
   points:
@@ -62,7 +62,7 @@ MonoBehaviour:
   possibleMovements: 010000000200000003000000
   effectsWhen:
   - when: 80
-    effect: 422035261
+    effect: 423564366
   position: {x: 0, y: 0, z: 0}
   rotation: {x: 0, y: 0, z: 0}
   scale: {x: 0, y: 0, z: 0}

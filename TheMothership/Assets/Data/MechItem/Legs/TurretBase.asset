@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,10 +14,10 @@ MonoBehaviour:
   enumName: TurretBase
   itemName: Turret Base
   itemDescription: The Base of Empire Standard Turret Defence
-  prefab: 1920846719
-  sprite: 1920846719
+  prefab: 1919634650
+  sprite: 1919634650
   rarity: 10
-  audio: 1815074794
+  audio: 1814405144
   sockets: []
   buffs: 
   points:
@@ -28,6 +28,7 @@ MonoBehaviour:
   widthCapacity: 1
   heightCapacity: 1
   possibleMovements: 00000000
+  effectsWhen: []
   position: {x: 0, y: 0, z: 0}
   rotation: {x: 0, y: 0, z: 0}
   scale: {x: 0, y: 0, z: 0}

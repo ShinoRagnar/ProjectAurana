@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: TurretHead
   itemName: Turret Head
   itemDescription: 
-  prefab: 1920846802
-  sprite: 1920846802
+  prefab: 1920011466
+  sprite: 1920011466
   rarity: 10
   rows:
   - columns: 020000000200000002000000
@@ -23,9 +23,9 @@ MonoBehaviour:
   connectionPos: {x: 1, y: 0}
   sockets:
   - type: 20
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 20
-    occupant: 1313033762
+    occupant: 1313102300
   buffs: 
   points:
   - prefabNode: Mount_Weapon_L
@@ -34,5 +34,6 @@ MonoBehaviour:
     point: 5
   effectsWhen:
   - when: 80
-    effect: 303245064
-  audio: 1203753075
+    effect: 304604012
+  audio: 1203272581
+  armor: 1

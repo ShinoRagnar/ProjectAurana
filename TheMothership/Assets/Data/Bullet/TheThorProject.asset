@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -15,21 +15,21 @@ MonoBehaviour:
   bulletName: The Thor Project
   type: 20
   target: 1
-  audio: 1213265369
+  audio: 1214645127
   effectsWhen:
   - when: 10
-    effect: 1906173153
+    effect: 1907205864
   - when: 50
-    effect: 1906173153
+    effect: 1907205864
   - when: 60
-    effect: 514208927
+    effect: 514794477
   - when: 70
-    effect: 920510037
+    effect: 920783135
   projectiles:
   - role: 0
-    projectile: 1906097313
+    projectile: 1907744950
   onHit:
-  - onHit: 1416574478
+  - onHit: 1417711600
     conditions:
     - selector: 80
       comparator: 0
@@ -42,3 +42,4 @@ MonoBehaviour:
   damage: []
   impact: 10
   explosionRadius: 1
+  waitForParticlesTime: 5

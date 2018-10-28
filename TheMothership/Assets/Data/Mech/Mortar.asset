@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,10 +14,10 @@ MonoBehaviour:
   enumName: Mortar
   mounts:
   - pos: {x: 2, y: 1}
-    core: 1920846802
+    core: 1920011466
     sockets:
     - pos: 00000000
-      socket: 1213097955
+      socket: 1214786853
   legs:
-    leg: 1815074794
+    leg: 1814405144
     sockets: []

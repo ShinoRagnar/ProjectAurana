@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enumName: QuestionMark
   effectName: Question Mark
-  prefab: 1619996356
+  prefab: 1619620193
   scaling: 20
   duration: 1.3
   handles: 0

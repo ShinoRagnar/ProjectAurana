@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,19 +14,19 @@ MonoBehaviour:
   enumName: TheDemonflame
   itemName: The Demons Flame
   itemDescription: The fiery soul of a demon
-  prefab: 1907855021
-  sprite: 1907841588
+  prefab: 1907863464
+  sprite: 1907086465
   rarity: 40
   effectsWhen:
   - when: 20
-    effect: 1907032751
-  bullet: 1907841588
+    effect: 1907083347
+  bullet: 1907086465
   sockets: []
   buffs: 
   points:
   - prefabNode: Barrel_end
     point: 1
-  audio: 1213097955
+  audio: 1214786853
   reloadTime: 10
   isRifle: 0
   diameter: 2

@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,34 +14,34 @@ MonoBehaviour:
   enumName: Sword
   audioFiles:
   - when: 50
-    audio: 1822632305
+    audio: 1822323933
     volume: 0.2
     pitch: 1
   - when: 2
-    audio: 1822067860
+    audio: 1821957472
     volume: 0.5
     pitch: 1
   - when: 18
-    audio: 1821211804
+    audio: 1821611534
     volume: 0.2
     pitch: 1
   - when: 19
-    audio: 1821155762
+    audio: 1822684750
     volume: 0.2
     pitch: 1
   - when: 70
-    audio: 1821244548
+    audio: 1821088043
     volume: 0.5
     pitch: 1
   - when: 80
-    audio: 1822318166
+    audio: 1821224296
     volume: 0.4
     pitch: 1
   - when: 1
-    audio: 1806475782
+    audio: 1807025246
     volume: 1
     pitch: 1
   - when: 100
-    audio: 410241365
+    audio: 411768297
     volume: 0.5
     pitch: 1

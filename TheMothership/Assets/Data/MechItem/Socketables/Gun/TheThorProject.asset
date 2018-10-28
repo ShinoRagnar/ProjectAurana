@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -15,19 +15,19 @@ MonoBehaviour:
   itemName: The Thor Project
   itemDescription: Launches three trackers that communicate with the orbital thor
     project cannon
-  prefab: 1907005321
-  sprite: 1907005321
+  prefab: 1906884217
+  sprite: 1906884217
   rarity: 40
   effectsWhen:
   - when: 20
-    effect: 1219360264
-  bullet: 1907005321
+    effect: 1219638509
+  bullet: 1906884217
   sockets: []
   buffs: 
   points:
   - prefabNode: Barrel_end_1
     point: 1
-  audio: 1213097955
+  audio: 1214786853
   reloadTime: 10
   isRifle: 0
   diameter: 2

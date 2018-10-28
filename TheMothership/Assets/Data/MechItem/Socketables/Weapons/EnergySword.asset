@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,22 +14,22 @@ MonoBehaviour:
   enumName: EnergySword
   itemName: Energy Sword
   itemDescription: Energy charged sword
-  prefab: 1821070787
-  sprite: 1821070787
+  prefab: 1821908906
+  sprite: 1821908906
   rarity: 20
   effectsWhen:
   - when: 90
-    effect: 1822324114
+    effect: 1822933135
   - when: 100
-    effect: 1822188257
+    effect: 1821947506
   - when: 40
-    effect: 1801520448
+    effect: 1802643947
   - when: 30
-    effect: 1801520448
+    effect: 1802643947
   sockets: []
   buffs: 
   points: []
-  audio: 1822036503
+  audio: 1822026872
   type: 10
   onHit: []
   damageModifiers:

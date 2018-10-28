@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,26 +14,26 @@ MonoBehaviour:
   enumName: GunArrayEightSlot
   itemName: Eight Slotted Gun Array
   itemDescription: A Gun array with eight slots
-  prefab: 619482716
-  sprite: 619482716
+  prefab: 619958427
+  sprite: 619958427
   rarity: 20
   sockets:
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 25
-    occupant: 1313033762
+    occupant: 1313102300
   buffs: 
   points:
   - prefabNode: Mount_Weapon_1
@@ -54,7 +54,7 @@ MonoBehaviour:
     point: 12
   effectsWhen:
   - when: 80
-    effect: 303245064
-  audio: 1203753075
+    effect: 304604012
+  audio: 1203272581
   inventoryHeight: 2
   inventoryWidth: 2

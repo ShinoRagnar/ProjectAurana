@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enumName: SuccessfullBlock
   effectName: Successfull Block
-  prefab: 1820093486
+  prefab: 1819586479
   scaling: 20
   duration: 3
   handles: 0

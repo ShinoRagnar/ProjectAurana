@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,25 +14,25 @@ MonoBehaviour:
   enumName: TheSpineOfWinter
   itemName: TheSpineOfWinter
   itemDescription: The spine of a winter dragon
-  prefab: 1906212411
-  sprite: 1906212411
+  prefab: 1906520954
+  sprite: 1906520954
   rarity: 40
   effectsWhen:
   - when: 90
-    effect: 1822386656
+    effect: 1822933135
   - when: 100
-    effect: 1821783381
+    effect: 1821947506
   - when: 40
-    effect: 1801341223
+    effect: 1802640332
   - when: 30
-    effect: 1801341223
+    effect: 1802640332
   sockets: []
-  buffs: 73f7b60c
+  buffs: d3bcb80c
   points: []
-  audio: 1822036503
+  audio: 1822026872
   type: 10
   onHit:
-  - onHit: 207029581
+  - onHit: 206914015
     conditions:
     - selector: 30
       comparator: 20
@@ -41,7 +41,7 @@ MonoBehaviour:
       buff: 213236731
       stat: 5
       threshold: 5
-  - onHit: 517960196
+  - onHit: 516080598
     conditions:
     - selector: 30
       comparator: 20
@@ -56,7 +56,7 @@ MonoBehaviour:
       comparator: 0
       calculation: 0
       target: 10
-      buff: 207029581
+      buff: 206914015
       stat: 10
       threshold: 0
     damageModifier: 2
@@ -67,7 +67,7 @@ MonoBehaviour:
       comparator: 0
       calculation: 0
       target: 10
-      buff: 517960340
+      buff: 517471283
       stat: 10
       threshold: 0
     damageModifier: 5

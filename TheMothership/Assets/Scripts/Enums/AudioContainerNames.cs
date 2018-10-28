@@ -1,13 +1,13 @@
 public enum AudioContainerNames 
 {
-	CrystalSounds = 217784740,
-	GunStandard = 619942731,
-	Inventory = 812992441,
-	MetalCoreSounds = 1203753075,
-	Mortar = 1213097955,
-	MortarShell = 1213265369,
-	Shield = 1806172967,
-	SpiderLegs = 1815074794,
-	Sword = 1822036503,
+	CrystalSounds = 216092874,
+	GunStandard = 620454723,
+	Inventory = 812697265,
+	MetalCoreSounds = 1203272581,
+	Mortar = 1214786853,
+	MortarShell = 1214645127,
+	Shield = 1806890527,
+	SpiderLegs = 1814405144,
+	Sword = 1822026872,
 
 }

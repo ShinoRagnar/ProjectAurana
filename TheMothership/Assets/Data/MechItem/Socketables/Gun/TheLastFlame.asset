@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,19 +14,19 @@ MonoBehaviour:
   enumName: TheLastFlame
   itemName: The Last Flame
   itemDescription: The first fire and the last
-  prefab: 1907627097
-  sprite: 1907627097
+  prefab: 1906341844
+  sprite: 1906341844
   rarity: 40
   effectsWhen:
   - when: 20
-    effect: 1219360264
-  bullet: 1907627097
+    effect: 1219638509
+  bullet: 1906341844
   sockets: []
   buffs: 
   points:
   - prefabNode: Barrel_end
     point: 1
-  audio: 1213097955
+  audio: 1214786853
   reloadTime: 15
   isRifle: 0
   diameter: 2

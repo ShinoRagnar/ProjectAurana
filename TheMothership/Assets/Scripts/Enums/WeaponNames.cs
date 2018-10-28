@@ -1,7 +1,7 @@
 public enum WeaponNames 
 {
-	EnergySword = 412926546,
-	TheHive = 1907142661,
-	TheSpineOfWinter = 1906212411,
+	EnergySword = 413077405,
+	TheHive = 1906950446,
+	TheSpineOfWinter = 1906520954,
 
 }

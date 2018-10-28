@@ -1,7 +1,7 @@
 public enum LegNames 
 {
-	NoName = 1313110472,
-	SpiderLegs = 1815074794,
-	TurretBase = 1920846719,
+	NoName = 1313266728,
+	SpiderLegs = 1814405144,
+	TurretBase = 1919634650,
 
 }

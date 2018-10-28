@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: Demoness
   itemName: Demoness
   itemDescription: Figurehead demoness
-  prefab: 304419110
-  sprite: 304419110
+  prefab: 304733625
+  sprite: 304733625
   rarity: 30
   rows:
   - columns: 00000000030000000300000000000000
@@ -25,11 +25,11 @@ MonoBehaviour:
   connectionPos: {x: 1, y: 0}
   sockets:
   - type: 10
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 10
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 10
-    occupant: 1313033762
+    occupant: 1313102300
   buffs: 
   points:
   - prefabNode: Socket1
@@ -46,5 +46,6 @@ MonoBehaviour:
     point: 16
   effectsWhen:
   - when: 80
-    effect: 303245064
-  audio: 1203753075
+    effect: 304604012
+  audio: 1203272581
+  armor: 1

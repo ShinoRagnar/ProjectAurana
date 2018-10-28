@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enumName: Footmark
   effectName: Footmark
-  prefab: 514208927
+  prefab: 514794477
   scaling: 20
   duration: 6
   handles: 0
@@ -22,4 +22,6 @@ MonoBehaviour:
   hasXDistance: 0
   hasZDistance: 0
   isStatic: 1
+  cleanupInnerTransforms: 0
+  cleanupStartAt: 3
   prefabAlterations: 

@@ -666,7 +666,7 @@ PlayerSettings:
   cloudServicesEnabled:
     UNet: 1
   facebookSdkVersion: 7.9.4
-  apiCompatibilityLevel: 2
+  apiCompatibilityLevel: 3
   cloudProjectId: 6a8add8d-d8db-4b1f-96cb-b7c59038be42
   projectName: TheMothership (3)
   organizationId: unity_bdp5fswqbqegra

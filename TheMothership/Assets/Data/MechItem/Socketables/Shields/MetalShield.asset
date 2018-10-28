@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,18 +14,18 @@ MonoBehaviour:
   enumName: MetalShield
   itemName: Metal Shield
   itemDescription: Empire Standard Shield
-  prefab: 1807610750
-  sprite: 1807610750
+  prefab: 1807122688
+  sprite: 1807122688
   rarity: 20
   effectsWhen:
   - when: 110
-    effect: 1806566743
+    effect: 1806311837
   - when: 115
-    effect: 1820093486
+    effect: 1819586479
   sockets: []
   buffs: 
   points: []
-  audio: 1806172967
+  audio: 1806890527
   rechargeTime: 1
   inventoryItemHeight: 2
   inventoryItemWidth: 2

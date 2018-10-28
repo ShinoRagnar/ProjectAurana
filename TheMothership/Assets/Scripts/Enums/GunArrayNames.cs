@@ -1,5 +1,5 @@
 public enum GunArrayNames 
 {
-	GunArrayEightSlot = 619051598,
+	GunArrayEightSlot = 619903455,
 
 }

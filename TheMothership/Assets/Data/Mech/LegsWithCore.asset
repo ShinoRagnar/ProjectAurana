@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: LegsWithCore
   mounts:
   - pos: {x: 2, y: 1}
-    core: 214000957
+    core: 214827841
     sockets: []
   legs:
-    leg: 1815074794
+    leg: 1814405144
     sockets: []

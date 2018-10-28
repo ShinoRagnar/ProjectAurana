@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: Thrusters
   itemName: Thrusters
   itemDescription: Speed boosting thrusters
-  prefab: 1907416775
-  sprite: 1907416775
+  prefab: 1906634447
+  sprite: 1906634447
   rarity: 40
   rows:
   - columns: 000000000300000000000000
@@ -27,5 +27,6 @@ MonoBehaviour:
   points: []
   effectsWhen:
   - when: 80
-    effect: 303245064
-  audio: 1203753075
+    effect: 304604012
+  audio: 1203272581
+  armor: 1

@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,12 +14,13 @@ MonoBehaviour:
   enumName: StandardRifleBullet
   bulletName: Standard Rifle Bullet
   type: 10
-  audio: 619942731
+  target: 0
+  audio: 620454723
   effectsWhen:
   - when: 40
-    effect: 1819521806
+    effect: 1818495947
   - when: 30
-    effect: 1819898390
+    effect: 1818676635
   projectiles: []
   onHit: []
   damageModifiers: []
@@ -28,3 +29,4 @@ MonoBehaviour:
     amount: 6
   impact: 1000
   explosionRadius: 0
+  waitForParticlesTime: 5

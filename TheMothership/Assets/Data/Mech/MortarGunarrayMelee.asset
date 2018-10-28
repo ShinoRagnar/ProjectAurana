@@ -14,54 +14,54 @@ MonoBehaviour:
   enumName: MortarGunarrayMelee
   mounts:
   - pos: {x: 2, y: 1}
-    core: 214000957
+    core: 214827841
     sockets: []
   - pos: {x: 3, y: 1}
-    core: 1203722410
+    core: 1204269733
     sockets:
     - pos: 00000000
-      socket: 1907142661
+      socket: 1906950446
     - pos: 01000000
-      socket: 1203220412
+      socket: 1203510877
   - pos: {x: 1, y: 1}
-    core: 1704483172
+    core: 1704950593
     sockets:
     - pos: 00000000
-      socket: 619051598
+      socket: 619903455
     - pos: 0000000000000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000001000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000002000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000003000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000004000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000005000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000006000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 0000000007000000
-      socket: 1818451808
+      socket: 1818462516
     - pos: 01000000
-      socket: 1213097955
+      socket: 1214786853
   - pos: {x: 2, y: 2}
-    core: 214000957
+    core: 214827841
     sockets: []
   - pos: {x: 1, y: 3}
-    core: 1704483172
+    core: 1704950593
     sockets:
     - pos: 00000000
-      socket: 1213097955
+      socket: 1214786853
     - pos: 01000000
-      socket: 1213097955
+      socket: 1214786853
   - pos: {x: 2, y: 3}
-    core: 214000957
+    core: 214827841
     sockets: []
   - pos: {x: 2, y: 4}
-    core: 214000957
+    core: 214827841
     sockets: []
   legs:
-    leg: 1815074794
+    leg: 1814405144
     sockets: []

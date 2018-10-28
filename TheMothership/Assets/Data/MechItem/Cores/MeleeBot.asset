@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: MeleeBot
   itemName: Tormented Soul
   itemDescription: Captured and brainwashed to serve
-  prefab: 113041031
-  sprite: 113041031
+  prefab: 113773659
+  sprite: 113773659
   rarity: 30
   rows:
   - columns: 000000000100000002000000
@@ -24,9 +24,9 @@ MonoBehaviour:
   connectionPos: {x: 1, y: 0}
   sockets:
   - type: 30
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 40
-    occupant: 1313033762
+    occupant: 1313102300
   buffs: 
   points:
   - prefabNode: SwordSlot
@@ -37,8 +37,8 @@ MonoBehaviour:
     point: 80
   effectsWhen:
   - when: 80
-    effect: 303245064
+    effect: 304604012
   - when: 40
-    effect: 1107270658
-  audio: 1203753075
+    effect: 1108500649
+  audio: 1203272581
   armor: 1

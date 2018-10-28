@@ -1,10 +1,10 @@
 public enum BulletNames 
 {
-	MissileProjectile = 1208842158,
-	MortarBullet = 1214437858,
-	StandardRifleBullet = 1819515575,
-	TheDemonFlame = 1907841588,
-	TheLastFlame = 1907627097,
-	TheThorProject = 1907005321,
+	MissileProjectile = 1208765859,
+	MortarBullet = 1214960111,
+	StandardRifleBullet = 1818964983,
+	TheDemonFlame = 1907086465,
+	TheLastFlame = 1906341844,
+	TheThorProject = 1906884217,
 
 }

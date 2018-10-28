@@ -173,6 +173,8 @@ public class TerrainGenerator {
         public float cliffDistance;
         public float propDistance;
 
+        public float addedScale;
+
         public PropsToPlace(
             PrefabNames nam,
             Vector3 position,
@@ -183,9 +185,11 @@ public class TerrainGenerator {
             LandingSpotController lsc,
             float treeDistance,
             float cliffDistance,
-            float propDistance
+            float propDistance,
+            float addedScale
             )
         {
+            this.addedScale = addedScale;
             this.nam = nam;
             this.position = position;
             this.propParent = propParent;
@@ -248,7 +252,7 @@ public class TerrainGenerator {
     public static float TREE_TERRAIN_MARGIN = 1;
     public static float CLIFF_TERRAIN_MARGIN = 10;
     public static float TREE_GRASS_THRESHOLD = 0.7f;
-    public static float TREE_MIN_SCALE = 0.7f;
+    public static float PROP_MIN_SCALE = 0.7f;
     public static float TREE_HEIGHT_REQUIREMENT = 0.2f * HEIGHT;
 
     //PROPS GENERAL
@@ -365,10 +369,10 @@ public class TerrainGenerator {
             if (iter > WALL_PROP_DISTANCE)
             {
                 iter = 0;
-                Transform pp = SpawnProp(props[rnd.Next(props.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 99, false, false);
+                Transform pp = SpawnProp(props[rnd.Next(props.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 1, 99, false, false);
                 pp.Rotate(new Vector3(0, 90, 0));
             }
-            Transform prop = SpawnProp(walls[rnd.Next(walls.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 99, false, false);
+            Transform prop = SpawnProp(walls[rnd.Next(walls.Count)], new Vector3(x, 0, WALL_DISTANCE), wall, 1, 99, false, false);
             prop.Rotate(new Vector3(0, 90, 0));
         }
     }
@@ -686,7 +690,7 @@ public class TerrainGenerator {
         }
 
         foreach (PropsToPlace ptp in propsToPlace) {
-            SpawnProp(ptp.nam, ptp.position, ptp.propParent, ptp.keepOnly, ptp.randomScale, ptp.randomRotation, ptp.lsc);
+            SpawnProp(ptp.nam, ptp.position, ptp.propParent,ptp.addedScale, ptp.keepOnly, ptp.randomScale, ptp.randomRotation, ptp.lsc);
         }
 
 
@@ -1050,40 +1054,42 @@ public class TerrainGenerator {
                         hillyLike = angle > angleBreakpoint ? 1 : hillyLike; //slopelike > hillySlopeBreakpoint ? 1 : hillyLike;
                         slopelike = angle <= angleBreakpoint ? slopelike : 0;  //slopelike <= hillySlopeBreakpoint ? slopelike : 0;
 
+                        // Calculate the normal of the terrain (note this is in normalised coordinates relative to the overall terrain dimensions)
+                        // Vector3 normal = terrainData.GetInterpolatedNormal(y_01, x_01);
+
+
+                        // Make sure wetness only occurs where feasible
+
+                        float wettnessCompabilityByFlatness = 1 - Mathf.Clamp01(steepness * steepness / (terrainDataHeightmapHeight / 0.5f));
+                        float wettnessCompabilityByTerrainBorder = row != 0 ? 1 : Mathf.Min(Mathf.Max(((float)xTerrain - 1) / wettnessTerrainMargin, 0), 1);
+
+
+                        float wettnessCompabilityByEndOfTerrain = row == 0 ? Mathf.Cos(x_01 * Mathf.PI * 0.5f) : Mathf.Sin(x_01 * Mathf.PI * 0.5f);
+                        float wetnessCompability = wettnessCompabilityByFlatness * wettnessCompabilityByTerrainBorder * wettnessCompabilityBySeam * wettnessCompabilityByEndOfTerrain;
+
+
+
+
+
+
+                        //X and Y intentionally flipped
+                        float w = Mathf.Min(Mathf.Max(wettnessMap[y + wetnessXInit, x + wetnessYInit] - 0.5f, 0) * 5, 1) * wetnessCompability;
+
+                        float wetness = 1f - Mathf.Cos(w * Mathf.PI * 0.5f);
+
+                        wetness *= 2;
+                        wetness = Mathf.Min(wetness, 1);
+
+
+                        float grasslike = (1 - hillyLike) * (1 - dirtlike) * flatness * (1f - wetness);
+
+                        int grasstype = drynessAtCurrentPos - 0.5f < 0 ? 0 :
+                                        drynessAtCurrentPos - 0.5f < 0.2 ? 1 : 2;
+
 
                         if (tgp == TerrainGenerationPass.SplatMapGenerationAndCliffs)
                         {
-                            // Calculate the normal of the terrain (note this is in normalised coordinates relative to the overall terrain dimensions)
-                            // Vector3 normal = terrainData.GetInterpolatedNormal(y_01, x_01);
 
-
-                            // Make sure wetness only occurs where feasible
-
-                            float wettnessCompabilityByFlatness = 1 - Mathf.Clamp01(steepness * steepness / (terrainDataHeightmapHeight / 0.5f));
-                            float wettnessCompabilityByTerrainBorder = row != 0 ? 1 : Mathf.Min(Mathf.Max(((float)xTerrain - 1) / wettnessTerrainMargin, 0), 1);
-
-
-                            float wettnessCompabilityByEndOfTerrain = row == 0 ? Mathf.Cos(x_01 * Mathf.PI * 0.5f) : Mathf.Sin(x_01 * Mathf.PI * 0.5f);
-                            float wetnessCompability = wettnessCompabilityByFlatness * wettnessCompabilityByTerrainBorder * wettnessCompabilityBySeam * wettnessCompabilityByEndOfTerrain;
-
-
-
-
-
-
-                            //X and Y intentionally flipped
-                            float w = Mathf.Min(Mathf.Max(wettnessMap[y + wetnessXInit, x + wetnessYInit] - 0.5f, 0) * 5, 1) * wetnessCompability;
-
-                            float wetness = 1f - Mathf.Cos(w * Mathf.PI * 0.5f);
-
-                            wetness *= 2;
-                            wetness = Mathf.Min(wetness, 1);
-
-
-                            float grasslike = (1 - hillyLike) * (1 - dirtlike) * flatness * (1f - wetness);
-
-                            int grasstype = drynessAtCurrentPos - 0.5f < 0 ? 0 :
-                                            drynessAtCurrentPos - 0.5f < 0.2 ? 1 : 2;
 
                             float grassHeight = Mathf.Clamp01(Mathf.Clamp01((drynessAtCurrentPos - 0.5f)) * 5);
 
@@ -1122,21 +1128,22 @@ public class TerrainGenerator {
 
 
                             steps--;
-                            /*
-                            if (true)
+
+                            /*if (true)
                             {
 
 
-                                bool canPlaceCliff = notTooCloseToEdges && slopelike > 0.5f && worldZPos > TERRAIN_Z_WIDTH + CLIFF_TERRAIN_MARGIN;
+                                bool canPlaceCliff = notTooCloseToEdges && dirtlike > 0.5f && hillyLike < 0.1f
+                                    && worldZPos > TERRAIN_Z_WIDTH + CLIFF_TERRAIN_MARGIN;
 
-                                
+
                                 //Only check for prop placement on new xPositions
                                 if (steps <= 0 && canPlaceProp && canPlaceCliff && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
                                 {
 
                                     foreach (PropsToPlace toPlace in propsToPlace)
                                     {
-                                        if (Vector3.Distance(toPlace.position, worldPos) 
+                                        if (Vector3.Distance(toPlace.position, worldPos)
                                             < toPlace.cliffDistance)
                                         {
 
@@ -1154,7 +1161,7 @@ public class TerrainGenerator {
                                         PrefabNames pf = cliffsToAdd[rnd.Next(cliffsToAdd.Count)];
 
                                         propsToPlace.Add(
-                                            new PropsToPlace(pf, worldPos, cliffs, row > 0 ? 1 : 99, true, true, null, 7, 15, 7)
+                                            new PropsToPlace(pf, worldPos, cliffs, row > 0 ? 1 : 99, true, true, null, 10, 30, 7, 1f)
                                             );
 
 
@@ -1172,7 +1179,8 @@ public class TerrainGenerator {
                                 }
 
                             }
-                            
+                            */
+
                             if (true)
                             {
                                 bool canPlaceLitter = worldZPos < TERRAIN_Z_WIDTH && flatness > 0.5 && dirtlike > 0.5f && grassNotAtEdge && worldZPos > -TERRAIN_Z_WIDTH - TERRAIN_Z_MARGIN + 2;
@@ -1181,10 +1189,12 @@ public class TerrainGenerator {
 
                                 if (steps <= 0 && canPlaceLitter && canPlaceProp && (yTerrain != lastYTerrain || xTerrain != lastXTerrain))
                                 {
-                                    foreach (Vector3 placed in placedLitter)
+                                    foreach (PropsToPlace toPlace in propsToPlace)
                                     {
-                                        if (Vector3.Distance(placed, worldPos) < LITTER_DISTANCE)
+                                        if (Vector3.Distance(toPlace.position, worldPos)
+                                            < toPlace.propDistance)
                                         {
+
                                             canPlaceProp = false;
                                             break;
                                         }
@@ -1192,13 +1202,19 @@ public class TerrainGenerator {
 
                                     if (canPlaceProp)
                                     {
+                                        PrefabNames pf = litterToAdd[rnd.Next(litterToAdd.Count)];
+
+                                        propsToPlace.Add(
+                                            new PropsToPlace(pf, worldPos, litter, 99, true, true, null, 3, 7, 7,1)
+                                            );
+
                                         //timeTakenWithoutSpawnAggregate += Time.realtimeSinceStartup - timeTakenWithoutSpawns;
                                         //timeTakenWithoutSpawns = Time.realtimeSinceStartup;
-                                        placedLitter.Add(worldPos, SpawnProp(litterToAdd[rnd.Next(litterToAdd.Count)], worldPos, litter, 99));
+                                        //placedLitter.Add(worldPos, SpawnProp(litterToAdd[rnd.Next(litterToAdd.Count)], worldPos, litter, 99));
                                     }
 
                                 }
-                            }*/
+                            }
 
                         }
                         /*else if (tgp == TerrainGenerationPass.Trees)
@@ -1215,31 +1231,30 @@ public class TerrainGenerator {
                                     (1 - x_01) * (TREE_SEPARATION_MAX_DISTANCE - TREE_SEPARATION_MIN_DISTANCE);
 
 
-                                bool canPlaceTrees = ((flatness > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
-                                            ||
-                                            (row != 0 && hillyLike < 0.3f));
+                                bool canPlaceTrees = 
+                                    worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN &&
+                                    (
+                                        (grasstype == 2 && grasslike > 0.5f)
+                                        //||
+                                        
+                                    ) 
+                                    && (row != 1);
+                                
+                                            //((flatness > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
+                                            //||
+                                            //(row != 0 && hillyLike < 0.3f));
 
                                 if (canPlaceProp && canPlaceTrees)
                                 {
 
-                                    foreach (Vector3 placed in placedTrees)
+                                    foreach (PropsToPlace toPlace in propsToPlace)
                                     {
-                                        if (Vector3.Distance(placed, worldPos) < treeDistance)
+                                        if (Vector3.Distance(toPlace.position, worldPos) < toPlace.treeDistance 
+                                            )
                                         {
+
                                             canPlaceProp = false;
                                             break;
-                                        }
-                                    }
-
-                                    if (canPlaceProp)
-                                    {
-                                        foreach (Transform placed in placedProps)
-                                        {
-                                            if (Vector3.Distance(placed.position, worldPos) < placedProps[placed].distances.TreeSizePropDistance)
-                                            {
-                                                canPlaceProp = false;
-                                                break;
-                                            }
                                         }
                                     }
 
@@ -1255,7 +1270,7 @@ public class TerrainGenerator {
 
                                         PrefabNames pf;
                                         bool impostor = false;
-
+                                        
                                         if (row == 0)
                                         {
                                             pf = treesToAdd[rnd.Next(treesToAdd.Count)];
@@ -1266,15 +1281,21 @@ public class TerrainGenerator {
                                             pf = impostorTreesToAdd[rnd.Next(impostorTreesToAdd.Count)];
                                         }
 
+
+                                        propsToPlace.Add(
+                                            new PropsToPlace(pf, worldPos, trees, isFar ? 1 : 99, true, true, !impostor ? lsc : null, 
+                                            treeDistance, treeDistance, treeDistance,0.7f)
+                                            );
+
                                         //PrefabNames pf = row == 0 ? PrefabNames.TreeBroadleaf :
                                         //                (hue ? PrefabNames.TreeBroadleafImpostorHue : PrefabNames.TreeBroadleafImpostor);
 
-                                        placedTrees.Add(worldPos, SpawnProp(pf, worldPos, trees, isFar ? 1 : 99, true, true, !impostor ? lsc : null));
+                                        //placedTrees.Add(worldPos, SpawnProp(pf, worldPos, trees, isFar ? 1 : 99, true, true, !impostor ? lsc : null));
 
                                     }
                                 }
                             }
-
+                            
                         }*/
 
                         // Texture[3] increases with height but only on surfaces facing positive Z axis 
@@ -1306,13 +1327,14 @@ public class TerrainGenerator {
         PrefabNames nam, 
         Vector3 position, 
         GameObject propParent, 
+        float addedScale,
         int keepOnly = 99, 
         bool randomScale = true,
         bool randomRotation = true,
         LandingSpotController lsc = null
         )
     {
-        float scaleChange = (float) rnd.NextDouble() * (1f - TREE_MIN_SCALE) + TREE_MIN_SCALE;
+        float scaleChange = ((float) rnd.NextDouble() * (1f - PROP_MIN_SCALE) + PROP_MIN_SCALE)*addedScale;
 
         Transform addTo = null;
         string name = nam.ToString() + keepOnly.ToString();
@@ -1958,6 +1980,7 @@ public class TerrainGenerator {
             if ((Texture2D)tiles[i].GetTexture("_BumpMap") != null)
             {
                 splatPrototype[i].normalMap = (Texture2D)tiles[i].GetTexture("_BumpMap");
+                
             }
 
             if (tiles[i].HasProperty("_Metallic"))

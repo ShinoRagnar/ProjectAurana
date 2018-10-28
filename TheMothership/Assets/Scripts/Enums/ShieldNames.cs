@@ -1,5 +1,5 @@
 public enum ShieldNames 
 {
-	MetalShield = 1203220412,
+	MetalShield = 1203510877,
 
 }

@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: DemonTargeter
   itemName: Targeter
   itemDescription: Demonic targeting
-  prefab: 1899828498
-  sprite: 1899828498
+  prefab: 1899210067
+  sprite: 1899210067
   rarity: 20
   rows:
   - columns: 000000000300000000000000
@@ -27,9 +27,10 @@ MonoBehaviour:
   points: []
   effectsWhen:
   - when: 80
-    effect: 303245064
+    effect: 304604012
   - when: 60
-    effect: 514208927
+    effect: 514794477
   - when: 70
-    effect: 920510037
-  audio: 1203753075
+    effect: 920783135
+  audio: 1203272581
+  armor: 1

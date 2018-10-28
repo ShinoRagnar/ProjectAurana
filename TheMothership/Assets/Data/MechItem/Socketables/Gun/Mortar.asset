@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,20 +14,22 @@ MonoBehaviour:
   enumName: Mortar
   itemName: Mortar
   itemDescription: Mortar Gun
-  prefab: 1213097955
-  sprite: 1213097955
+  prefab: 1214786853
+  sprite: 1214786853
   rarity: 20
   effectsWhen:
   - when: 20
-    effect: 1219360264
-  bullet: 1214437858
+    effect: 1219638509
+  bullet: 1214960111
   sockets: []
   buffs: 
   points:
   - prefabNode: Barrel_end
     point: 1
-  audio: 1213097955
+  audio: 1214786853
   reloadTime: 3
+  isRifle: 0
+  diameter: 2
   position: {x: 0, y: 0, z: 0}
   rotation: {x: 0, y: 0, z: 0}
   scale: {x: 0, y: 0, z: 0}

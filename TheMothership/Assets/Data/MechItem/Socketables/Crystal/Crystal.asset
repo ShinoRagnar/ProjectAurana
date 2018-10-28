@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,12 +14,12 @@ MonoBehaviour:
   enumName: Crystal
   itemName: Crystal
   itemDescription: Crystal
-  prefab: 111422613
-  sprite: 111422613
+  prefab: 110139816
+  sprite: 110139816
   rarity: 30
-  buffs: f33c2012
+  buffs: 63212212
   effectsWhen:
   - when: 80
-    effect: 303198885
+    effect: 303724155
   points: []
-  audio: 217784740
+  audio: 216092874

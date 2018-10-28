@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,8 +14,8 @@ MonoBehaviour:
   enumName: Core
   itemName: Core
   itemDescription: Empire Standard Equipment
-  prefab: 214000957
-  sprite: 214000957
+  prefab: 214827841
+  sprite: 214827841
   rarity: 10
   rows:
   - columns: 000000000300000000000000
@@ -23,10 +23,10 @@ MonoBehaviour:
   connectionPos: {x: 1, y: 0}
   sockets:
   - type: 10
-    occupant: 1313033762
+    occupant: 1313102300
   - type: 10
-    occupant: 1313033762
-  buffs: f8a95b7d
+    occupant: 1313102300
+  buffs: fd06607d
   points:
   - prefabNode: Socket1
     point: 5
@@ -34,10 +34,10 @@ MonoBehaviour:
     point: 6
   effectsWhen:
   - when: 80
-    effect: 303245064
+    effect: 304604012
   - when: 60
-    effect: 514208927
+    effect: 514794477
   - when: 70
-    effect: 920510037
-  audio: 1203753075
+    effect: 920783135
+  audio: 1203272581
   armor: 1

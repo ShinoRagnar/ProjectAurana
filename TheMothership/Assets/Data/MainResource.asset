@@ -693,11 +693,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 76a8b8cc406f919499cf50ff64c8305f, type: 2}
   mech:
   - {fileID: 11400000, guid: 61a3c844413c0d44da424d0a79d4841c, type: 2}
-  - {fileID: 11400000, guid: c7ec714d5099e654893da59647e38b81, type: 2}
-  - {fileID: 11400000, guid: a0af2fc776955924d92b08d49c0905f1, type: 2}
-  - {fileID: 11400000, guid: 85cd1caee64d9fc418342bf45d05f6ac, type: 2}
   - {fileID: 11400000, guid: 558a4a59c3b098445b85c0eba23ccf57, type: 2}
-  - {fileID: 11400000, guid: 594ab178d3f666a439ec1f6292d80446, type: 2}
   - {fileID: 11400000, guid: 23855833dc9dc0e428b2c630ed3196ad, type: 2}
   mechImports:
   - {fileID: 0}

@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,19 +14,19 @@ MonoBehaviour:
   enumName: StandardRifle
   itemName: StandardRifle
   itemDescription: Standard rifle
-  prefab: 1708035890
-  sprite: 1708035890
+  prefab: 1708538761
+  sprite: 1708538761
   rarity: 10
   effectsWhen:
   - when: 20
-    effect: 1220736452
-  bullet: 1819515575
+    effect: 1219168473
+  bullet: 1818964983
   sockets: []
   buffs: 
   points:
   - prefabNode: Muzzle
     point: 1
-  audio: 619942731
+  audio: 620454723
   reloadTime: 1
   isRifle: 1
   diameter: 1

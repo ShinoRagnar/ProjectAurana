@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -14,6 +14,6 @@ MonoBehaviour:
   enumName: MetalCoreSounds
   audioFiles:
   - when: 50
-    audio: 1204023375
+    audio: 1203879231
     volume: 0.1
     pitch: 1

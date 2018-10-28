@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -13,9 +13,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enumName: Skidmark
   effectName: Skidmark
-  prefab: 1809047625
+  prefab: 1809458553
   scaling: 20
   duration: 5
   handles: 1
   randomZRotation: 0
   hasYDistance: 0
+  hasXDistance: 0
+  hasZDistance: 0
+  isStatic: 0
+  cleanupInnerTransforms: 0
+  cleanupStartAt: 3
+  prefabAlterations: 
