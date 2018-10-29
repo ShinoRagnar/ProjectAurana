@@ -500,6 +500,7 @@ public class TerrainGenerator {
         Vector2[] tileSizes
     )
     {
+        Material cliff = Global.Resources[MaterialNames.Cliff];
 
         GameObject terr = new GameObject("UndergroundMeshes <" + tr.roomNr + ">");
         terr.transform.parent = terra.transform;
@@ -507,21 +508,42 @@ public class TerrainGenerator {
         GameObject roof = new GameObject("Roof <" + tr.roomNr + ">");
         roof.transform.parent = terr.transform;
 
+        GameObject background = new GameObject("Background <" + tr.roomNr + ">");
+        background.transform.parent = terr.transform;
+
         float yRoofPos = tr.maxY;
+        float yFloorPos = tr.minY;
+
         float length = (tr.maxX - tr.minX);
+        float height = (tr.maxY - tr.minY);
+
         float xPos = tr.minX;
-        float resolution = 2;
+        float resolution = 0.5f;
 
-        Material cliff = Global.Resources[MaterialNames.Cliff];
+        float xLength = length/2f;
+        float zLength = length;
+        float yLength = height - UNDERGROUND_ROOF_HEIGHT - UNDERGROUND_GROUND_HEIGHT;
 
-        int xLength = (int)length/2;
-        int zLength = (int)length;
 
-        float[,] heights = CreateRoof(xLength,zLength);
 
-        MeshRenderer mr = GenerateTerrainMesh(roof.transform, heights, cliff, null, 1, 1, UNDERGROUND_ROOF_HEIGHT);
-        mr.transform.position = new Vector3(xPos+length, yRoofPos, -TERRAIN_Z_WIDTH);
-        mr.transform.localEulerAngles = new Vector3(0, 0, 180);
+        /*
+
+        MeshRenderer roofRen = GenerateTerrainMesh(
+            roof.transform, CreateRoof((int)(xLength * resolution),(int) (zLength * resolution)), 
+            cliff, null, 1f/resolution, 1f/resolution, UNDERGROUND_ROOF_HEIGHT);
+
+        roofRen.transform.position = new Vector3(xPos+length-1f, yRoofPos, -TERRAIN_Z_WIDTH);
+        roofRen.transform.localEulerAngles = new Vector3(0, 0, 180);
+
+        MeshRenderer backRen = GenerateTerrainMesh(
+            roof.transform, CreateBackground((int)(zLength * resolution), (int)(yLength  * resolution)),
+            cliff, null, 1f / resolution, 1f / resolution, xLength - TERRAIN_Z_WIDTH);
+
+
+        backRen.transform.localEulerAngles = new Vector3(0, 90, -90);
+        backRen.transform.position = new Vector3(xPos, yRoofPos - UNDERGROUND_ROOF_HEIGHT , -TERRAIN_Z_WIDTH*2+  xLength);
+
+        */
 
         /*
         GenerateTerrainMesh(
@@ -581,6 +603,23 @@ public class TerrainGenerator {
             for (int z = 0; z < zLength; z++)
             {
                 initHeights[x, z] = x == xLength - 1 || z == zLength - 1 || z == 0 ? 1 : 0;
+
+            }
+        }
+
+        return initHeights;
+    }
+
+    public float[,] CreateBackground(int xLength, int zLength)
+    {
+        float[,] initHeights = new float[xLength, zLength];
+
+
+        for (int x = 0; x < xLength; x++)
+        {
+            for (int z = 0; z < zLength; z++)
+            {
+                initHeights[x, z] = x == xLength - 1 || x == 0 ? 1 : 0;
 
             }
         }
