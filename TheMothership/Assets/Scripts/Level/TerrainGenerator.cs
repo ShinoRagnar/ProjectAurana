@@ -263,7 +263,8 @@ public class TerrainGenerator {
     public static float WETTNESS_MARGIN = 0.1f;
 
     //DISTANCE
-    public static float FAR_Z_DISTANCE = 15;
+    public static float FAR_Z_DISTANCE = 80;
+    public static float SIMPLE_TREE_Z_DIST = 25;
     public static float GRASS_RENDER_Z_DISTANCE = 25;
 
     //WALLS
@@ -500,16 +501,40 @@ public class TerrainGenerator {
     )
     {
 
-        GameObject terr = new GameObject("UndergroundTerrain <" + tr.roomNr + ">");
+        GameObject terr = new GameObject("UndergroundMeshes <" + tr.roomNr + ">");
         terr.transform.parent = terra.transform;
 
-
+        GameObject roof = new GameObject("Roof <" + tr.roomNr + ">");
+        roof.transform.parent = terr.transform;
 
         float yRoofPos = tr.maxY;
         float length = (tr.maxX - tr.minX);
         float xPos = tr.minX;
-        float resolution = 1;
+        float resolution = 2;
 
+        Material cliff = Global.Resources[MaterialNames.Cliff];
+
+        int xLength = (int)length/2;
+        int zLength = (int)length;
+
+        float[,] heights = CreateRoof(xLength,zLength);
+
+        MeshRenderer mr = GenerateTerrainMesh(roof.transform, heights, cliff, null, 1, 1, UNDERGROUND_ROOF_HEIGHT);
+        mr.transform.position = new Vector3(xPos+length, yRoofPos, -TERRAIN_Z_WIDTH);
+        mr.transform.localEulerAngles = new Vector3(0, 0, 180);
+
+        /*
+        GenerateTerrainMesh(
+    Transform parent,
+    float[,] heights,
+    Material mat,
+    bool[,] shouldUse,
+    float sampleWidth,
+    float sampleLength,
+    float genHeight
+    */
+
+        /*
         GameObject roof = new GameObject("Roof <" + tr.roomNr + ">");
         roof.transform.parent = terr.transform;
 
@@ -517,16 +542,50 @@ public class TerrainGenerator {
         roof.transform.position = new Vector3(xPos, yRoofPos, -TERRAIN_Z_WIDTH);
 
         TerrainData terrainData = new TerrainData();
-        terrainData.heightmapResolution = (int)length;
-        terrainData.size = new Vector3(length * resolution, UNDERGROUND_ROOF_HEIGHT, length * resolution);
 
-        //terrainData.SetHeights(0, 0, initHeights);
+        terrainData.heightmapResolution = (int)(length * resolution);
+
+        int xLength = (int)length;
+        int zLength = (int)(length/2);
+
+        terrainData.size = new Vector3(xLength, UNDERGROUND_ROOF_HEIGHT, zLength);
+        
+        terrainData.SetHeights(0, 0, CreateRoof(terrainData.heightmapHeight, terrainData.heightmapWidth));
+
         roofTerrain.terrainData = terrainData;
 
-        tr.DebugPrint();
+        MeshRenderer mr = GenerateTerrainMesh(roofTerrain, Global.Resources[MaterialNames.Cliff], null);
+
+        //mr.transform.localRotation *= Quaternion.Euler(0, 0, 0);
+        mr.transform.parent = terr.transform;
+        */
+        //roof.SetActive(false);
+
+
+
+
+
+        //tr.DebugPrint();
         //SetSplatMapTextures(roofTerrain, materials, tileSizes, resolution);
 
 
+    }
+
+    public float[,] CreateRoof(int xLength, int zLength)
+    {
+        float[,] initHeights = new float[xLength, zLength];
+
+
+        for (int x = 0; x < xLength; x++)
+        {
+            for (int z = 0; z < zLength; z++)
+            {
+                initHeights[x, z] = x == xLength - 1 || z == zLength - 1 || z == 0 ? 1 : 0;
+
+            }
+        }
+
+        return initHeights;
     }
 
 
@@ -594,7 +653,8 @@ public class TerrainGenerator {
             { PrefabNames.LitterRockFour },
             { PrefabNames.LitterRockOne },
             { PrefabNames.LitterRockThree },
-            { PrefabNames.LitterRockTwo }
+            { PrefabNames.LitterRockTwo },
+            { PrefabNames.LitterSmallGeyser }
         };
         List<PrefabNames> wallsToAdd = new List<PrefabNames>() { { PrefabNames.WallOne } };
         List<PrefabNames> wallsCorners = new List<PrefabNames>() { { PrefabNames.WallOneCorner } };
@@ -1023,7 +1083,7 @@ public class TerrainGenerator {
 
 
                         bool isFar = worldZPos > FAR_Z_DISTANCE;
-
+                        bool isAtTreeSimplerDistance = worldZPos > SIMPLE_TREE_Z_DIST;
 
                         float drynessAtCurrentPos = drynessMap[y + drynessXInit, x + drynessYInit];
 
@@ -1129,7 +1189,7 @@ public class TerrainGenerator {
 
                             steps--;
 
-                            /*if (true)
+                            if (true)
                             {
 
 
@@ -1161,7 +1221,7 @@ public class TerrainGenerator {
                                         PrefabNames pf = cliffsToAdd[rnd.Next(cliffsToAdd.Count)];
 
                                         propsToPlace.Add(
-                                            new PropsToPlace(pf, worldPos, cliffs, row > 0 ? 1 : 99, true, true, null, 10, 30, 7, 1f)
+                                            new PropsToPlace(pf, worldPos, cliffs, 99, true, true, null, 10, 30, 7, 1f)
                                             );
 
 
@@ -1179,7 +1239,7 @@ public class TerrainGenerator {
                                 }
 
                             }
-                            */
+                            
 
                             if (true)
                             {
@@ -1217,7 +1277,7 @@ public class TerrainGenerator {
                             }
 
                         }
-                        /*else if (tgp == TerrainGenerationPass.Trees)
+                        else if (false && tgp == TerrainGenerationPass.Trees)
                         {
 
                             steps--;
@@ -1231,14 +1291,15 @@ public class TerrainGenerator {
                                     (1 - x_01) * (TREE_SEPARATION_MAX_DISTANCE - TREE_SEPARATION_MIN_DISTANCE);
 
 
-                                bool canPlaceTrees = 
+                                bool canPlaceTrees =
                                     worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN &&
                                     (
-                                        (grasstype == 2 && grasslike > 0.5f)
-                                        //||
+                                        (grasstype > 0 && grasslike > 0.5f && hillyLike < 0.2f && wettnessMap[y + wetnessXInit, x + wetnessYInit] > 0.5f)
                                         
-                                    ) 
-                                    && (row != 1);
+                                        ||
+                                        (row == 1)
+                                    );
+                                   // && (row != 1);
                                 
                                             //((flatness > TREE_GRASS_THRESHOLD && worldZPos > TERRAIN_Z_WIDTH + TREE_TERRAIN_MARGIN)
                                             //||
@@ -1271,19 +1332,20 @@ public class TerrainGenerator {
                                         PrefabNames pf;
                                         bool impostor = false;
                                         
-                                        if (row == 0)
-                                        {
-                                            pf = treesToAdd[rnd.Next(treesToAdd.Count)];
-                                        }
-                                        else
+                                        if (isFar)
                                         {
                                             impostor = true;
                                             pf = impostorTreesToAdd[rnd.Next(impostorTreesToAdd.Count)];
+                                            
+                                        }
+                                        else
+                                        {
+                                            pf = treesToAdd[rnd.Next(treesToAdd.Count)];
                                         }
 
 
                                         propsToPlace.Add(
-                                            new PropsToPlace(pf, worldPos, trees, isFar ? 1 : 99, true, true, !impostor ? lsc : null, 
+                                            new PropsToPlace(pf, worldPos, trees, 99, true, true, !impostor ? lsc : null, 
                                             treeDistance, treeDistance, treeDistance,0.7f)
                                             );
 
@@ -1296,7 +1358,7 @@ public class TerrainGenerator {
                                 }
                             }
                             
-                        }*/
+                        }
 
                         // Texture[3] increases with height but only on surfaces facing positive Z axis 
                         //splatWeights[3] = height * Mathf.Clamp01(normal.z);
@@ -2073,6 +2135,7 @@ public class TerrainGenerator {
 
     private Dictionary<Coordinate, int> indexLookup = new Dictionary<Coordinate, int>();
 
+    /*
     private float[,] heights;
 
     private int genWidth;
@@ -2080,36 +2143,65 @@ public class TerrainGenerator {
     private float genHeight;
     private float sampleWidth;
     private float sampleLength;
+    */
 
-
-    private MeshRenderer GenerateTerrainMesh(Terrain terrain, Material mat, bool[,] shouldUse)
+    private MeshRenderer GenerateTerrainMesh(
+        Terrain terrain, 
+        Material mat, 
+        bool[,] shouldUse
+        )
     {
         var terrainData = terrain.terrainData;
-        heights = terrainData.GetHeights(0, 0, terrainData.heightmapWidth, terrainData.heightmapHeight);
+        float[,] heights = terrainData.GetHeights(0, 0, terrainData.heightmapWidth, terrainData.heightmapHeight);
 
-        genWidth = heights.GetLength(0);
-        genLength = heights.GetLength(1);
-        sampleWidth = terrainData.size.x / genWidth;
-        sampleLength = terrainData.size.z / genLength;
-        genHeight = terrainData.size.y;
+        int genWidth = heights.GetLength(0);
+        int genLength = heights.GetLength(1);
+        float sampleWidth = terrainData.size.x / genWidth;
+        float sampleLength = terrainData.size.z / genLength;
+        float genHeight = terrainData.size.y;
 
         var parent = new GameObject(terrain.name + " Mesh").transform;
+
+        MeshRenderer renderer = GenerateTerrainMesh(parent, heights, mat, shouldUse, sampleWidth, sampleLength, genHeight);
+
+        var terrainTransform = terrain.transform;
+        parent.position = terrainTransform.position;
+        parent.rotation = terrainTransform.rotation;
+        parent.localScale = terrainTransform.localScale;
+        parent.parent = terrainTransform;
+
+        return renderer;
+    }
+
+
+    private MeshRenderer GenerateTerrainMesh(
+        Transform parent,
+        float[,] heights, 
+        Material mat,
+        bool[,] shouldUse,
+        float sampleWidth,
+        float sampleLength,
+        float genHeight
+        )
+    {
+        int genWidth = heights.GetLength(0);
+        int genLength = heights.GetLength(1);
 
         for (int x = 0; x + 1 < genWidth; x++)
         {
             for (int y = 0; y + 1 < genLength; y++)
             {
-                if (shouldUse[x, y])
+                if (shouldUse == null || shouldUse[x, y])
                 {
                     if (vertices.Count + 4 > 65535)
                     {
                         GenerateSubMesh(parent, mat);
                     }
 
-                    var v0 = GetOrCreateVertex(x, y);
-                    var v1 = GetOrCreateVertex(x + 1, y);
-                    var v2 = GetOrCreateVertex(x + 1, y + 1);
-                    var v3 = GetOrCreateVertex(x, y + 1);
+                    var v0 = GetOrCreateVertex(x, y, genWidth, genLength, sampleWidth, sampleLength, genHeight, heights);
+                    var v1 = GetOrCreateVertex(x + 1, y, genWidth, genLength, sampleWidth, sampleLength, genHeight, heights);
+                    var v2 = GetOrCreateVertex(x + 1, y + 1, genWidth, genLength, sampleWidth, sampleLength, genHeight, heights);
+                    var v3 = GetOrCreateVertex(x, y + 1, genWidth, genLength, sampleWidth, sampleLength, genHeight, heights);
 
                     triangles.Add(v0);
                     triangles.Add(v1);
@@ -2124,11 +2216,7 @@ public class TerrainGenerator {
 
         MeshRenderer renderer = GenerateSubMesh(parent,mat);
 
-        var terrainTransform = terrain.transform;
-        parent.position = terrainTransform.position;
-        parent.rotation = terrainTransform.rotation;
-        parent.localScale = terrainTransform.localScale;
-        parent.parent = terrainTransform;
+
 
         return renderer;
     }
@@ -2168,7 +2256,7 @@ public class TerrainGenerator {
         return renderer;
     }
 
-    private int GetOrCreateVertex(int x, int y)
+    private int GetOrCreateVertex(int x, int y, int genWidth, int genLength, float sampleWidth, float sampleLength, float genHeight, float[,] heights)
     {
         var coord = new Coordinate(x, y);
         if (indexLookup.ContainsKey(coord))
@@ -2176,16 +2264,16 @@ public class TerrainGenerator {
             return indexLookup[coord];
         }
 
-        var center = GetHeight(x, y);
+        var center = GetHeight(x, y, sampleWidth, sampleLength, genHeight,  heights);
         vertices.Add(center);
         //I don't know why exactly, but x and y are swapped here... 
         uvs.Add(new Vector2((float)y / genLength, (float)x / genWidth));
 
         //Calculate normal
-        var left = x > 0 ? GetHeight(x - 1, y) : center;
-        var right = x + 1 < genWidth ? GetHeight(x + 1, y) : center;
-        var front = y > 0 ? GetHeight(x, y - 1) : center;
-        var back = y + 1 < genLength ? GetHeight(x, y + 1) : center;
+        var left = x > 0 ? GetHeight(x - 1, y, sampleWidth, sampleLength, genHeight, heights) : center;
+        var right = x + 1 < genWidth ? GetHeight(x + 1, y, sampleWidth, sampleLength, genHeight, heights) : center;
+        var front = y > 0 ? GetHeight(x, y - 1, sampleWidth, sampleLength, genHeight, heights) : center;
+        var back = y + 1 < genLength ? GetHeight(x, y + 1, sampleWidth, sampleLength, genHeight, heights) : center;
 
         var widthDiff = right - left;
         var lengthDiff = front - back;
@@ -2196,7 +2284,7 @@ public class TerrainGenerator {
         return index;
     }
 
-    private Vector3 GetHeight(int x, int y)
+    private Vector3 GetHeight(int x, int y, float sampleWidth, float sampleLength, float genHeight, float[,] heights)
     {
         //I don't know why exactly, but x and y are swapped here... 
         return new Vector3(y * sampleLength, heights[x, y] * genHeight, x * sampleWidth);

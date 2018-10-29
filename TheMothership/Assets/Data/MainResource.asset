@@ -302,6 +302,8 @@ MonoBehaviour:
     prefab: {fileID: 4532950424384948, guid: c02fd91a318fa45408631f80c8abaf22, type: 2}
   - name: Crow
     prefab: {fileID: 4204942241419404, guid: 54c90bbe541e4e348b63307b05ab4017, type: 2}
+  - name: LitterSmallGeyser
+    prefab: {fileID: 4419312285100754, guid: badf63d65644ed945a332c0f1742262d, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:

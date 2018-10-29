@@ -14,8 +14,12 @@ public class PlayerSpawner : Spawner, Initiates{
     private FocusMovement cameraFocus;
     // private Camera cam;
 
+    public MechNames startAs = MechNames.MortarGunarrayMelee;
+    public SceneReferenceNames startAt = SceneReferenceNames.NodeUnderground;
+
     public void Start()
     {
+
         Initiate();
     }
 
@@ -35,13 +39,15 @@ public class PlayerSpawner : Spawner, Initiates{
     // Use this for initialization
     void Spawn () {
 
+        
+
         //Debug.Log("Player spawner init");
 
         o = Global.instance;
         player = Global.PLAYER_STANDARD_SETUP.Clone();
         Global.AddInventoryHandler(player);
 
-        SpawnMech(player, MechNames.MortarGunarrayMelee, Global.NAME_PLAYER_GAMEOBJECT, Global.LAYER_PLAYER);
+        SpawnMech(player, startAs, Global.NAME_PLAYER_GAMEOBJECT, Global.LAYER_PLAYER);
        // player.AddAI<AIMech>();
 
         //Focus
@@ -106,6 +112,8 @@ public class PlayerSpawner : Spawner, Initiates{
 
         //Add player controller
         player.AddAI<PlayerKeypresses>();
+
+        Global.Enter(player, startAt);
 
         /*//GameObject
         playerNode = new GameObject(Global.NAME_PLAYER_GAMEOBJECT).transform;

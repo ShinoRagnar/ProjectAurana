@@ -101,22 +101,22 @@ Material:
     - _P1Mul: 0.276
     - _P2Mul: 0.502
     - _Parallax: 0.02
-    - _Particles1OffsetX: 8.712366
-    - _Particles1OffsetY: 4.496024
+    - _Particles1OffsetX: 25.251268
+    - _Particles1OffsetY: 12.807204
     - _Particles1Tiling: 1
-    - _Particles2OffsetX: 8.712366
-    - _Particles2OffsetY: 4.496024
+    - _Particles2OffsetX: 25.251268
+    - _Particles2OffsetY: 12.807204
     - _Particles2Tiling: 0.5
-    - _Smoke1OffsetX: 2.2692661
-    - _Smoke1OffsetY: 4.3774385
+    - _Smoke1OffsetX: 7.2007413
+    - _Smoke1OffsetY: 13.422769
     - _Smoke1Tiling: 0.8
-    - _Smoke2OffsetX: 4.711804
-    - _Smoke2OffsetY: 4.711804
+    - _Smoke2OffsetX: 12.581802
+    - _Smoke2OffsetY: 12.581802
     - _Smoke2Tiling: 0.75
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _SurfaceOffsetX: 5.1017985
+    - _SurfaceOffsetX: 12.856381
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:

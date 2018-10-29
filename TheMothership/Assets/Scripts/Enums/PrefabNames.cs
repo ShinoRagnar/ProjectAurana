@@ -71,6 +71,7 @@ public enum PrefabNames
 	LitterRockOne = 1107270949,
 	LitterRockThree = 1108207434,
 	LitterRockTwo = 1107543328,
+	LitterSmallGeyser = 1108597480,
 	MenuEquipment = 1204244291,
 	MenuInventory = 1203798535,
 	MenuTooltip = 1204635275,

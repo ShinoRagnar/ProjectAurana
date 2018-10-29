@@ -408,19 +408,22 @@ public class Global : MonoBehaviour {
         ShowOnly(SHOWING,restoreTerrain);
     }
 
+    public static void Enter(GameUnit u, SceneReferenceNames toEnter)
+    {
+        SHOWING = toEnter;
+        RestoreScene();
+        u.slot = SHOWING;
+    }
+
     public static void TriggerEnter(GameUnit gu, GameObject from, GameEvent gameEvent)
     {
         if (gu.isPlayer && gameEvent == GameEvent.CaveEnter && SHOWING == SceneReferenceNames.NodeAboveGround)
         {
-            SHOWING = SceneReferenceNames.NodeUnderground;
-            RestoreScene();
-            gu.slot = SHOWING;
+            Enter(gu, SceneReferenceNames.NodeUnderground);
         }
         else if(gu.isPlayer && gameEvent == GameEvent.CaveExit && SHOWING == SceneReferenceNames.NodeUnderground)
         {
-            SHOWING = SceneReferenceNames.NodeAboveGround;
-            RestoreScene();
-            gu.slot = SHOWING;
+            Enter(gu, SceneReferenceNames.NodeAboveGround);
         }
 
         
