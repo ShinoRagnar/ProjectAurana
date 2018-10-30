@@ -35,12 +35,13 @@ public class Room : MonoBehaviour {
         this.zSize = z;
         this.resolution = resolution;
 
-    }
-
-    private void OnValidate()
-	{
         FullUpdate();
     }
+
+    //private void OnValidate()
+	//{
+    //    FullUpdate();
+    //}
 
     public void FullUpdate() {
         Initialize();
@@ -64,7 +65,7 @@ public class Room : MonoBehaviour {
                 GameObject meshObj = new GameObject("mesh");
                 meshObj.transform.parent = transform;
 
-                meshObj.AddComponent<MeshRenderer>().sharedMaterial = mat != null ? mat : new Material(Shader.Find("Standard"));
+                meshObj.AddComponent<MeshRenderer>().sharedMaterial = mat;
                 meshFilters[i] = meshObj.AddComponent<MeshFilter>();
                 meshFilters[i].sharedMesh = new Mesh();
             }

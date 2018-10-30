@@ -29,6 +29,7 @@ public class TerrainFace {
     public void ConstructMesh()
     {
 
+
         int xMod = 1;
         int yMod = 1;
         int zMod = 1;
@@ -57,10 +58,15 @@ public class TerrainFace {
         int xResolution = resolution*xMod;
         int yResolution = resolution*yMod;
 
+        Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), 1f / (float)(yResolution - 1f));
 
         Vector3[] vertices = new Vector3[xResolution * yResolution];
+        Vector2[] uvs = new Vector2[xResolution * yResolution];
+        Vector3[] normals = new Vector3[xResolution * yResolution];
+
         int[] triangles = new int[(xResolution - 1) * (yResolution - 1) * 6];
         int triIndex = 0;
+        
 
         int i = 0;
         for (int y = 0; y < yResolution; y++)
@@ -69,10 +75,13 @@ public class TerrainFace {
             {
 
                 Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
+
                 Vector3 pointOnUnitCube = localUp*zMod + (percent.x - .5f) * 2 * axisA*((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
                 //Vector3 pointOnUnitSphere = pointOnUnitCube.normalized;
                 vertices[i] = pointOnUnitCube; //pointOnUnitSphere;
+                uvs[i] = percent;// new Vector2(((float)y) / (float)(yResolution - 1f), ((float)x) / (float)(xResolution - 1));
+                //normals[i] = GetNormal(zMod,xMod,yMod,percent,onePercent);
 
                 if (x != xResolution - 1 && y != yResolution - 1)
                 {
@@ -89,8 +98,39 @@ public class TerrainFace {
             }
         }
         mesh.Clear();
+
         mesh.vertices = vertices;
+        mesh.uv = uvs;
+       // mesh.normals = normals;
         mesh.triangles = triangles;
+
+
+
         mesh.RecalculateNormals();
+        //mesh.RecalculateBounds();
     }
+
+    /*
+    public Vector3 GetHeight(int zMod, int xMod, int yMod, Vector3 percent)
+    {
+        return localUp* zMod +(percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+
+    }*/
+
+    /*public Vector3 GetNormal(int zMod, int xMod, int yMod, Vector3 percent, Vector3 onePercent)
+    {
+        var left = GetHeight(zMod, xMod, yMod, new Vector3(percent.x - onePercent.x, percent.y));
+        var right = GetHeight(zMod, xMod, yMod, new Vector3(percent.x + onePercent.x, percent.y));
+        var front = GetHeight(zMod, xMod, yMod, new Vector3(percent.x, percent.y-onePercent.y));
+        var back = GetHeight(zMod, xMod, yMod, new Vector3(percent.x, percent.y+onePercent.y));
+
+        //x + 1 < genWidth ? GetHeight(x + 1, y, sampleWidth, sampleLength, genHeight, heights) : center;
+        //var front = y > 0 ? GetHeight(x, y - 1, sampleWidth, sampleLength, genHeight, heights) : center;
+        //var back = y + 1 < genLength ? GetHeight(x, y + 1, sampleWidth, sampleLength, genHeight, heights) : center;
+
+        var widthDiff = right - left;
+        var lengthDiff = front - back;
+        return Vector3.Cross(widthDiff,lengthDiff);
+
+    }*/
 }

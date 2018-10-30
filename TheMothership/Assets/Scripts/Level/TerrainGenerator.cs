@@ -279,8 +279,8 @@ public class TerrainGenerator {
     public static float BIRD_WAYPOINT_HEIGHT = 10;
 
     //Underground
-    public static float UNDERGROUND_ROOF_HEIGHT = 10;
-    public static float UNDERGROUND_GROUND_HEIGHT = 10;
+    //public static float UNDERGROUND_ROOF_HEIGHT = 10;
+    //public static float UNDERGROUND_GROUND_HEIGHT = 10;
 
 
 
@@ -505,26 +505,18 @@ public class TerrainGenerator {
         GameObject terr = new GameObject("UndergroundMeshes <" + tr.roomNr + ">");
         terr.transform.parent = terra.transform;
 
-        GameObject roof = new GameObject("Roof <" + tr.roomNr + ">");
-        roof.transform.parent = terr.transform;
-
-        GameObject background = new GameObject("Background <" + tr.roomNr + ">");
-        background.transform.parent = terr.transform;
-
-        float yRoofPos = tr.maxY;
-        float yFloorPos = tr.minY;
-
         float length = (tr.maxX - tr.minX);
         float height = (tr.maxY - tr.minY);
 
-        float xPos = tr.minX;
-        float resolution = 0.5f;
+        float resolution = 1;
 
-        float xLength = length/2f;
-        float zLength = length;
-        float yLength = height - UNDERGROUND_ROOF_HEIGHT - UNDERGROUND_GROUND_HEIGHT;
+        float xLength = length;
+        float zLength = length / 2f;
+        float yLength = height;
 
+        Vector3 pos = new Vector3(tr.minX+ xLength/2, tr.minY+yLength/2, -TERRAIN_Z_WIDTH + zLength/2);
 
+        terr.AddComponent<Room>().SetParameters(pos, (int)(xLength / 2f), (int)(yLength / 2f), (int)(zLength / 2f), cliff, (int)resolution);
 
         /*
 
