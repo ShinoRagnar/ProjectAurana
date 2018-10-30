@@ -316,7 +316,8 @@ public class NavMeshAttachor : MonoBehaviour, Initiates {
     {
         foreach (Transform child in t)
         {
-            if (!Global.NonNavigateableGrounds[slot].Contains(child)){
+            if (!Global.NonNavigateableGrounds[slot].Contains(child) && !Global.Grounds[slot].Contains(child))
+            {
 
                 if (child.GetComponent<BoxCollider>() != null)
                 {

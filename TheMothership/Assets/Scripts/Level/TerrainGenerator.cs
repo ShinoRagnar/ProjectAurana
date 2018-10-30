@@ -108,43 +108,6 @@ public class TerrainGenerator {
         }
     }
 
-    private class TerrainRoom
-    {
-        public int roomNr;
-        public List<Ground> members;
-        public float maxX;
-        public float minX;
-        public float maxY;
-        public float minY;
-
-        public TerrainRoom(int room, Ground g)
-        {
-            this.roomNr = room;
-            this.members = new List<Ground>();
-            maxX = g.GetRightSide().x;
-            minX = g.GetLeftSide().x;
-            maxY = g.GetSurfaceY(0);
-            minY = g.GetBottomY();
-
-            this.members.Add(g);
-        }
-
-        public void AddMember(Ground g)
-        {
-            maxX = g.GetRightSide().x > maxX ? g.GetRightSide().x : maxX;
-            minX = g.GetLeftSide().x < minX ? g.GetLeftSide().x : minX;
-            maxY = g.GetSurfaceY(0) > maxY ? g.GetSurfaceY(0) : maxY;
-            minY = g.GetBottomY() < minY ? g.GetBottomY() : minY;
-
-            members.Add(g);
-        }
-
-        public void DebugPrint()
-        {
-            Debug.Log("Room<" + roomNr + "> maxX:" + maxX + " minX:" + minX + " maxY:" + maxY + " minY:" + minY);
-        }
-    }
-
     private struct TerrainMaps
     {
         public float[,,] splatmap;
@@ -456,26 +419,34 @@ public class TerrainGenerator {
             new Vector2(10,10)
         };
 
+        Material cliff = Global.Resources[MaterialNames.Cliff];
+        int resolution = 1;
+
+
         foreach (Transform t in Global.Grounds[slot])
         {
-            CreateBoundriesForRoom(Global.Grounds[slot][t]);
+            GatherMembersForRoom(Global.Grounds[slot][t]);
         }
 
         foreach (Transform t in Global.NonNavigateableGrounds[slot])
         {
-            CreateBoundriesForRoom(Global.NonNavigateableGrounds[slot][t]);
+            GatherMembersForRoom(Global.NonNavigateableGrounds[slot][t]);
         }
 
         foreach (int i in rooms)
         {
-            TerrainRoom tr = rooms[i];
-            CreateRoom(terra, tr, TerrainRoomType.Cave, materials, tileSizes);
+
+            GameObject terr = new GameObject("UndergroundMeshes <" + i + ">");
+            terr.transform.parent = terra.transform;
+
+            rooms[i].GroupMembers();
+            rooms[i].SpawnRoom(terr.transform, cliff, resolution, TERRAIN_Z_MARGIN);
         }
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";
     }
 
-    private void CreateBoundriesForRoom(Ground g)
+    private void GatherMembersForRoom(Ground g)
     {
         GroundHints h = g.hints;
 
@@ -492,98 +463,6 @@ public class TerrainGenerator {
         }
     }
 
-    private void CreateRoom(
-        GameObject terra,
-        TerrainRoom tr,
-        TerrainRoomType trt,
-        Material[] materials,
-        Vector2[] tileSizes
-    )
-    {
-        Material cliff = Global.Resources[MaterialNames.Cliff];
-
-        GameObject terr = new GameObject("UndergroundMeshes <" + tr.roomNr + ">");
-        terr.transform.parent = terra.transform;
-
-        float length = (tr.maxX - tr.minX);
-        float height = (tr.maxY - tr.minY);
-
-        float resolution = 1;
-
-        float xLength = length;
-        float zLength = length / 2f;
-        float yLength = height;
-
-        Vector3 pos = new Vector3(tr.minX+ xLength/2, tr.minY+yLength/2, -TERRAIN_Z_WIDTH + zLength/2);
-
-        terr.AddComponent<Room>().SetParameters(pos, (int)(xLength / 2f), (int)(yLength / 2f), (int)(zLength / 2f), cliff, (int)resolution);
-
-        /*
-
-        MeshRenderer roofRen = GenerateTerrainMesh(
-            roof.transform, CreateRoof((int)(xLength * resolution),(int) (zLength * resolution)), 
-            cliff, null, 1f/resolution, 1f/resolution, UNDERGROUND_ROOF_HEIGHT);
-
-        roofRen.transform.position = new Vector3(xPos+length-1f, yRoofPos, -TERRAIN_Z_WIDTH);
-        roofRen.transform.localEulerAngles = new Vector3(0, 0, 180);
-
-        MeshRenderer backRen = GenerateTerrainMesh(
-            roof.transform, CreateBackground((int)(zLength * resolution), (int)(yLength  * resolution)),
-            cliff, null, 1f / resolution, 1f / resolution, xLength - TERRAIN_Z_WIDTH);
-
-
-        backRen.transform.localEulerAngles = new Vector3(0, 90, -90);
-        backRen.transform.position = new Vector3(xPos, yRoofPos - UNDERGROUND_ROOF_HEIGHT , -TERRAIN_Z_WIDTH*2+  xLength);
-
-        */
-
-        /*
-        GenerateTerrainMesh(
-    Transform parent,
-    float[,] heights,
-    Material mat,
-    bool[,] shouldUse,
-    float sampleWidth,
-    float sampleLength,
-    float genHeight
-    */
-
-        /*
-        GameObject roof = new GameObject("Roof <" + tr.roomNr + ">");
-        roof.transform.parent = terr.transform;
-
-        Terrain roofTerrain = roof.gameObject.AddComponent<Terrain>();
-        roof.transform.position = new Vector3(xPos, yRoofPos, -TERRAIN_Z_WIDTH);
-
-        TerrainData terrainData = new TerrainData();
-
-        terrainData.heightmapResolution = (int)(length * resolution);
-
-        int xLength = (int)length;
-        int zLength = (int)(length/2);
-
-        terrainData.size = new Vector3(xLength, UNDERGROUND_ROOF_HEIGHT, zLength);
-        
-        terrainData.SetHeights(0, 0, CreateRoof(terrainData.heightmapHeight, terrainData.heightmapWidth));
-
-        roofTerrain.terrainData = terrainData;
-
-        MeshRenderer mr = GenerateTerrainMesh(roofTerrain, Global.Resources[MaterialNames.Cliff], null);
-
-        //mr.transform.localRotation *= Quaternion.Euler(0, 0, 0);
-        mr.transform.parent = terr.transform;
-        */
-        //roof.SetActive(false);
-
-
-
-
-
-        //tr.DebugPrint();
-        //SetSplatMapTextures(roofTerrain, materials, tileSizes, resolution);
-
-
-    }
 
     public float[,] CreateRoof(int xLength, int zLength)
     {

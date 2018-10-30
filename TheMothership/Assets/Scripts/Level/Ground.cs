@@ -8,10 +8,10 @@ public class Ground {
     public Transform obj;
     public DictionaryList<Vector3, Ground> links;
     public DictionaryList<Vector3, Vector3> startPointToEndPoint;
-    public DictionaryList<Vector3, DictionaryList<Ground,int>> distances;
+    public DictionaryList<Vector3, DictionaryList<Ground, int>> distances;
 
-   // public ListHash<Ground> group;
-   // public Color groupColor;
+    // public ListHash<Ground> group;
+    // public Color groupColor;
 
     private static ListHash<Ground> search = new ListHash<Ground>();
     private static ListHash<Ground> next = new ListHash<Ground>();
@@ -27,11 +27,11 @@ public class Ground {
     }
     public Vector3 GetMidPoint()
     {
-        return new Vector3(obj.transform.position.x, obj.transform.position.y+obj.transform.localScale.y/2);
+        return new Vector3(obj.transform.position.x, obj.transform.position.y + obj.transform.localScale.y / 2);
     }
     public Vector3 GetLeftSide()
     {
-        return new Vector3(obj.transform.position.x-obj.transform.localScale.x/2, 
+        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
             obj.transform.position.y + obj.transform.localScale.y / 2);
     }
     public float GetDepth()
@@ -43,6 +43,71 @@ public class Ground {
     {
         return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
             obj.transform.position.y + obj.transform.localScale.y / 2);
+    }
+
+    public bool IsOnSameLevel(Ground g, bool yAxis) {
+
+        if (yAxis) {
+
+            float topY = GetSurfaceY(0);
+            float bottomY = GetBottomY();
+
+            return (g.GetSurfaceY(0) >= bottomY && g.GetSurfaceY(0) <= topY) || (g.GetBottomY() >= bottomY && g.GetBottomY() <= topY);
+        }
+        else
+        {
+            float leftX = GetLeftSide().x;
+            float rightX = GetRightSide().x;
+
+            return (g.GetLeftSide().x >= leftX && g.GetLeftSide().x <= rightX) || (g.GetRightSide().x >= leftX && g.GetRightSide().x <= rightX);
+        }
+    }
+
+    public float Distance(Ground g, bool yAxis) {
+
+        if (yAxis)
+        {
+            return
+                Mathf.Min(
+                    Mathf.Min(
+                        Mathf.Abs(g.GetSurfaceY(0) - GetSurfaceY(0)),
+                            Mathf.Min(
+                                Mathf.Abs(g.GetBottomY() - GetSurfaceY(0)), 
+                                Mathf.Abs(g.GetSurfaceY(0) - GetBottomY())
+                                )
+                            ),
+                Mathf.Abs(g.GetBottomY() - GetBottomY())
+                );
+
+        }
+        else {
+            return
+                Mathf.Min(
+                    Mathf.Min(
+                        Mathf.Abs(g.GetLeftSide().x - GetLeftSide().x),
+                             Mathf.Min
+                                (Mathf.Abs(g.GetLeftSide().x - GetRightSide().x), 
+                                Mathf.Abs(g.GetRightSide().x - GetLeftSide().x))
+                            ),
+                Mathf.Abs(g.GetRightSide().x - GetRightSide().x)
+                );
+
+
+           ;
+        }
+
+    }
+
+    public bool IsWithinOvarlappingDistance(Ground g, float distance) {
+
+        bool ret = (IsOnSameLevel(g, true) && Distance(g, false) <= distance) || (IsOnSameLevel(g, false) && Distance(g, true) <= distance);
+
+        if (false) {
+            Debug.Log("(IsOnSameLevel(g, true) "+ IsOnSameLevel(g, true)+ " Distance(g, false) <= distance) "+ Distance(g, false));
+            Debug.Log("(IsOnSameLevel(g, false) " + IsOnSameLevel(g, false) + " Distance(g, true) " + Distance(g, true));
+        }
+
+        return ret;
     }
 
     public Vector3 GetRightPointAtDistance(Vector3 from, float distance)

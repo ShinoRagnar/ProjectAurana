@@ -26,6 +26,12 @@ public class TerrainFace {
         axisB = Vector3.Cross(localUp, axisA);
     }
 
+    //public void GenerateHeightMap(List<>) {
+
+
+
+    //}
+
     public void ConstructMesh()
     {
 
