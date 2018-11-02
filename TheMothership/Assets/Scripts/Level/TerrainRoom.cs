@@ -26,31 +26,54 @@ public class TerrainRoom
     public int ySize = 2;
     public int zSize = 1;
 
+    public float xLength;
+    public float zLength;
+    public float yLength;
+
     public Vector3 position;
 
     private Material mat;
 
     private Transform self;
 
+    public float textureSize;
+
+    public Noise noise;
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
-    public void SpawnRoom(Transform self, Material mat, int resolution, float zShift)
+    public void SpawnRoom(Transform self, Material[] materials, float zShift)
     {
+        noise = new Noise();
+
+        Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
+        terrainMat.SetTexture("_Splat0", materials[0].mainTexture);
+
 
         float length = (maxX - minX);
         float height = (maxY - minY);
 
-        this.resolution = resolution;
+        if(Mathf.Max(length,height) < 120)
+        {
+            this.resolution = 4;
+        }
+        else
+        {
+            this.resolution = 1;
+        }
 
-        float xLength = length;
-        float zLength = length / 2f;
-        float yLength = height;
+        textureSize = 10;
+
+
+
+        this.xLength = length;
+        this.zLength = length / 2f;
+        this.yLength = height;
 
         Vector3 pos = new Vector3(minX + xLength / 2, minY + yLength / 2, -zShift + zLength / 2);
 
         this.self = self;
-        this.mat = mat;
+        this.mat = terrainMat;
         this.position = pos;
         this.xSize = (int)(xLength / 2f);
         this.ySize = (int)(yLength / 2f);
@@ -59,11 +82,13 @@ public class TerrainRoom
         FullUpdate();
     }
 
+
     private void FullUpdate()
     {
         Initialize();
         GenerateMesh();
         self.position = position;
+        self.gameObject.isStatic = true;
     }
 
     private void Initialize()
@@ -87,7 +112,7 @@ public class TerrainRoom
                 meshFilters[i].sharedMesh = new Mesh();
             }
 
-            terrainFaces[i] = new TerrainFace(meshFilters[i].sharedMesh, resolution, directions[i], xSize, ySize, zSize);
+            terrainFaces[i] = new TerrainFace(meshFilters[i].sharedMesh, this, directions[i]);
         }
     }
 
@@ -95,7 +120,7 @@ public class TerrainRoom
     {
         foreach (TerrainFace face in terrainFaces)
         {
-            face.ConstructMesh();
+            face.ConstructMesh(position, directionMembers[face.localUp]);
         }
     }
 
@@ -144,7 +169,7 @@ public class TerrainRoom
         foreach (Ground g in members)
         {
 
-            if (g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor)
+            if (g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
             {
 
                 if (Mathf.Abs(g.GetLeftSide().x - minX) <= SIDE_ATTACH_DISTANCE)

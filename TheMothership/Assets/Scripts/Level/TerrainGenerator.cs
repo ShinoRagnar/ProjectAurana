@@ -419,10 +419,6 @@ public class TerrainGenerator {
             new Vector2(10,10)
         };
 
-        Material cliff = Global.Resources[MaterialNames.Cliff];
-        int resolution = 1;
-
-
         foreach (Transform t in Global.Grounds[slot])
         {
             GatherMembersForRoom(Global.Grounds[slot][t]);
@@ -440,7 +436,7 @@ public class TerrainGenerator {
             terr.transform.parent = terra.transform;
 
             rooms[i].GroupMembers();
-            rooms[i].SpawnRoom(terr.transform, cliff, resolution, TERRAIN_Z_MARGIN);
+            rooms[i].SpawnRoom(terr.transform, materials, TERRAIN_Z_MARGIN);
         }
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";

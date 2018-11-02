@@ -45,6 +45,58 @@ public class Ground {
             obj.transform.position.y + obj.transform.localScale.y / 2);
     }
 
+    public Vector3 GetBottomRightSideAgainstCamera()
+    {
+        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
+            obj.transform.position.y - obj.transform.localScale.y / 2,
+            obj.transform.position.z - obj.transform.localScale.z / 2);
+    }
+
+    public Vector3 GetBottomRightSideAwayFromCamera()
+    {
+        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
+            obj.transform.position.y - obj.transform.localScale.y / 2,
+            obj.transform.position.z + obj.transform.localScale.z / 2);
+    }
+
+    public Vector3 GetTopRightSideAwayFromCamera()
+    {
+        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
+            obj.transform.position.y + obj.transform.localScale.y / 2,
+            obj.transform.position.z + obj.transform.localScale.z / 2);
+    }
+
+    public Vector3 GetTopRightSideAgainstCamera()
+    {
+        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
+            obj.transform.position.y + obj.transform.localScale.y / 2,
+            obj.transform.position.z - obj.transform.localScale.z / 2);
+    }
+
+
+    public Vector3 GetTopLeftSideAgainstCamera()
+    {
+        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
+            obj.transform.position.y + obj.transform.localScale.y / 2,
+            obj.transform.position.z - obj.transform.localScale.z / 2);
+    }
+
+
+    public Vector3 GetBottomLeftSideAgainstCamera()
+    {
+        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
+            obj.transform.position.y - obj.transform.localScale.y / 2,
+            obj.transform.position.z - obj.transform.localScale.z / 2);
+    }
+
+    public Vector3 GetTopLeftSideAwayFromCamera()
+    {
+        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
+            obj.transform.position.y + obj.transform.localScale.y / 2,
+            obj.transform.position.z + obj.transform.localScale.z / 2);
+    }
+
+
     public bool IsOnSameLevel(Ground g, bool yAxis) {
 
         if (yAxis) {
@@ -52,14 +104,23 @@ public class Ground {
             float topY = GetSurfaceY(0);
             float bottomY = GetBottomY();
 
-            return (g.GetSurfaceY(0) >= bottomY && g.GetSurfaceY(0) <= topY) || (g.GetBottomY() >= bottomY && g.GetBottomY() <= topY);
+            return (g.GetSurfaceY(0) >= bottomY && g.GetSurfaceY(0) <= topY) 
+                || (g.GetBottomY() >= bottomY && g.GetBottomY() <= topY)
+                || (bottomY >= g.GetBottomY() && bottomY <= g.GetSurfaceY(0))
+                || (topY >= g.GetBottomY() && topY <= g.GetSurfaceY(0))
+                ;
         }
         else
         {
             float leftX = GetLeftSide().x;
             float rightX = GetRightSide().x;
 
-            return (g.GetLeftSide().x >= leftX && g.GetLeftSide().x <= rightX) || (g.GetRightSide().x >= leftX && g.GetRightSide().x <= rightX);
+            return 
+                (g.GetLeftSide().x >= leftX && g.GetLeftSide().x <= rightX) 
+                || (g.GetRightSide().x >= leftX && g.GetRightSide().x <= rightX)
+                || (leftX >= g.GetLeftSide().x && leftX <= g.GetRightSide().x)
+                || (rightX >= g.GetLeftSide().x && rightX <= g.GetRightSide().x)
+                ;
         }
     }
 
