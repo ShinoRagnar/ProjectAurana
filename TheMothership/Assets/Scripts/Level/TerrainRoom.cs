@@ -32,7 +32,7 @@ public class TerrainRoom
 
     public Vector3 position;
 
-    private Material mat;
+   // private Material mat;
 
     private Transform self;
 
@@ -40,17 +40,17 @@ public class TerrainRoom
 
     public Noise noise;
 
+    //public MeshRenderer renderer;
+
+    public Material[] materials;
+
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
     public void SpawnRoom(Transform self, Material[] materials, float zShift)
     {
         noise = new Noise();
 
-        Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
-        terrainMat.SetTexture("_Splat0", materials[0].mainTexture);
-        terrainMat.SetTexture("_Splat1", materials[1].mainTexture);
-
-
+        this.materials = materials;
 
         float length = (maxX - minX);
         float height = (maxY - minY);
@@ -75,7 +75,7 @@ public class TerrainRoom
         Vector3 pos = new Vector3(minX + xLength / 2, minY + yLength / 2, -zShift + zLength / 2);
 
         this.self = self;
-        this.mat = terrainMat;
+       // this.mat = terrainMat;
         this.position = pos;
         this.xSize = (int)(xLength / 2f);
         this.ySize = (int)(yLength / 2f);
@@ -88,7 +88,7 @@ public class TerrainRoom
     private void FullUpdate()
     {
         Initialize();
-        GenerateMesh();
+        GenerateMeshAndTexture();
         self.position = position;
         self.gameObject.isStatic = true;
     }
@@ -104,25 +104,26 @@ public class TerrainRoom
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (meshFilters[i] == null)
-            {
+            //if (meshFilters[i] == null)
+           // {
                 GameObject meshObj = new GameObject("Submesh "+ directions[i].ToString());
                 meshObj.transform.parent = self;
 
-                meshObj.AddComponent<MeshRenderer>().sharedMaterial = mat;
+                MeshRenderer renderer = meshObj.AddComponent<MeshRenderer>();
+               // renderer.sharedMaterial = mat;
                 meshFilters[i] = meshObj.AddComponent<MeshFilter>();
                 meshFilters[i].sharedMesh = new Mesh();
-            }
+            //}
 
-            terrainFaces[i] = new TerrainFace(meshFilters[i].sharedMesh, this, directions[i]);
+            terrainFaces[i] = new TerrainFace(meshFilters[i].sharedMesh, this, directions[i], renderer);
         }
     }
 
-    void GenerateMesh()
+    void GenerateMeshAndTexture()
     {
         foreach (TerrainFace face in terrainFaces)
         {
-            face.ConstructMesh(position, directionMembers[face.localUp]);
+            face.ConstructMeshAndTexture(position, directionMembers[face.localUp]);
         }
     }
 

@@ -6,8 +6,8 @@ Shader "UVFree/Terrain/StandardMetallic" {
 		_UVScale("Texture Scale %", Float) = 100.0	
 		_BumpScale("Bump Scale", Range(-2.0, 2.0)) = 1.0
 				
-		// set by terrain engine
-		[HideInInspector] _Control ("Control (RGBA)", 2D) = "red" {}
+		// set by terrain engine [HideInInspector]
+		 _Control ("Control (RGBA)", 2D) = "red" {}
 		[HideInInspector] _Splat3 ("Layer 3 (A)", 2D) = "white" {}
 		[HideInInspector] _Splat2 ("Layer 2 (B)", 2D) = "white" {}
 		[HideInInspector] _Splat1 ("Layer 1 (G)", 2D) = "white" {}

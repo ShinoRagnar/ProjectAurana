@@ -9,29 +9,33 @@ public class TerrainFace {
     Vector3 axisA;
     Vector3 axisB;
     TerrainRoom room;
+    MeshRenderer renderer;
+
+    public static int[] TEXTURE_SIZES = new int[] { 2,4,8,16,32,64,128,256,512,1024,2048};
 
     public struct TerrainHeightMaps
     {
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
-        public float[,] heightMapEssential;
+        public float[,] heightMap;
         public bool[,] withinAnyYBoundsMap;
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
             maxHeightMap = new float[xResolution, yResolution];
-            heightMapEssential = new float[xResolution, yResolution];
+            heightMap = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
         }
 
     }
 
-    public TerrainFace(Mesh mesh, TerrainRoom tr, Vector3 localUp)
+    public TerrainFace(Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr)
     {
         this.mesh = mesh;
         this.room = tr;
         this.localUp = localUp;
+        this.renderer = mr;
 
         axisA = new Vector3(localUp.y, localUp.z, localUp.x);
         axisB = Vector3.Cross(localUp, axisA);
@@ -175,7 +179,7 @@ public class TerrainFace {
                     }
                     else if (localUp == Vector3.forward) {
 
-                        persistedHeight *= 0.7f;
+                        //persistedHeight *= 0.7f;
 
                         if (persistedHeight < 0.02f) {
                             persistedHeight = 0f;
@@ -209,10 +213,10 @@ public class TerrainFace {
 
 
 
-                    thm.heightMapEssential[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
+                    thm.heightMap[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
                         Mathf.Min(
                             thm.maxHeightMap[x, y],
-                            thm.heightMapEssential[x, y] + persistedHeight * reducedHeight);
+                            thm.heightMap[x, y] + persistedHeight * reducedHeight);
 
                     //thm.persistanceMap[x, y] = Mathf.Max(
                     //    thm.persistanceMap[x, y],
@@ -322,7 +326,7 @@ public class TerrainFace {
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
-    public void ConstructMesh(Vector3 position, List<Ground> members)
+    public void ConstructMeshAndTexture(Vector3 position, List<Ground> members)
     {
 
 
@@ -370,6 +374,13 @@ public class TerrainFace {
 
 
         int i = 0;
+
+        float baseRoughness = 2;
+        float roughness = 2;
+        float strength = 1f;
+        float persistance = 0.5f;
+        int layers = 5;
+
         //float yTextureProgress = 0;
 
         for (int y = 0; y < yResolution; y++)
@@ -384,9 +395,6 @@ public class TerrainFace {
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
                 Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
-
-
-                //float xProgress = Mathf.Clamp01(Mathf.Abs((pointOnUnitCube.x - room.position.x) / (room.xLength / 2)));
                 float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
                 float yProgCos = Mathf.Cos(((pointOnUnitCube.y) / (room.yLength / 2f)) * (Mathf.PI / 2f));
                 float combCos = xProgCos * yProgCos;
@@ -397,66 +405,23 @@ public class TerrainFace {
                     + new Vector3(0, 0, -room.zLength / 2)
                     ;
 
-                //Vector3 pointOnMoreNarrowCosCurve =
-                //     new Vector3(pointOnUnitCube.x, pointOnUnitCube.y)
-                //     + new Vector3(0, 0, room.zLength) * combCos
-                //     + new Vector3(0, 0, -room.zLength)
-                //     ;
-
-
                 float yProgress = Mathf.Clamp01(Mathf.Abs((pointOnUnitCube.y - room.position.y) / (room.yLength / 2)));
                 float zProgress = Mathf.Clamp01((pointOnUnitCube.z) / (room.zLength / 2));
-
-
                 zProgress = zProgress * zProgress * zProgress * (zProgress * (6f * zProgress - 15f) + 10f);
 
                 Vector3 pointOnSphere = pointOnUnitCube.normalized * Mathf.Lerp(room.xLength / 2f, room.yLength / 2f, yProgress);
 
                 float reducedSmoothCosCurve = (combCos) * (combCos) * (combCos) * (combCos) * (6f * (combCos - 15f) + 10f);
 
-
-                float baseRoughness = 2;
-                float roughness = 2;
-                float strength = 1f;
-                float persistance = 0.5f;
-                int layers = 5;
-
                 float noiseVal =
                     EvaluateNoise(pointOnCosCurve.normalized, baseRoughness, roughness, persistance, strength, layers, false);
 
-                //((room.noise.Evaluate(room.position + pointOnCosCurve.normalized*roughness) +1f)/2f)* strength;
-
-
-
-                //Vector3 pointOnHalfMinSphere = pointOnUnitCube.normalized * Mathf.Min(room.xLength / 2f, room.yLength / 2f)/2f;
-                //pointOnHalfMinSphere.z -= room.zLength / 2;
-
-
-
                 Vector3 mergeSphereWithCosCurve = Vector3.Lerp(pointOnCosCurve, pointOnSphere, reducedSmoothCosCurve);
-
                 Vector3 mergeWithNoise = Vector3.Lerp(mergeSphereWithCosCurve, pointOnUnitCube, noiseVal);
-
-
-                // Vector3 pointOnUnitYSphere = pointOnUnitCube.normalized * ();
-
-
-
-
-                //Vector3 pointOnSphere = Vector3.Lerp(pointOnUnitXSphere, pointOnUnitYSphere, yProgress);
-
                 Vector3 cubeToSphereness = Vector3.Lerp(pointOnUnitCube, mergeWithNoise, zProgress);
 
 
-                //float xTextureProgress = ((((float)xMod) * percent.x) % (room.textureSize)) / room.textureSize;
-                //float yTextureProgress = ((((float)yMod) * percent.y) % (room.textureSize)) / room.textureSize;
-
-                //float xTextureProgress = (x*room.resolution % room.textureSize) / room.textureSize;
-                //float yTextureProgress = (y*room.resolution % room.textureSize) / room.textureSize;
-
-                //float heightMapPersistance = thm.persistanceMap[x, y];
-
-                float height = thm.heightMapEssential[x, y];
+                float height = thm.heightMap[x, y];
 
                 float noiseForGrounds = 0;
                 Vector3 mergeTo;
@@ -468,23 +433,19 @@ public class TerrainFace {
                     height *= thm.onlyFacesHeightMap[x, y] != 0 ? 1 + (noiseVal * zProgress) * 0.1f : 1;
                 }
                 else {
-                    mergeTo = reversePos + new Vector3(0, 0, room.zLength*2);
-                    noiseForGrounds = 0.2f* (noiseVal)*(1f - Mathf.Clamp01((pointOnUnitCube.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                    mergeTo = reversePos + new Vector3(0, 0, room.zLength * 2);
+                    noiseForGrounds = 0.2f * (noiseVal) * (1f - Mathf.Clamp01((pointOnUnitCube.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
                 }
 
                 vertices[i] = height > 0 ?
 
-                    Vector3.Lerp(Vector3.Lerp(pointOnUnitCube, reversePos, height),
-                        mergeTo, noiseForGrounds)
-
+                    Vector3.Lerp(
+                        Vector3.Lerp(Vector3.Lerp(pointOnUnitCube, reversePos, height),
+                            mergeTo, noiseForGrounds)
+                            , cubeToSphereness, Mathf.Clamp01(zProgress - height*4))
                     : cubeToSphereness; 
 
-
-                
-                //heightMap[x, y] == 0 ? pointOnUnitCube : reversePos; //pointOnUnitSphere;
-                uvs[i] = percent; //new Vector2(xTextureProgress, yTextureProgress);
-                //percent;// new Vector2(((float)y) / (float)(yResolution - 1f), ((float)x) / (float)(xResolution - 1));
-                //normals[i] = GetNormal(zMod,xMod,yMod,percent,onePercent);
+                uvs[i] = percent; 
 
                 if (x != xResolution - 1 && y != yResolution - 1)
                 {
@@ -498,21 +459,51 @@ public class TerrainFace {
                     triIndex += 6;
                 }
                 i++;
-                //xTextureProgress += textureProgressIncrementX;
             }
-            //yTextureProgress += textureProgressIncrementY;
         }
         mesh.Clear();
 
         mesh.vertices = vertices;
         mesh.uv = uvs;
-       // mesh.normals = normals;
         mesh.triangles = triangles;
-
-
-
         mesh.RecalculateNormals();
-        //mesh.RecalculateBounds();
+
+        GenerateTexture(xResolution, yResolution, thm);
+    }
+
+    public void GenerateTexture(int xResolution, int yResolution, TerrainHeightMaps thm) {
+
+
+
+        int size = GetPreferredTextureSize(xResolution, yResolution);
+
+        Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
+
+        Color32[,] colors = new Color32[size, size];
+
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++)
+            {
+                colors[x, y] = x < size / 2f ? new Color32(1,0,0,0) : new Color32(0, 1, 0, 0);
+                splatmap.SetPixel(x, y, Color.red);
+            }
+        }
+        splatmap.Apply();
+
+        Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
+
+        terrainMat.SetTexture("_Splat0", room.materials[0].mainTexture);
+        terrainMat.SetFloat("_Metallic0", 0.5f);
+        terrainMat.SetFloat("_Smoothness0", 0.5f);
+
+        terrainMat.SetTexture("_Splat1", room.materials[1].mainTexture);
+        terrainMat.SetFloat("_Metallic1", 0.5f);
+        terrainMat.SetFloat("_Smoothness1", 0.5f);
+
+        //terrainMat.SetTexture("_Control", splatmap);
+
+        renderer.material = terrainMat;
+
     }
 
     public float EvaluateNoise(
@@ -557,6 +548,21 @@ public class TerrainFace {
         return (noiseValue * strength)/ maximum;
 
 
+    }
+
+
+    public int GetPreferredTextureSize(int xResolution, int yResolution) {
+
+        int max = Mathf.Max(xResolution, yResolution);
+
+        for (int i = 0; i < TEXTURE_SIZES.Length; i++) {
+
+            if(max < TEXTURE_SIZES[i])
+            {
+                return TEXTURE_SIZES[i];
+            }
+        }
+        return TEXTURE_SIZES[TEXTURE_SIZES.Length - 1];
     }
 
     /*

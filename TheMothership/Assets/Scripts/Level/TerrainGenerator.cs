@@ -460,41 +460,6 @@ public class TerrainGenerator {
     }
 
 
-    public float[,] CreateRoof(int xLength, int zLength)
-    {
-        float[,] initHeights = new float[xLength, zLength];
-
-
-        for (int x = 0; x < xLength; x++)
-        {
-            for (int z = 0; z < zLength; z++)
-            {
-                initHeights[x, z] = x == xLength - 1 || z == zLength - 1 || z == 0 ? 1 : 0;
-
-            }
-        }
-
-        return initHeights;
-    }
-
-    public float[,] CreateBackground(int xLength, int zLength)
-    {
-        float[,] initHeights = new float[xLength, zLength];
-
-
-        for (int x = 0; x < xLength; x++)
-        {
-            for (int z = 0; z < zLength; z++)
-            {
-                initHeights[x, z] = x == xLength - 1 || x == 0 ? 1 : 0;
-
-            }
-        }
-
-        return initHeights;
-    }
-
-
     public void GenerateOverGroundTerrain(int seed)
     {
 
