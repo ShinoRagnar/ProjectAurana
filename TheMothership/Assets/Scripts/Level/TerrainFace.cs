@@ -479,31 +479,48 @@ public class TerrainFace {
 
         Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
 
-        Color32[,] colors = new Color32[size, size];
+        //Color32[,] colors = new Color32[size, size];
+        Color32 red = new Color32(255, 0, 0, 0);
+        Color32 green = new Color32(0, 255, 0, 0);
 
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++)
             {
-                colors[x, y] = x < size / 2f ? new Color32(1,0,0,0) : new Color32(0, 1, 0, 0);
-                splatmap.SetPixel(x, y, Color.red);
+                //colors[x, y] = x < size / 2f ? new Color32(1,0,0,0.5f) : new Color32(0, 1, 0, 0);
+                splatmap.SetPixel(x, y, x < size / 2f ?  red : green);
             }
         }
         splatmap.Apply();
 
         Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
 
+        for (int i = 0; i < room.materials.Length; i++) {
+            SetTexture(i, room.materials[i], terrainMat);
+        }
+
+
+        /*
         terrainMat.SetTexture("_Splat0", room.materials[0].mainTexture);
-        terrainMat.SetFloat("_Metallic0", 0.5f);
-        terrainMat.SetFloat("_Smoothness0", 0.5f);
+        terrainMat.SetTexture("_Normal0", room.materials[0].GetTexture("_BumpMap"));
+        terrainMat.SetFloat("_Metallic0", room.materials[0].GetFloat("_Metallic"));
+        terrainMat.SetFloat("_Smoothness0", room.materials[0].GetFloat("_Glossiness"));
 
         terrainMat.SetTexture("_Splat1", room.materials[1].mainTexture);
         terrainMat.SetFloat("_Metallic1", 0.5f);
         terrainMat.SetFloat("_Smoothness1", 0.5f);
-
-        //terrainMat.SetTexture("_Control", splatmap);
+        */
+        terrainMat.SetTexture("_Control", splatmap);
 
         renderer.material = terrainMat;
 
+    }
+
+    private void SetTexture(int num, Material from, Material to) {
+
+        to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
+        to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
+        to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
+        to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
     }
 
     public float EvaluateNoise(

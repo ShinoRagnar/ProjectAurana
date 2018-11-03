@@ -618,6 +618,8 @@ public class TerrainGenerator {
                 MeshRenderer renderer = GenerateTerrainMesh(td.terrain, Global.Resources[MaterialNames.GrassVertexShader], td.grassmap);
             }
 
+            //td.terrain.gameObject.AddComponent<CTS.CTSRuntimeTerrainHelper>();
+
         }
 
         foreach (PropsToPlace ptp in propsToPlace) {
