@@ -15,18 +15,13 @@ public class TerrainFace {
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
         public float[,] heightMapEssential;
-        public float[,] heightMap;
-
-        public float[,] persistanceMap;
         public bool[,] withinAnyYBoundsMap;
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
             maxHeightMap = new float[xResolution, yResolution];
-            heightMap = new float[xResolution, yResolution];
             heightMapEssential = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
-            persistanceMap = new float[xResolution, yResolution];
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
         }
 
@@ -60,12 +55,16 @@ public class TerrainFace {
         Vector3 firstPoint = Vector3.zero;
         Vector3 secondPoint = Vector3.zero;
 
-        if (localUp == Vector3.forward) {
+        float underHangMultiplier = 0.5f;
+        float overHangMultiplier = 2;
 
+        if (localUp == Vector3.forward) {
+            overHangMultiplier = 2f;
+            underHangMultiplier = 2f;
             firstPoint = PositionToHeightMapPosForward(position, g.GetLeftSide(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosForward(position, g.GetBottomRightSideAgainstCamera(), xResolution, yResolution);
 
-        }else if (localUp == Vector3.left)
+        } else if (localUp == Vector3.left)
         {
             firstPoint = PositionToHeightMapPosLeft(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosLeft(position, g.GetBottomRightSideAgainstCamera(), xResolution, yResolution);
@@ -77,34 +76,43 @@ public class TerrainFace {
         }
         else if (localUp == Vector3.up)
         {
+            overHangMultiplier = 0.25f;
+            underHangMultiplier = 0.25f;
             firstPoint = PositionToHeightMapPosUp(position, g.GetBottomRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosUp(position, g.GetBottomLeftSideAgainstCamera(), xResolution, yResolution);
         }
         else if (localUp == Vector3.down)
         {
+            overHangMultiplier = 0.25f;
+            underHangMultiplier = 0.25f;
             firstPoint = PositionToHeightMapPosDown(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosDown(position, g.GetTopLeftSideAgainstCamera(), xResolution, yResolution);
         }
 
-        int i = 0;
+        //int i = 0;
 
         int minY = (int)Mathf.Min(secondPoint.y, firstPoint.y);
         int maxY = (int)Mathf.Max(secondPoint.y, firstPoint.y);
         int minX = (int)Mathf.Min(firstPoint.x, secondPoint.x);
         int maxX = (int)Mathf.Max(firstPoint.x, secondPoint.x);
 
-        bool iterXSmoothening = localUp == Vector3.left;
-        bool iterYSmoothening = localUp == Vector3.left;
+        bool iterXSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
+        bool iterYSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
 
-        int maxOverhang = Mathf.Max(maxX - minX, maxY - minY) * 2;
-        int maxUnderHang = Mathf.Max(maxX - minX, maxY - minY) / 2;
+
+
+        int maxOverhang = localUp == Vector3.left || localUp == Vector3.right ? minY : 
+                            (int) (Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
+
+        int maxUnderHang = (int) (Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
 
         int iterMinY = iterYSmoothening ? Mathf.Max(0, minY-maxOverhang) : minY;
         int iterMaxY = iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY+ maxUnderHang) : maxY;
-        int iterMinX = iterXSmoothening ? 0 : minX;
-        int iterMaxX = iterXSmoothening ? (int)(xResolution - 1) : maxX;
+        int iterMinX = iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
+        int iterMaxX = iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
 
         float height = firstPoint.z;
+        float innerHeight = localUp != Vector3.up ? height : PositionToHeightMapPosForward(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution).z;
 
         float xProgress = 1;
         float yProgress = 1;
@@ -115,7 +123,8 @@ public class TerrainFace {
             {
                 if (y >= 0 && x >= 0 && x < xResolution && y < yResolution)
                 {
-
+                    bool xWithinBounds = x >= minX && x <= maxX;
+                    bool yWithinBounds = y >= minY && y <= maxY;
 
                     if (iterXSmoothening)
                     {
@@ -131,6 +140,11 @@ public class TerrainFace {
                         {
                             xStartProg = Mathf.Clamp01((float)x / minX);
                         }
+                        if(localUp == Vector3.up)
+                        {
+                            xEndProg = 1f - Mathf.Clamp01(((float)x - (float)maxX) / (float)(maxUnderHang));
+                            xStartProg = Mathf.Clamp01(((float)x - (float)iterMinX) / (float)(maxOverhang));
+                        }
 
                         xProgress = x < maxX ? xStartProg : xEndProg;
                     }
@@ -143,12 +157,10 @@ public class TerrainFace {
                         yEndProg = 1f - Mathf.Clamp01(((float)y - (float)maxY) / (float)(maxUnderHang));
                         yStartProg = Mathf.Clamp01(((float)y - (float)iterMinY) / (float)(maxOverhang));
 
-                        yProgress = y < maxY ? yStartProg : yEndProg;
+                        yProgress =  y < maxY ? yStartProg : yEndProg;
                     }
 
-                    bool xWithinBounds = x >= minX && x <= maxX;
-                    bool yWithinBounds = y >= minY && y <= maxY;
-
+                    //float morphIntoNoiseFactor = 0;
 
                     float p = yProgress * xProgress;
                     float persistance = p * p * p * (p *
@@ -156,8 +168,20 @@ public class TerrainFace {
 
                     float persistedHeight = height * persistance;
 
-                    if (xWithinBounds && yWithinBounds) {
-                        thm.onlyFacesHeightMap[x, y] = Mathf.Max(thm.onlyFacesHeightMap[x, y], persistedHeight);
+                    if (xWithinBounds && yWithinBounds)
+                    {
+                        thm.onlyFacesHeightMap[x, y] = Mathf.Max(thm.onlyFacesHeightMap[x, y], height);
+
+                    }
+                    else if (localUp == Vector3.forward) {
+
+                        persistedHeight *= 0.7f;
+
+                        if (persistedHeight < 0.02f) {
+                            persistedHeight = 0f;
+
+                        }
+                        //morphIntoNoiseFactor = 1 - persistedHeight;
                     }
 
                     if (yWithinBounds) {
@@ -168,74 +192,56 @@ public class TerrainFace {
 
                     float inverseProgress = (1 - xProgress);
 
-                    float newHeight = Mathf.Min(thm.maxHeightMap[x, y], thm.heightMapEssential[x, y] + persistedHeight);
                     float xTotalLength = (maxX - minX);
                     float halfpoint = maxX - xTotalLength / 2;
                     float o = (1f - Mathf.Clamp01((x - minX + xTotalLength / 2) / (xTotalLength)));
+
+                    if (localUp == Vector3.right)
+                    {
+                        o = (Mathf.Clamp01((x - maxX + xTotalLength / 2) / (xTotalLength)));
+                    }
+                    else if (localUp == Vector3.up || localUp == Vector3.down || localUp == Vector3.forward) {
+
+                        o = 1;
+                    }
                     float cliffRolloff = o * o * o * o;
-
-                    thm.heightMapEssential[x, y] = 
-                        y < minY && x > halfpoint ? 0 :
-                        y < minY ? o * newHeight
-                        : 
-                        newHeight
-                        ;
+                    float reducedHeight = y < minY ? o : 1;
 
 
-                    /*
-                    thm.heightMapEssential[x, y] =
-                    xWithinBounds ? thm.onlyFacesHeightMap[x, y]
-                    :
-                    thm.withinAnyYBoundsMap[x, y] ?
-                        thm.onlyFacesHeightMap[x, y] > 0 ?
-                            thm.onlyFacesHeightMap[x, y] :
 
-                            Mathf.Min(thm.maxHeightMap[x, y],
-                              thm.heightMapEssential[x, y] + persistedHeight)
-                              :
-                              thm.onlyFacesHeightMap[x, y]
-                              ;
+                    thm.heightMapEssential[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
+                        Mathf.Min(
+                            thm.maxHeightMap[x, y],
+                            thm.heightMapEssential[x, y] + persistedHeight * reducedHeight);
 
-                    thm.heightMap[x, y] =
-                        //x > maxX ?
-                        //thm.heightMapEssential[x, y]
-                        //:
-                        // Mathf.Max(
-                        xWithinBounds ? thm.onlyFacesHeightMap[x, y]
-                        :
-                            thm.onlyFacesHeightMap[x, y] > 0 ?
-                                thm.onlyFacesHeightMap[x, y] :
+                    //thm.persistanceMap[x, y] = Mathf.Max(
+                    //    thm.persistanceMap[x, y],
+                    //    morphIntoNoiseFactor
+                    //    );
 
-                                Mathf.Min(thm.maxHeightMap[x, y],
-                                  thm.heightMap[x, y] + persistedHeight)
-                    // , 
-                    //thm.heightMapEssential[x, y]);
-                    ;*/
-
-                    thm.persistanceMap[x, y] = Mathf.Max(thm.persistanceMap[x, y], Mathf.Clamp01((float)x / maxX));
-
-                    i++;
+                   // i++;
                 }
             }
         }
     }
 
     public Vector3 PositionToHeightMapPosForward(
-        Vector3 centerPosition, 
+        Vector3 centerPosition,
         Vector3 groundPositon,
-        float xResolution, 
+        float xResolution,
         float yResolution
         )
     {
         Vector3 start = groundPositon - centerPosition;
 
-        float xProgression = 1-((start.x + room.xLength / 2f) / room.xLength);
+        float xProgression = 1 - ((start.x + room.xLength / 2f) / room.xLength);
         float yProgression = (start.y + room.yLength / 2f) / room.yLength;
+        float zProgression = 1 - (start.z - TerrainGenerator.TERRAIN_Z_WIDTH + room.zLength / 2f) / room.zLength;
 
         float startY = (int)(xProgression * (yResolution - 1f));
         float startX = (int)(yProgression * (xResolution - 1f));
 
-        return new Vector3(startX, startY, 1); //xProgression * xBind + yProgression * yBind; //
+        return new Vector3(startX, startY, zProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
     public Vector3 PositionToHeightMapPosLeft(
@@ -448,11 +454,32 @@ public class TerrainFace {
                 //float xTextureProgress = (x*room.resolution % room.textureSize) / room.textureSize;
                 //float yTextureProgress = (y*room.resolution % room.textureSize) / room.textureSize;
 
-                float heightMapPersistance = thm.persistanceMap[x, y];
+                //float heightMapPersistance = thm.persistanceMap[x, y];
 
                 float height = thm.heightMapEssential[x, y];
 
-                vertices[i] = height > 0 ? Vector3.Lerp(pointOnUnitCube, reversePos, height) : cubeToSphereness; 
+                float noiseForGrounds = 0;
+                Vector3 mergeTo;
+
+                if (localUp == Vector3.forward)
+                {
+                    mergeTo = pointOnUnitCube;
+                    noiseForGrounds = (thm.onlyFacesHeightMap[x, y] != 0 ? 0 : 1) * (noiseVal * zProgress);
+                    height *= thm.onlyFacesHeightMap[x, y] != 0 ? 1 + (noiseVal * zProgress) * 0.1f : 1;
+                }
+                else {
+                    mergeTo = reversePos + new Vector3(0, 0, room.zLength*2);
+                    noiseForGrounds = 0.2f* (noiseVal)*(1f - Mathf.Clamp01((pointOnUnitCube.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                }
+
+                vertices[i] = height > 0 ?
+
+                    Vector3.Lerp(Vector3.Lerp(pointOnUnitCube, reversePos, height),
+                        mergeTo, noiseForGrounds)
+
+                    : cubeToSphereness; 
+
+
                 
                 //heightMap[x, y] == 0 ? pointOnUnitCube : reversePos; //pointOnUnitSphere;
                 uvs[i] = percent; //new Vector2(xTextureProgress, yTextureProgress);

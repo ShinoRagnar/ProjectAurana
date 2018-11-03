@@ -48,6 +48,8 @@ public class TerrainRoom
 
         Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
         terrainMat.SetTexture("_Splat0", materials[0].mainTexture);
+        terrainMat.SetTexture("_Splat1", materials[1].mainTexture);
+
 
 
         float length = (maxX - minX);
