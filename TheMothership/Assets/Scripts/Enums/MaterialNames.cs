@@ -1,6 +1,7 @@
 public enum MaterialNames 
 {
 	Black = 110061854,
+	CaveDirt = 200434149,
 	Cliff = 210649717,
 	Default = 303680664,
 	Dirt = 307444879,

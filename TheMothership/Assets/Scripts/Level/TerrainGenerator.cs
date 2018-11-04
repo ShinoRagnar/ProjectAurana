@@ -411,7 +411,7 @@ public class TerrainGenerator {
         Material[] materials = new Material[] {
             Global.Resources[MaterialNames.Dirt],
             Global.Resources[MaterialNames.Cliff],
-            Global.Resources[MaterialNames.Water]
+            Global.Resources[MaterialNames.CaveDirt]
         };
         Vector2[] tileSizes = new Vector2[] {
             new Vector2(10,10),

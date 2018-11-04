@@ -56,6 +56,9 @@ public class TerrainFace {
 
     public void Imprint(Vector3 position, Ground g, TerrainHeightMaps thm, float xResolution, float yResolution, float xMod, float yMod, float zMod)
     {
+        g.obj.GetComponent<MeshRenderer>().enabled = false;
+
+
         Vector3 firstPoint = Vector3.zero;
         Vector3 secondPoint = Vector3.zero;
 
@@ -364,7 +367,7 @@ public class TerrainFace {
 
         Vector3[] vertices = new Vector3[xResolution * yResolution];
         Vector2[] uvs = new Vector2[xResolution * yResolution];
-        Vector3[] normals = new Vector3[xResolution * yResolution];
+        //Vector3[] normals = new Vector3[xResolution * yResolution];
 
         int[] triangles = new int[(xResolution - 1) * (yResolution - 1) * 6];
         int triIndex = 0;
@@ -468,10 +471,10 @@ public class TerrainFace {
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
 
-        GenerateTexture(xResolution, yResolution, thm);
+        GenerateTexture(mesh.normals, xResolution, yResolution, thm);
     }
 
-    public void GenerateTexture(int xResolution, int yResolution, TerrainHeightMaps thm) {
+    public void GenerateTexture(Vector3[] normals, int xResolution, int yResolution, TerrainHeightMaps thm) {
 
 
 
@@ -480,14 +483,46 @@ public class TerrainFace {
         Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
 
         //Color32[,] colors = new Color32[size, size];
-        Color32 red = new Color32(255, 0, 0, 0);
-        Color32 green = new Color32(0, 255, 0, 0);
+        //Color32 red = new Color32(255, 0, 0, 0);
+        //Color32 green = new Color32(0, 255, 0, 0);
 
-        for (int x = 0; x < size; x++) {
-            for (int y = 0; y < size; y++)
+        Debug.Log("Normals :" + normals.Length + " xResolution: " + xResolution + " yResolution: " + yResolution+" total: "+xResolution*yResolution);
+
+
+
+
+        int xy = 0;
+        for (float y = 0; y < size; y++) {
+            for (float x = 0; x < size; x++)
             {
+                float xPercent = x / size;
+                float yPercent = y / size;
+
+                int xPosMeshMaps = (int)(xPercent * xResolution);
+                int yPosMeshMaps = (int)(yPercent * yResolution);
+
+                int iPosMeshMaps = yPosMeshMaps * xResolution + xPosMeshMaps;
+
+                float nonHillyNess = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f);
+                bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
+
+                bool dirtIsDark = leftOrRight || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f);
+
+
+                float dirt = dirtIsDark ? 0 : nonHillyNess;
+                float stone = (1f - nonHillyNess);
+                float darkDirt = dirtIsDark ? nonHillyNess : 0;
+
+
+                Color32 splat = new Color32(
+                    (byte)(255f * dirt), 
+                    (byte)(255f * stone),
+                    (byte)(255f * darkDirt), 
+                    0);
+
                 //colors[x, y] = x < size / 2f ? new Color32(1,0,0,0.5f) : new Color32(0, 1, 0, 0);
-                splatmap.SetPixel(x, y, x < size / 2f ?  red : green);
+                splatmap.SetPixel((int)x, (int)y, splat);
+                xy++;
             }
         }
         splatmap.Apply();
