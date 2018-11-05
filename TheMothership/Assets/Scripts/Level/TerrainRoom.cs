@@ -43,14 +43,18 @@ public class TerrainRoom
     //public MeshRenderer renderer;
 
     public Material[] materials;
+    public MaterialNames[] grass;
+    public int seed;
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
-    public void SpawnRoom(Transform self, Material[] materials, float zShift)
+    public void SpawnRoom(Transform self, Material[] materials, MaterialNames[] grass, float zShift, int seed)
     {
         noise = new Noise();
 
         this.materials = materials;
+        this.grass = grass;
+        this.seed = seed;
 
         float length = (maxX - minX);
         float height = (maxY - minY);

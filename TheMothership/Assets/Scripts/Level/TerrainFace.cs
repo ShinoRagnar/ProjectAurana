@@ -490,7 +490,7 @@ public class TerrainFace {
     }
 
     public void GenerateFauna(
-        TerrainFaceSurfaceType[] types, 
+        TerrainFaceSurfaceType[] types,
         Vector3[] normals, 
         int[] triangles,
         Vector3[] vertices, 
@@ -499,16 +499,29 @@ public class TerrainFace {
         int yResolution
         ) {
 
-        GameObject fauna = new GameObject("Fauna for " + self.gameObject.name);
-        fauna.transform.parent = self.transform;
 
-        MeshRenderer faunaRenderer = fauna.AddComponent<MeshRenderer>();
-        // renderer.sharedMaterial = mat;
-        MeshFilter faunaMeshFilter = fauna.AddComponent<MeshFilter>();
-        Mesh faunaMesh = faunaMeshFilter.sharedMesh = new Mesh();
+        GameObject[] faunas = new GameObject[room.grass.Length];
+        MeshRenderer[] faunaRenderers = new MeshRenderer[room.grass.Length];
+        Mesh[] faunaMeshes = new Mesh[room.grass.Length];
+        DictionaryList<int, List<int>> faunaTriangles = new DictionaryList<int, List<int>>();
+
+        for (int a = 0; a < room.grass.Length; a++) {
+
+            faunas[a] = new GameObject("Fauna <" + room.grass[a].ToString() + "> ");
+            faunas[a].transform.parent = self.transform;
+
+            faunaRenderers[a] = faunas[a].AddComponent<MeshRenderer>();
+            // renderer.shaaredMaterial = mat;
+            MeshFilter faunaMeshFilter = faunas[a].AddComponent<MeshFilter>();
+            faunaMeshes[a] = faunaMeshFilter.sharedMesh = new Mesh();
+            faunaTriangles.Add(a, new List<int>());
+        }
+
 
         //List<Vector3> faunaVertices = new List<Vector3>();
-        List<int> faunaTriangle = new List<int>();
+        //List<int> faunaTriangle = new List<int>();
+
+        Vector3 grassPos = new Vector3(0,0,room.seed)+room.position;
 
         int triIndex = 0;
         int i = 0;
@@ -525,13 +538,22 @@ public class TerrainFace {
                 {
                     if (types[i] == TerrainFaceSurfaceType.Grass)
                     {
+                        int grass =(int)(((room.noise.Evaluate(grassPos + vertices[i]) + 1f) / 2f) * ((float)room.grass.Length)) ;
 
-                        faunaTriangle.Add(triangles[triIndex]);
+                        faunaTriangles[grass].Add(triangles[triIndex]);
+                        faunaTriangles[grass].Add(triangles[triIndex + 1]);
+                        faunaTriangles[grass].Add(triangles[triIndex + 2]);
+                        faunaTriangles[grass].Add(triangles[triIndex + 3]);
+                        faunaTriangles[grass].Add(triangles[triIndex + 4]);
+                        faunaTriangles[grass].Add(triangles[triIndex + 5]);
+
+                        /*faunaTriangle.Add(triangles[triIndex]);
                         faunaTriangle.Add(triangles[triIndex + 1]);
                         faunaTriangle.Add(triangles[triIndex + 2]);
                         faunaTriangle.Add(triangles[triIndex + 3]);
                         faunaTriangle.Add(triangles[triIndex + 4]);
                         faunaTriangle.Add(triangles[triIndex + 5]);
+                        */
                     }
 
 
@@ -550,12 +572,24 @@ public class TerrainFace {
             }
         }
 
-        faunaMesh.Clear();
+        for (int a = 0; a < room.grass.Length; a++)
+        {
+            faunaMeshes[a].Clear();
+            faunaMeshes[a].vertices = vertices;
+            faunaMeshes[a].triangles = faunaTriangles[a].ToArray();
+            faunaMeshes[a].RecalculateNormals();
+            faunaRenderers[a].material = Global.Resources[room.grass[a]];
+            faunaRenderers[a].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            faunas[a].isStatic = true;
+        }
+
+        /*faunaMesh.Clear();
         faunaMesh.vertices = vertices;
         faunaMesh.triangles = faunaTriangle.ToArray();
         faunaMesh.RecalculateNormals();
 
         faunaRenderer.material = Global.Resources[MaterialNames.CaveGrass];
+        */
 
     }
 

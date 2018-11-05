@@ -413,12 +413,17 @@ public class TerrainGenerator {
             Global.Resources[MaterialNames.Cliff],
             Global.Resources[MaterialNames.CaveDirt],
             Global.Resources[MaterialNames.CaveUnderGrass],
-
         };
         Vector2[] tileSizes = new Vector2[] {
             new Vector2(10,10),
             new Vector2(15,15),
             new Vector2(10,10)
+        };
+
+        MaterialNames[] grasses = new MaterialNames[] {
+            MaterialNames.CaveGrass,
+            MaterialNames.CaveGrassDarkBrown,
+            MaterialNames.CaveGrassGreen
         };
 
         foreach (Transform t in Global.Grounds[slot])
@@ -438,7 +443,7 @@ public class TerrainGenerator {
             terr.transform.parent = terra.transform;
 
             rooms[i].GroupMembers();
-            rooms[i].SpawnRoom(terr.transform, materials, TERRAIN_Z_MARGIN);
+            rooms[i].SpawnRoom(terr.transform, materials, grasses, TERRAIN_Z_MARGIN,seed);
         }
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";
