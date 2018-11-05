@@ -490,6 +490,12 @@ MonoBehaviour:
     prefab: {fileID: 2100000, guid: 2c6f5ab601d22834883d3c7e18f8be41, type: 2}
   - name: GrassVertexShader
     prefab: {fileID: 2100000, guid: ba17b1ce6e90ba648b13b42551152a2b, type: 2}
+  - name: CaveDirt
+    prefab: {fileID: 2100000, guid: e90bd62ddc8c3a14bb51ba4a43e49278, type: 2}
+  - name: CaveGrass
+    prefab: {fileID: 2100000, guid: c8a6b084feb56b54796fb1ff854f8e2c, type: 2}
+  - name: CaveUnderGrass
+    prefab: {fileID: 2100000, guid: 6c8199cbc1e5058448cefef561c01a0c, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

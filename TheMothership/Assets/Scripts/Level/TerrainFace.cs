@@ -2,7 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum TerrainFaceSurfaceType {
+    
+    Cliff = 0,
+    Dirt = 1,
+    DarkDirt = 2,
+    Grass = 3
+}
 public class TerrainFace {
+
+    
 
     Mesh mesh;
     public Vector3 localUp;
@@ -10,6 +19,7 @@ public class TerrainFace {
     Vector3 axisB;
     TerrainRoom room;
     MeshRenderer renderer;
+    GameObject self;
 
     public static int[] TEXTURE_SIZES = new int[] { 2,4,8,16,32,64,128,256,512,1024,2048};
 
@@ -30,8 +40,9 @@ public class TerrainFace {
 
     }
 
-    public TerrainFace(Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr)
+    public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr)
     {
+        this.self = meshobj;
         this.mesh = mesh;
         this.room = tr;
         this.localUp = localUp;
@@ -331,8 +342,6 @@ public class TerrainFace {
 
     public void ConstructMeshAndTexture(Vector3 position, List<Ground> members)
     {
-
-
         int xMod = 1;
         int yMod = 1;
         int zMod = 1;
@@ -440,6 +449,8 @@ public class TerrainFace {
                     noiseForGrounds = 0.2f * (noiseVal) * (1f - Mathf.Clamp01((pointOnUnitCube.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
                 }
 
+
+
                 vertices[i] = height > 0 ?
 
                     Vector3.Lerp(
@@ -471,12 +482,86 @@ public class TerrainFace {
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
 
-        GenerateTexture(mesh.normals, xResolution, yResolution, thm);
+        Vector3[] normals = mesh.normals;
+
+        TerrainFaceSurfaceType[] types = GenerateTexture(normals, xResolution, yResolution, thm);
+        GenerateFauna(types, normals, triangles, vertices, thm, xResolution, yResolution);
+
     }
 
-    public void GenerateTexture(Vector3[] normals, int xResolution, int yResolution, TerrainHeightMaps thm) {
+    public void GenerateFauna(
+        TerrainFaceSurfaceType[] types, 
+        Vector3[] normals, 
+        int[] triangles,
+        Vector3[] vertices, 
+        TerrainHeightMaps thm,
+        int xResolution, 
+        int yResolution
+        ) {
+
+        GameObject fauna = new GameObject("Fauna for " + self.gameObject.name);
+        fauna.transform.parent = self.transform;
+
+        MeshRenderer faunaRenderer = fauna.AddComponent<MeshRenderer>();
+        // renderer.sharedMaterial = mat;
+        MeshFilter faunaMeshFilter = fauna.AddComponent<MeshFilter>();
+        Mesh faunaMesh = faunaMeshFilter.sharedMesh = new Mesh();
+
+        //List<Vector3> faunaVertices = new List<Vector3>();
+        List<int> faunaTriangle = new List<int>();
+
+        int triIndex = 0;
+        int i = 0;
+        for (int y = 0; y < yResolution; y++)
+        {
+            //float xTextureProgress = 0;
+
+            for (int x = 0; x < xResolution; x++)
+            {
+
+                //float nonHillyNess = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[i])) / 90f);
+
+                if (x != xResolution - 1 && y != yResolution - 1)
+                {
+                    if (types[i] == TerrainFaceSurfaceType.Grass)
+                    {
+
+                        faunaTriangle.Add(triangles[triIndex]);
+                        faunaTriangle.Add(triangles[triIndex + 1]);
+                        faunaTriangle.Add(triangles[triIndex + 2]);
+                        faunaTriangle.Add(triangles[triIndex + 3]);
+                        faunaTriangle.Add(triangles[triIndex + 4]);
+                        faunaTriangle.Add(triangles[triIndex + 5]);
+                    }
 
 
+                    /*triangles[triIndex] = i;
+                    triangles[triIndex + 1] = i + xResolution;
+                    triangles[triIndex + 2] = i + xResolution + 1;
+
+                    triangles[triIndex + 3] = i;
+                    triangles[triIndex + 4] = i + xResolution + 1;
+                    triangles[triIndex + 5] = i + 1;
+                    */
+                    triIndex += 6;
+                }
+
+                i++;
+            }
+        }
+
+        faunaMesh.Clear();
+        faunaMesh.vertices = vertices;
+        faunaMesh.triangles = faunaTriangle.ToArray();
+        faunaMesh.RecalculateNormals();
+
+        faunaRenderer.material = Global.Resources[MaterialNames.CaveGrass];
+
+    }
+
+    public TerrainFaceSurfaceType[] GenerateTexture(Vector3[] normals, int xResolution, int yResolution, TerrainHeightMaps thm) {
+
+        TerrainFaceSurfaceType[] types = new TerrainFaceSurfaceType[normals.Length];
 
         int size = GetPreferredTextureSize(xResolution, yResolution);
 
@@ -509,16 +594,44 @@ public class TerrainFace {
                 bool dirtIsDark = leftOrRight || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f);
 
 
+                bool isGrass = xPosMeshMaps - 1 > 0 && yPosMeshMaps - 1 > 0 && xPosMeshMaps + 1 < xResolution && yPosMeshMaps + 1 < yResolution
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps, yPosMeshMaps]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 0]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps + 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps + 0]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps - 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps - 1];
+
+
                 float dirt = dirtIsDark ? 0 : nonHillyNess;
                 float stone = (1f - nonHillyNess);
-                float darkDirt = dirtIsDark ? nonHillyNess : 0;
+                float darkDirt = dirtIsDark ? isGrass ? 0 : nonHillyNess : 0;
+                float grass = dirtIsDark && isGrass ? nonHillyNess : 0;
 
+                if (stone > 0.5f)
+                {
+                    types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                }
+                else if (dirtIsDark)
+                {
+                    if (isGrass)
+                    {
+                        types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+                    }
+                    else {
+                        types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                    }
+                }
+                else{
+                    types[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
+                }
 
                 Color32 splat = new Color32(
                     (byte)(255f * dirt), 
                     (byte)(255f * stone),
-                    (byte)(255f * darkDirt), 
-                    0);
+                    (byte)(255f * darkDirt),
+                    (byte)(255f * grass));
 
                 //colors[x, y] = x < size / 2f ? new Color32(1,0,0,0.5f) : new Color32(0, 1, 0, 0);
                 splatmap.SetPixel((int)x, (int)y, splat);
@@ -533,21 +646,11 @@ public class TerrainFace {
             SetTexture(i, room.materials[i], terrainMat);
         }
 
-
-        /*
-        terrainMat.SetTexture("_Splat0", room.materials[0].mainTexture);
-        terrainMat.SetTexture("_Normal0", room.materials[0].GetTexture("_BumpMap"));
-        terrainMat.SetFloat("_Metallic0", room.materials[0].GetFloat("_Metallic"));
-        terrainMat.SetFloat("_Smoothness0", room.materials[0].GetFloat("_Glossiness"));
-
-        terrainMat.SetTexture("_Splat1", room.materials[1].mainTexture);
-        terrainMat.SetFloat("_Metallic1", 0.5f);
-        terrainMat.SetFloat("_Smoothness1", 0.5f);
-        */
         terrainMat.SetTexture("_Control", splatmap);
 
         renderer.material = terrainMat;
 
+        return types;
     }
 
     private void SetTexture(int num, Material from, Material to) {

@@ -115,7 +115,7 @@ public class TerrainRoom
                 meshFilters[i].sharedMesh = new Mesh();
             //}
 
-            terrainFaces[i] = new TerrainFace(meshFilters[i].sharedMesh, this, directions[i], renderer);
+            terrainFaces[i] = new TerrainFace(meshObj, meshFilters[i].sharedMesh, this, directions[i], renderer);
         }
     }
 
