@@ -8,9 +8,9 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: CaveWeed
   m_Shader: {fileID: 4800000, guid: 1902925be899f6c4794040c4a1c39b50, type: 3}
-  m_ShaderKeywords: GRASS_CALC_GLOBAL_WIND GRASS_FOLLOW_SURFACE_NORMAL GRASS_PBR_LIGHTING
-    GRASS_RANDOM_DIR GRASS_USE_TEXTURE_ATLAS GRASS_WIDTH_SMOOTHING ONE_GRASS_TYPE
-    UNIFORM_DENSITY
+  m_ShaderKeywords: GRASS_CALC_GLOBAL_WIND GRASS_FOLLOW_SURFACE_NORMAL GRASS_HEIGHT_SMOOTHING
+    GRASS_PBR_LIGHTING GRASS_RANDOM_DIR GRASS_USE_TEXTURE_ATLAS GRASS_WIDTH_SMOOTHING
+    ONE_GRASS_TYPE UNIFORM_DENSITY
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -144,14 +144,14 @@ Material:
     m_Colors:
     - _BurnColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color00: {r: 1, g: 1, b: 1, a: 1}
+    - _Color00: {r: 0, g: 0.9804158, b: 1, a: 1}
     - _Color01: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _Color02: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _Color03: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _DensityValues: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _GrassBottomColor: {r: 1, g: 0.82939136, b: 0.2216981, a: 1}
-    - _SecColor00: {r: 0.6320754, g: 0.6320754, b: 0.6320754, a: 1}
+    - _GrassBottomColor: {r: 0.6603774, g: 0.38272902, b: 0.12148453, a: 1}
+    - _SecColor00: {r: 0.043137252, g: 0.071000606, b: 1, a: 1}
     - _SecColor01: {r: 0.2, g: 0.5, b: 0.15, a: 1}
     - _SecColor02: {r: 0.2, g: 0.5, b: 0.15, a: 1}
     - _SecColor03: {r: 0.2, g: 0.5, b: 0.15, a: 1}

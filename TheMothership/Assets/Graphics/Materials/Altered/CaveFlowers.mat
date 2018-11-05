@@ -9,7 +9,7 @@ Material:
   m_Name: CaveFlowers
   m_Shader: {fileID: 4800000, guid: 1902925be899f6c4794040c4a1c39b50, type: 3}
   m_ShaderKeywords: GRASS_CALC_GLOBAL_WIND GRASS_FOLLOW_SURFACE_NORMAL GRASS_HEIGHT_SMOOTHING
-    ONE_GRASS_TYPE
+    ONE_GRASS_TYPE UNIFORM_DENSITY
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

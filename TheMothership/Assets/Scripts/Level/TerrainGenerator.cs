@@ -408,6 +408,12 @@ public class TerrainGenerator {
         GameObject terra = new GameObject();
         terra.transform.parent = parent;
 
+        GameObject fog = new GameObject();
+        fog.transform.parent = terra.transform;
+
+        GameObject dust = new GameObject();
+        dust.transform.parent = terra.transform;
+
         Material[] materials = new Material[] {
             Global.Resources[MaterialNames.Dirt],
             Global.Resources[MaterialNames.Cliff],
@@ -424,6 +430,10 @@ public class TerrainGenerator {
             MaterialNames.CaveGrass,
             MaterialNames.CaveGrassDarkBrown,
             MaterialNames.CaveGrassGreen
+        };
+
+        PrefabNames[] faunaCentralPieces = new PrefabNames[] {
+            PrefabNames.CaveGrowingLamp
         };
 
         foreach (Transform t in Global.Grounds[slot])
@@ -443,10 +453,24 @@ public class TerrainGenerator {
             terr.transform.parent = terra.transform;
 
             rooms[i].GroupMembers();
-            rooms[i].SpawnRoom(terr.transform, materials, grasses, TERRAIN_Z_MARGIN,seed);
+            rooms[i].SpawnRoom(terr.transform, materials, grasses, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
+
+            /*SpawnAmbient(fog,
+                Global.Resources[PrefabNames.Fog],
+                rooms[i].position+new Vector3(0,0,rooms[i].zLength/4f), 
+                rooms[i].xLength, rooms[i].zLength / 2f, rooms[i].yLength, "Fog < " + i + " > ");
+                */
+
+            SpawnAmbient(dust,
+                Global.Resources[PrefabNames.DustEmber],
+                rooms[i].position,
+                rooms[i].xLength, rooms[i].zLength, rooms[i].yLength, "Dust < " + i + " > ");
         }
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";
+        fog.name = "Fog (" + fog.transform.childCount + ")";
+        dust.name = "Dust (" + dust.transform.childCount + ")";
+
     }
 
     private void GatherMembersForRoom(Ground g)

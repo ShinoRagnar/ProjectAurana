@@ -13,6 +13,7 @@ public enum PrefabNames
 	BuffDuration = 119365253,
 	BuffFrame = 119176624,
 	BuffStack = 119063851,
+	CaveGrowingLamp = 200103796,
 	Chill = 206914015,
 	CliffBroad = 211895557,
 	CliffBroad2 = 211830885,

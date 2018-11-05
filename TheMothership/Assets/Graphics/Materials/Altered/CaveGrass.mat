@@ -8,7 +8,8 @@ Material:
   m_PrefabInternal: {fileID: 0}
   m_Name: CaveGrass
   m_Shader: {fileID: 4800000, guid: 1902925be899f6c4794040c4a1c39b50, type: 3}
-  m_ShaderKeywords: GRASS_CALC_GLOBAL_WIND GRASS_WIDTH_SMOOTHING SIMPLE_GRASS
+  m_ShaderKeywords: GRASS_CALC_GLOBAL_WIND GRASS_FOLLOW_SURFACE_NORMAL GRASS_HEIGHT_SMOOTHING
+    GRASS_WIDTH_SMOOTHING ONE_GRASS_TYPE UNIFORM_DENSITY
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -51,7 +52,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GrassTex00:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: a832f7b9454b999459b23d997636269a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GrassTex01:
@@ -90,20 +91,20 @@ Material:
     - _DetailNormalMapScale: 1
     - _Disorder: 5
     - _DstBlend: 0
-    - _EdgeLength: 23.6
+    - _EdgeLength: 50
     - _Glossiness: 0.5
-    - _GrassFadeEnd: 100
-    - _GrassFadeStart: 50
-    - _LODEnd: 100
-    - _LODMax: 5
-    - _LODStart: 20
-    - _MaxHeight00: 1.5
+    - _GrassFadeEnd: 80
+    - _GrassFadeStart: 40
+    - _LODEnd: 80
+    - _LODMax: 1
+    - _LODStart: 40
+    - _MaxHeight00: 1
     - _MaxHeight01: 1.5
     - _MaxHeight02: 1.5
     - _MaxHeight03: 1.5
     - _MaxTessellation: 1
     - _Metallic: 0
-    - _MinHeight00: 1
+    - _MinHeight00: 0.5
     - _MinHeight01: 0.2
     - _MinHeight02: 0.2
     - _MinHeight03: 0.2
@@ -114,7 +115,7 @@ Material:
     - _Smoothness01: 0.5
     - _Smoothness02: 0.5
     - _Smoothness03: 0.5
-    - _Softness00: 0.108
+    - _Softness00: 0.076
     - _Softness01: 0.5
     - _Softness02: 0.5
     - _Softness03: 0.5
@@ -133,7 +134,7 @@ Material:
     - _TextureAtlasWidth03: 1
     - _TextureCutoff: 0.1
     - _UVSec: 0
-    - _Width00: 0.12
+    - _Width00: 1
     - _Width01: 0.1
     - _Width02: 0.1
     - _Width03: 0.1
@@ -142,18 +143,18 @@ Material:
     m_Colors:
     - _BurnColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Color00: {r: 0.5849056, g: 0.529952, b: 0.46075112, a: 1}
+    - _Color00: {r: 1, g: 0.55036384, b: 0.514151, a: 1}
     - _Color01: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _Color02: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _Color03: {r: 0.5, g: 0.7, b: 0.3, a: 1}
     - _DensityValues: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _GrassBottomColor: {r: 1, g: 0.8330134, b: 0.495283, a: 1}
-    - _SecColor00: {r: 0.4765931, g: 0.6099081, b: 0.6603774, a: 1}
+    - _GrassBottomColor: {r: 0.6226415, g: 0.41509432, b: 0, a: 1}
+    - _SecColor00: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 1}
     - _SecColor01: {r: 0.2, g: 0.5, b: 0.15, a: 1}
     - _SecColor02: {r: 0.2, g: 0.5, b: 0.15, a: 1}
     - _SecColor03: {r: 0.2, g: 0.5, b: 0.15, a: 1}
-    - _SpecColor00: {r: 0.735849, g: 0.6307533, b: 0.6213065, a: 1}
+    - _SpecColor00: {r: 0.2264151, g: 0.2264151, b: 0.2264151, a: 1}
     - _SpecColor01: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     - _SpecColor02: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     - _SpecColor03: {r: 0.2, g: 0.2, b: 0.2, a: 1}

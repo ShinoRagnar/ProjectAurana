@@ -304,6 +304,8 @@ MonoBehaviour:
     prefab: {fileID: 4204942241419404, guid: 54c90bbe541e4e348b63307b05ab4017, type: 2}
   - name: LitterSmallGeyser
     prefab: {fileID: 4419312285100754, guid: badf63d65644ed945a332c0f1742262d, type: 2}
+  - name: CaveGrowingLamp
+    prefab: {fileID: 4596924672316714, guid: 72c8e87b93c602b4888710f65109ffb7, type: 2}
   inventorySounds:
   - name: Tooltip
     prefab:
@@ -496,6 +498,10 @@ MonoBehaviour:
     prefab: {fileID: 2100000, guid: c8a6b084feb56b54796fb1ff854f8e2c, type: 2}
   - name: CaveUnderGrass
     prefab: {fileID: 2100000, guid: 6c8199cbc1e5058448cefef561c01a0c, type: 2}
+  - name: CaveGrassGreen
+    prefab: {fileID: 2100000, guid: 0e168b462292cea4d80590086221a685, type: 2}
+  - name: CaveGrassDarkBrown
+    prefab: {fileID: 2100000, guid: dbecff3eb79143a4ba40c9216357af8e, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

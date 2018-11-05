@@ -20,8 +20,16 @@ public class TerrainFace {
     TerrainRoom room;
     MeshRenderer renderer;
     GameObject self;
+    TerrainHeightMaps thm;
 
     public static int[] TEXTURE_SIZES = new int[] { 2,4,8,16,32,64,128,256,512,1024,2048};
+
+    public static int FAUNA_DENSITY_INFLUENCE = 10;
+
+    public static int FAUNA_CENTERPIECE_MAX_AMOUNT = 3;
+    public static int FAUNA_CENTERPIECE_MIN_DISTANCE = 5;
+    public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
+
 
     public struct TerrainHeightMaps
     {
@@ -29,6 +37,11 @@ public class TerrainFace {
         public float[,] maxHeightMap;
         public float[,] heightMap;
         public bool[,] withinAnyYBoundsMap;
+        public float[,] faunaDensityMap;
+        public Vector3 faunaMeshPos;
+        public Vector3 faunaPreferredPos;
+        public Vector3 faunaPreferredNormal;
+        public float maxDensity;
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
@@ -36,6 +49,11 @@ public class TerrainFace {
             heightMap = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
+            faunaDensityMap = new float[xResolution, yResolution];
+            faunaPreferredPos = Vector3.zero;
+            faunaPreferredNormal = Vector3.up;
+            faunaMeshPos = Vector3.zero;
+            maxDensity = 0;
         }
 
     }
@@ -370,7 +388,7 @@ public class TerrainFace {
         int xResolution = room.resolution *xMod;
         int yResolution = room.resolution *yMod;
 
-        TerrainHeightMaps thm = GenerateHeightMap(members, position, xResolution, yResolution,xMod, yMod, zMod);
+        this.thm = GenerateHeightMap(members, position, xResolution, yResolution,xMod, yMod, zMod);
 
         //Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), 1f / (float)(yResolution - 1f));
 
@@ -484,8 +502,8 @@ public class TerrainFace {
 
         Vector3[] normals = mesh.normals;
 
-        TerrainFaceSurfaceType[] types = GenerateTexture(normals, xResolution, yResolution, thm);
-        GenerateFauna(types, normals, triangles, vertices, thm, xResolution, yResolution);
+        TerrainFaceSurfaceType[] types = GenerateTexture(normals, vertices, xResolution, yResolution);
+        GenerateFauna(types, normals, triangles, vertices, xResolution, yResolution);
 
     }
 
@@ -494,7 +512,7 @@ public class TerrainFace {
         Vector3[] normals, 
         int[] triangles,
         Vector3[] vertices, 
-        TerrainHeightMaps thm,
+        //TerrainHeightMaps thm,
         int xResolution, 
         int yResolution
         ) {
@@ -572,6 +590,83 @@ public class TerrainFace {
             }
         }
 
+        // Place centerpiece light
+        if (thm.maxDensity > 0)
+        {
+            bool placedProp = PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
+            thm.faunaPreferredPos, thm.faunaPreferredNormal, (int)thm.faunaMeshPos.x, (int)thm.faunaMeshPos.y, xResolution, yResolution);
+
+            int placedAmount = placedProp ? 1 : 0;
+            float maxDensity = 1;
+
+            while (maxDensity > 0 && placedAmount < FAUNA_CENTERPIECE_MAX_AMOUNT) {
+                
+                maxDensity = 0;
+                Vector2 foundPos = Vector2.zero;
+
+                for (int faunaX = 0; faunaX < xResolution; faunaX++)
+                {
+                    for (int faunaY = 0; faunaY < yResolution; faunaY++)
+                    {
+                        float density = thm.faunaDensityMap[faunaX, faunaY];
+
+                        if (density > maxDensity && density > thm.maxDensity * FAUNA_CENTERPIECE_REQUIREMENT)
+                        {
+                            maxDensity = thm.faunaDensityMap[faunaX, faunaY];
+                            foundPos = new Vector2(faunaX, faunaY);
+                        }
+                    }
+                }
+
+                if (maxDensity > 0)
+                {
+
+                    int iPosFaunaMaps = (int)(foundPos.y * xResolution + foundPos.x);
+
+                    placedProp = PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
+                        vertices[iPosFaunaMaps], normals[iPosFaunaMaps], (int)foundPos.x, (int)foundPos.y, xResolution, yResolution);
+
+                    placedAmount += placedProp ? 1 : 0;
+
+                }
+
+            }
+
+
+            /*bool tooClose = false;
+
+            foreach (Transform prop in room.props) {
+                if (Vector3.Distance(prop.localPosition, thm.faunaPreferredPos) < FAUNA_CENTERPIECE_MIN_DISTANCE) {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            if (!tooClose) {
+
+                PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
+                    thm.faunaPreferredPos, thm.faunaPreferredNormal, (int)thm.faunaMeshPos.x, (int)thm.faunaMeshPos.y, xResolution, yResolution);
+
+
+                GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + room.faunaCentralPieces[0].ToString() + "> ");
+                faunaCenterPieces.transform.parent = self.transform;
+
+                Transform centerpiece = Global.Create(Global.Resources[room.faunaCentralPieces[0]], faunaCenterPieces.transform);
+                centerpiece.localPosition = thm.faunaPreferredPos;
+                centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, thm.faunaPreferredNormal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
+                room.props.Add(centerpiece);
+
+            }
+            else
+            {
+                Debug.Log("Fauna density: " + thm.maxDensity + " preferred pos not found for room " + room.roomNr);
+
+            }*/
+        }
+
+
+
+
         for (int a = 0; a < room.grass.Length; a++)
         {
             faunaMeshes[a].Clear();
@@ -592,8 +687,63 @@ public class TerrainFace {
         */
 
     }
+    public bool PlaceCenterpiece(
+        PrefabNames centralPiece,
+        Vector3 pos, 
+        Vector3 normal, 
+        int xMeshPos, 
+        int yMeshPos,
+        int xResolution, 
+        int yResolution) {
 
-    public TerrainFaceSurfaceType[] GenerateTexture(Vector3[] normals, int xResolution, int yResolution, TerrainHeightMaps thm) {
+        bool placedProp = false;
+        bool tooClose = false;
+
+        foreach (Transform prop in room.props) {
+            if (Vector3.Distance(prop.localPosition, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE) {
+                tooClose = true;
+                break;
+            }
+        }
+
+        if (!tooClose) {
+
+            placedProp = true;
+
+            GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
+            faunaCenterPieces.transform.parent = self.transform;
+
+            Transform centerpiece = Global.Create(Global.Resources[centralPiece], faunaCenterPieces.transform);
+            centerpiece.localPosition = pos;
+            centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
+            room.props.Add(centerpiece);
+
+            //centerpiece.gameObject.isStatic = true;
+        }
+
+        int faunaMinX = Mathf.Clamp(xMeshPos - FAUNA_DENSITY_INFLUENCE * 2, 0, xResolution);
+        int faunaMaxX = Mathf.Clamp(xMeshPos + FAUNA_DENSITY_INFLUENCE * 2, 0, xResolution);
+        int faunaMinY = Mathf.Clamp(yMeshPos - FAUNA_DENSITY_INFLUENCE * 2, 0, yResolution);
+        int faunaMaxY = Mathf.Clamp(yMeshPos + FAUNA_DENSITY_INFLUENCE * 2, 0, yResolution);
+
+        for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
+        {
+            for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
+            {
+                thm.faunaDensityMap[faunaX, faunaY] = 0;
+            }
+        }
+        return placedProp;
+
+    }
+
+    public TerrainFaceSurfaceType[] GenerateTexture(
+        Vector3[] normals,
+        Vector3[] vertices, 
+        int xResolution, 
+        int yResolution
+       // TerrainHeightMaps thm
+    ) {
 
         TerrainFaceSurfaceType[] types = new TerrainFaceSurfaceType[normals.Length];
 
@@ -605,10 +755,10 @@ public class TerrainFace {
         //Color32 red = new Color32(255, 0, 0, 0);
         //Color32 green = new Color32(0, 255, 0, 0);
 
-        Debug.Log("Normals :" + normals.Length + " xResolution: " + xResolution + " yResolution: " + yResolution+" total: "+xResolution*yResolution);
+        //Debug.Log("Normals :" + normals.Length + " xResolution: " + xResolution + " yResolution: " + yResolution+" total: "+xResolution*yResolution);
 
 
-
+        //float maxDensity = 0;
 
         int xy = 0;
         for (float y = 0; y < size; y++) {
@@ -623,19 +773,12 @@ public class TerrainFace {
                 int iPosMeshMaps = yPosMeshMaps * xResolution + xPosMeshMaps;
 
                 float nonHillyNess = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f);
-                bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
+                //bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
 
-                bool dirtIsDark = leftOrRight || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f);
+                bool dirtIsDark = IsDark(thm, xPosMeshMaps, yPosMeshMaps);
 
 
-                bool isGrass = xPosMeshMaps - 1 > 0 && yPosMeshMaps - 1 > 0 && xPosMeshMaps + 1 < xResolution && yPosMeshMaps + 1 < yResolution
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps, yPosMeshMaps]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 0]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps + 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps + 0]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps - 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps - 1];
+                bool isGrass = IsGrass(thm, xPosMeshMaps, yPosMeshMaps, xResolution, yResolution);
 
 
                 float dirt = dirtIsDark ? 0 : nonHillyNess;
@@ -652,6 +795,35 @@ public class TerrainFace {
                     if (isGrass)
                     {
                         types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+
+                        //Angle against camera preferred
+                        //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
+                        
+                        for (int faunaX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution); 
+                            faunaX < Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution); faunaX++) {
+                            for (int faunaY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution); 
+                                faunaY < Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution); faunaY++)
+                            {
+                                thm.faunaDensityMap[faunaX, faunaY] += nonHillyNess; //forwardness;
+
+                                if (thm.faunaDensityMap[faunaX, faunaY] > thm.maxDensity 
+                                    && IsDark(thm,faunaX, faunaY)
+                                    && IsGrass(thm,faunaX,faunaY,xResolution,yResolution)
+                                    ) {
+                                   
+                                    int iPosFaunaMaps = faunaY * xResolution + faunaX;
+
+                                    //Debug.Log("It happened? " + thm.faunaDensityMap[faunaX, faunaY] + " was bigger than " + thm.maxDensity + " pos " + vertices[iPosFaunaMaps].ToString());
+
+                                    thm.maxDensity = thm.faunaDensityMap[faunaX, faunaY];
+                                    thm.faunaPreferredPos = vertices[iPosFaunaMaps];
+                                    thm.faunaPreferredNormal = normals[iPosFaunaMaps];
+                                    thm.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                }
+                            }
+                        }
+
+                        
                     }
                     else {
                         types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
@@ -685,6 +857,23 @@ public class TerrainFace {
         renderer.material = terrainMat;
 
         return types;
+    }
+    public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps)
+    {
+
+        return (localUp == Vector3.left || localUp == Vector3.right)
+            || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f);
+    }
+    public bool IsGrass(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, int xResolution, int yResolution) {
+       
+        return xPosMeshMaps - 1 > 0 && yPosMeshMaps - 1 > 0 && xPosMeshMaps + 1 < xResolution && yPosMeshMaps + 1 < yResolution
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps, yPosMeshMaps]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 0]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps + 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps + 0]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps - 1]
+                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps - 1];
     }
 
     private void SetTexture(int num, Material from, Material to) {

@@ -44,14 +44,24 @@ public class TerrainRoom
 
     public Material[] materials;
     public MaterialNames[] grass;
+    public PrefabNames[] faunaCentralPieces;
     public int seed;
+
+    public List<Transform> props = new List<Transform>();
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
-    public void SpawnRoom(Transform self, Material[] materials, MaterialNames[] grass, float zShift, int seed)
+    public void SpawnRoom(
+        Transform self, 
+        Material[] materials, 
+        MaterialNames[] grass, 
+        PrefabNames[] faunaCentralPieces, 
+        float zShift, 
+        int seed)
     {
         noise = new Noise();
 
+        this.faunaCentralPieces = faunaCentralPieces;
         this.materials = materials;
         this.grass = grass;
         this.seed = seed;
@@ -158,13 +168,13 @@ public class TerrainRoom
     {
 
         directionMembers[dir].Add(g);
-        Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
+        //Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
     }
 
     public void GroupMembers()
     {
 
-        Debug.Log("Group members started for room: " + roomNr);
+        //Debug.Log("Group members started for room: " + roomNr);
 
         foreach (Vector3 dir in directions)
         {
