@@ -41,7 +41,7 @@ public class TerrainFace {
         public float[,] maxHeightMap;
         public float[,] heightMap;
         public bool[,] withinAnyYBoundsMap;
-        //public bool[,] isNotOutmostWall;
+        public bool[,] grassDisabled;
         public float[,] faunaDensityMap;
         public Vector3 faunaMeshPos;
         public Vector3 faunaPreferredPos;
@@ -54,7 +54,7 @@ public class TerrainFace {
             heightMap = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
-            //isNotOutmostWall = new bool[xResolution, yResolution];
+            grassDisabled = new bool[xResolution, yResolution];
             faunaDensityMap = new float[xResolution, yResolution];
             faunaPreferredPos = Vector3.zero;
             faunaPreferredNormal = Vector3.up;
@@ -216,7 +216,7 @@ public class TerrainFace {
                     if (xWithinBounds && yWithinBounds)
                     {
                         thm.onlyFacesHeightMap[x, y] = Mathf.Max(thm.onlyFacesHeightMap[x, y], height);
-
+                        thm.grassDisabled[x, y] = true;
                     }
                     else if (localUp == Vector3.forward) {
 
@@ -231,6 +231,10 @@ public class TerrainFace {
 
                     if (yWithinBounds) {
                         thm.withinAnyYBoundsMap[x, y] = true;
+
+                        if (localUp == Vector3.left || localUp == Vector3.right) {
+                            thm.grassDisabled[x, y] = true;
+                        }
                     }
 
                     thm.maxHeightMap[x, y] = Mathf.Max(thm.maxHeightMap[x, y], persistedHeight);
@@ -657,18 +661,7 @@ public class TerrainFace {
                         hangWeedTriangles[weed].Add(triangles[triIndex + 3]);
                         hangWeedTriangles[weed].Add(triangles[triIndex + 4]);
                         hangWeedTriangles[weed].Add(triangles[triIndex + 5]);
-
                     }
-
-
-                    /*triangles[triIndex] = i;
-                    triangles[triIndex + 1] = i + xResolution;
-                    triangles[triIndex + 2] = i + xResolution + 1;
-
-                    triangles[triIndex + 3] = i;
-                    triangles[triIndex + 4] = i + xResolution + 1;
-                    triangles[triIndex + 5] = i + 1;
-                    */
                     triIndex += 6;
                 }
 
@@ -872,32 +865,42 @@ public class TerrainFace {
 
                         //Angle against camera preferred
                         //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
-                        
-                        for (int faunaX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution); 
-                            faunaX < Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution); faunaX++) {
-                            for (int faunaY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution); 
-                                faunaY < Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution); faunaY++)
+                        int faunaMinX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
+                        int faunaMaxX = Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
+                        int faunaMinY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
+                        int faunaMaxY = Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
+
+                        if (faunaMaxX != faunaMinX && faunaMinY != faunaMaxY) {
+                            for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
                             {
-                                thm.faunaDensityMap[faunaX, faunaY] += nonHillyNess; //forwardness;
+                                for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
+                                {
+                                    if (IsDark(thm, faunaX, faunaY) && IsGrass(thm, faunaX, faunaY, xResolution, yResolution))
+                                    {
 
-                                if (thm.faunaDensityMap[faunaX, faunaY] > thm.maxDensity 
-                                    && IsDark(thm,faunaX, faunaY)
-                                    && IsGrass(thm,faunaX,faunaY,xResolution,yResolution)
-                                    ) {
-                                   
-                                    int iPosFaunaMaps = faunaY * xResolution + faunaX;
+                                        float percentX = Mathf.Abs((float)(xPosMeshMaps - faunaX)) / ((float)(faunaMaxX - faunaMinX)/2f);
+                                        float percentY = Mathf.Abs((float)(yPosMeshMaps - faunaY)) / ((float)(faunaMaxY - faunaMinY)/2f);
 
-                                    //Debug.Log("It happened? " + thm.faunaDensityMap[faunaX, faunaY] + " was bigger than " + thm.maxDensity + " pos " + vertices[iPosFaunaMaps].ToString());
+                                        float percent = (1f - percentX) * (1f - percentY);
 
-                                    thm.maxDensity = thm.faunaDensityMap[faunaX, faunaY];
-                                    thm.faunaPreferredPos = vertices[iPosFaunaMaps];
-                                    thm.faunaPreferredNormal = normals[iPosFaunaMaps];
-                                    thm.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                        thm.faunaDensityMap[faunaX, faunaY] += nonHillyNess * percent; //forwardness;
+
+                                        if (thm.faunaDensityMap[faunaX, faunaY] > thm.maxDensity)
+                                        {
+
+                                            int iPosFaunaMaps = faunaY * xResolution + faunaX;
+
+                                            //Debug.Log("It happened? " + thm.faunaDensityMap[faunaX, faunaY] + " was bigger than " + thm.maxDensity + " pos " + vertices[iPosFaunaMaps].ToString());
+
+                                            thm.maxDensity = thm.faunaDensityMap[faunaX, faunaY];
+                                            thm.faunaPreferredPos = vertices[iPosFaunaMaps];
+                                            thm.faunaPreferredNormal = normals[iPosFaunaMaps];
+                                            thm.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                        }
+                                    }
                                 }
                             }
                         }
-
-                        
                     }
                     else {
                         types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
@@ -940,14 +943,17 @@ public class TerrainFace {
     }
     public bool IsGrass(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, int xResolution, int yResolution) {
        
-        return xPosMeshMaps - 1 > 0 && yPosMeshMaps - 1 > 0 && xPosMeshMaps + 1 < xResolution && yPosMeshMaps + 1 < yResolution
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps, yPosMeshMaps]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 0]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps + 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 1, yPosMeshMaps + 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps + 0]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps + 0, yPosMeshMaps - 1]
-                    && !thm.withinAnyYBoundsMap[xPosMeshMaps - 1, yPosMeshMaps - 1];
+        return      xPosMeshMaps - 1 > 0 
+                    && yPosMeshMaps - 1 > 0 
+                    && xPosMeshMaps + 1 < xResolution 
+                    && yPosMeshMaps + 1 < yResolution
+                    && !thm.grassDisabled[xPosMeshMaps, yPosMeshMaps]
+                    && !thm.grassDisabled[xPosMeshMaps + 1, yPosMeshMaps + 0]
+                    && !thm.grassDisabled[xPosMeshMaps + 0, yPosMeshMaps + 1]
+                    && !thm.grassDisabled[xPosMeshMaps + 1, yPosMeshMaps + 1]
+                    && !thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps + 0]
+                    && !thm.grassDisabled[xPosMeshMaps + 0, yPosMeshMaps - 1]
+                    && !thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps - 1];
     }
 
     private void SetTexture(int num, Material from, Material to) {
