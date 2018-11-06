@@ -13,7 +13,7 @@ public enum TerrainFaceSurfaceType {
 }
 public class TerrainFace {
 
-    
+
 
     Mesh mesh;
     public Vector3 localUp;
@@ -24,7 +24,7 @@ public class TerrainFace {
     GameObject self;
     TerrainHeightMaps thm;
 
-    public static int[] TEXTURE_SIZES = new int[] { 2,4,8,16,32,64,128,256,512,1024,2048};
+    public static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
     public static int FAUNA_DENSITY_INFLUENCE = 10;
 
@@ -143,16 +143,16 @@ public class TerrainFace {
 
 
 
-        int maxOverhang = localUp == Vector3.left || localUp == Vector3.right ? minY : 
-                            (int) (Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
+        int maxOverhang = localUp == Vector3.left || localUp == Vector3.right ? minY :
+                            (int)(Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
 
-        int maxUnderHang = (int) (Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
+        int maxUnderHang = (int)(Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
 
         bool isOutmostWall = g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof || g.hints.type == GroundType.Wall;
-  
 
-        int iterMinY = iterYSmoothening ? Mathf.Max(0, minY-maxOverhang) : minY;
-        int iterMaxY = iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY+ maxUnderHang) : maxY;
+
+        int iterMinY = iterYSmoothening ? Mathf.Max(0, minY - maxOverhang) : minY;
+        int iterMaxY = iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY + maxUnderHang) : maxY;
         int iterMinX = iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
         int iterMaxX = iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
 
@@ -185,7 +185,7 @@ public class TerrainFace {
                         {
                             xStartProg = Mathf.Clamp01((float)x / minX);
                         }
-                        if(localUp == Vector3.up)
+                        if (localUp == Vector3.up)
                         {
                             xEndProg = 1f - Mathf.Clamp01(((float)x - (float)maxX) / (float)(maxUnderHang));
                             xStartProg = Mathf.Clamp01(((float)x - (float)iterMinX) / (float)(maxOverhang));
@@ -202,7 +202,7 @@ public class TerrainFace {
                         yEndProg = 1f - Mathf.Clamp01(((float)y - (float)maxY) / (float)(maxUnderHang));
                         yStartProg = Mathf.Clamp01(((float)y - (float)iterMinY) / (float)(maxOverhang));
 
-                        yProgress =  y < maxY ? yStartProg : yEndProg;
+                        yProgress = y < maxY ? yStartProg : yEndProg;
                     }
 
                     //float morphIntoNoiseFactor = 0;
@@ -272,7 +272,7 @@ public class TerrainFace {
                     //    morphIntoNoiseFactor
                     //    );
 
-                   // i++;
+                    // i++;
                 }
             }
         }
@@ -307,8 +307,8 @@ public class TerrainFace {
         Vector3 start = groundPositon - centerPosition;
 
         float xProgression = ((start.x + room.xLength / 2f) / room.xLength);
-        float yProgression = 1-((start.y + room.yLength / 2f) / room.yLength);
-        float zProgression = 1-((start.z + room.zLength / 2f) / room.zLength);
+        float yProgression = 1 - ((start.y + room.yLength / 2f) / room.yLength);
+        float zProgression = 1 - ((start.z + room.zLength / 2f) / room.zLength);
 
         float startY = (int)(yProgression * (yResolution - 1f));
         float startX = (int)(zProgression * (xResolution - 1f));
@@ -365,9 +365,9 @@ public class TerrainFace {
     {
         Vector3 start = groundPositon - centerPosition;
 
-        float xProgression = 1-((start.x + room.xLength / 2f) / room.xLength);
+        float xProgression = 1 - ((start.x + room.xLength / 2f) / room.xLength);
         float yProgression = ((start.y + room.yLength / 2f) / room.yLength);
-        float zProgression = 1 -((start.z + room.zLength / 2f) / room.zLength);
+        float zProgression = 1 - ((start.z + room.zLength / 2f) / room.zLength);
 
         float startY = (int)(zProgression * (yResolution - 1f));
         float startX = (int)(xProgression * (xResolution - 1f));
@@ -402,10 +402,10 @@ public class TerrainFace {
             zMod = room.ySize;
         }
 
-        int xResolution = room.resolution *xMod;
-        int yResolution = room.resolution *yMod;
+        int xResolution = room.resolution * xMod;
+        int yResolution = room.resolution * yMod;
 
-        this.thm = GenerateHeightMap(members, position, xResolution, yResolution,xMod, yMod, zMod);
+        this.thm = GenerateHeightMap(members, position, xResolution, yResolution, xMod, yMod, zMod);
 
         //Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), 1f / (float)(yResolution - 1f));
 
@@ -509,8 +509,10 @@ public class TerrainFace {
                     }
                     else
                     {
-                        mergeTo = reversePos + new Vector3(0, 0, room.zLength * 2);
-                        noiseForGrounds = 0.2f * (noiseVal) * (1f - Mathf.Clamp01((pointOnWall.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                        bool isUpOrDown = localUp == Vector3.up || localUp == Vector3.down;
+
+                        mergeTo = reversePos + new Vector3(0, 0, isUpOrDown ? 0 : room.zLength * 2);
+                        noiseForGrounds = (isUpOrDown ? 0.05f : 0.2f) * (noiseVal) * (1f - Mathf.Clamp01((pointOnWall.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
                     }
 
                     vertices[i] =
@@ -543,17 +545,17 @@ public class TerrainFace {
 
                 }
 
-                uvs[i] = percent; 
+                uvs[i] = percent;
 
                 if (x != xResolution - 1 && y != yResolution - 1)
                 {
                     triangles[triIndex] = i;
                     triangles[triIndex + 1] = i + xResolution;
-                    triangles[triIndex + 2] = i + xResolution + 1; 
+                    triangles[triIndex + 2] = i + xResolution + 1;
 
                     triangles[triIndex + 3] = i;
                     triangles[triIndex + 4] = i + xResolution + 1;
-                    triangles[triIndex + 5] = i + 1; 
+                    triangles[triIndex + 5] = i + 1;
                     triIndex += 6;
                 }
                 i++;
@@ -571,16 +573,16 @@ public class TerrainFace {
         TerrainFaceSurfaceType[] types = GenerateTexture(normals, vertices, xResolution, yResolution);
         GenerateFauna(types, normals, triangles, vertices, xResolution, yResolution);
 
-       
+
     }
 
     public void GenerateFauna(
         TerrainFaceSurfaceType[] types,
-        Vector3[] normals, 
+        Vector3[] normals,
         int[] triangles,
-        Vector3[] vertices, 
+        Vector3[] vertices,
         //TerrainHeightMaps thm,
-        int xResolution, 
+        int xResolution,
         int yResolution
         ) {
 
@@ -625,7 +627,7 @@ public class TerrainFace {
         //List<Vector3> faunaVertices = new List<Vector3>();
         //List<int> faunaTriangle = new List<int>();
 
-        Vector3 grassPos = new Vector3(0,0,room.seed)+room.position;
+        Vector3 grassPos = new Vector3(0, 0, room.seed) + room.position;
 
         int triIndex = 0;
         int i = 0;
@@ -679,7 +681,7 @@ public class TerrainFace {
             float maxDensity = 1;
 
             while (maxDensity > 0 && placedAmount < FAUNA_CENTERPIECE_MAX_AMOUNT) {
-                
+
                 maxDensity = 0;
                 Vector2 foundPos = Vector2.zero;
 
@@ -746,36 +748,47 @@ public class TerrainFace {
     }
     public bool PlaceCenterpiece(
         PrefabNames centralPiece,
-        Vector3 pos, 
-        Vector3 normal, 
-        int xMeshPos, 
+        Vector3 pos,
+        Vector3 normal,
+        int xMeshPos,
         int yMeshPos,
-        int xResolution, 
+        int xResolution,
         int yResolution) {
 
         bool placedProp = false;
         bool tooClose = false;
 
-        foreach (Transform prop in room.props) {
-            if (Vector3.Distance(prop.localPosition, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE) {
-                tooClose = true;
-                break;
+        if (pos.x+room.position.x > room.minX + WALL_WIDTH
+            && pos.x + room.position.x < room.maxX - WALL_WIDTH
+            && pos.y + room.position.y > room.minY + WALL_WIDTH
+            && pos.y + room.position.y < room.maxY - WALL_WIDTH
+            ) {
+
+            foreach (Transform prop in room.props)
+            {
+                if (Vector3.Distance(prop.localPosition, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE)
+                {
+                    tooClose = true;
+                    break;
+                }
             }
-        }
 
-        if (!tooClose) {
+            if (!tooClose)
+            {
 
-            placedProp = true;
+                placedProp = true;
 
-            GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
-            faunaCenterPieces.transform.parent = self.transform;
+                GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
+                faunaCenterPieces.transform.parent = self.transform;
 
-            Transform centerpiece = Global.Create(Global.Resources[centralPiece], faunaCenterPieces.transform);
-            centerpiece.localPosition = pos;
-            centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
-            room.props.Add(centerpiece);
+                Transform centerpiece = Global.Create(Global.Resources[centralPiece], faunaCenterPieces.transform);
+                centerpiece.localPosition = pos;
+                centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
+                room.props.Add(centerpiece);
 
-            //centerpiece.gameObject.isStatic = true;
+                //centerpiece.gameObject.isStatic = true;
+            }
+
         }
 
         int faunaMinX = Mathf.Clamp(xMeshPos - FAUNA_DENSITY_INFLUENCE * 2, 0, xResolution);
