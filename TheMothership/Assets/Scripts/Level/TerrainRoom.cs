@@ -202,13 +202,15 @@ public class TerrainRoom
         {
             if (g.hints.type == GroundType.Wall)
             {
+                g.obj.GetComponent<MeshRenderer>().enabled = false;
             }
             else if (g.hints.type == GroundType.Floor)
             {
+                g.obj.GetComponent<MeshRenderer>().enabled = false;
                 //AddDirectionMember(Vector3.down, g);
             }
             else if (g.hints.type == GroundType.Roof) {
-
+                g.obj.GetComponent<MeshRenderer>().enabled = false;
                 //AddDirectionMember(Vector3.up, g);
             } else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
             {
