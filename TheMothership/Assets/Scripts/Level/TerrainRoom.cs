@@ -32,7 +32,7 @@ public class TerrainRoom
 
     public Vector3 position;
 
-   // private Material mat;
+    // private Material mat;
 
     private Transform self;
 
@@ -53,12 +53,12 @@ public class TerrainRoom
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
     public void SpawnRoom(
-        Transform self, 
-        Material[] materials, 
+        Transform self,
+        Material[] materials,
         MaterialNames[] grass,
         MaterialNames[] hangWeed,
-        PrefabNames[] faunaCentralPieces, 
-        float zShift, 
+        PrefabNames[] faunaCentralPieces,
+        float zShift,
         int seed)
     {
         noise = new Noise();
@@ -72,7 +72,7 @@ public class TerrainRoom
         float length = (maxX - minX);
         float height = (maxY - minY);
 
-        if(Mathf.Max(length,height) < 120)
+        if (Mathf.Max(length, height) < 120)
         {
             this.resolution = 4;
         }
@@ -89,14 +89,19 @@ public class TerrainRoom
         this.zLength = length / 2f;
         this.yLength = height;
 
-        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f);
-
-        this.self = self;
-       // this.mat = terrainMat;
-        this.position = pos;
         this.xSize = (int)(xLength / 2f);
         this.ySize = (int)(yLength / 2f);
         this.zSize = (int)(zLength / 2f);
+
+        float diffCorrection = (zLength / 2f) - ((float)zSize);
+        //Debug.Log("Diffcorrection room<" + roomNr + "> " + diffCorrection);
+
+        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f- diffCorrection);
+
+        this.self = self;
+        // this.mat = terrainMat;
+        this.position = pos;
+
 
         FullUpdate();
     }
@@ -122,14 +127,14 @@ public class TerrainRoom
         for (int i = 0; i < directions.Length; i++)
         {
             //if (meshFilters[i] == null)
-           // {
-                GameObject meshObj = new GameObject("Submesh "+ directions[i].ToString());
-                meshObj.transform.parent = self;
+            // {
+            GameObject meshObj = new GameObject("Submesh " + directions[i].ToString());
+            meshObj.transform.parent = self;
 
-                MeshRenderer renderer = meshObj.AddComponent<MeshRenderer>();
-               // renderer.sharedMaterial = mat;
-                meshFilters[i] = meshObj.AddComponent<MeshFilter>();
-                meshFilters[i].sharedMesh = new Mesh();
+            MeshRenderer renderer = meshObj.AddComponent<MeshRenderer>();
+            // renderer.sharedMaterial = mat;
+            meshFilters[i] = meshObj.AddComponent<MeshFilter>();
+            meshFilters[i].sharedMesh = new Mesh();
             //}
 
             terrainFaces[i] = new TerrainFace(meshObj, meshFilters[i].sharedMesh, this, directions[i], renderer);
@@ -146,6 +151,9 @@ public class TerrainRoom
         {
             meshFilters[i].gameObject.isStatic = true;
         }
+
+        //DebugPrint();
+
     }
 
     public TerrainRoom(int room, Ground g)
@@ -175,7 +183,7 @@ public class TerrainRoom
     {
 
         directionMembers[dir].Add(g);
-        Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
+        //Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
     }
 
     public void GroupMembers()
@@ -261,6 +269,9 @@ public class TerrainRoom
 
     public void DebugPrint()
     {
-        Debug.Log("Room<" + roomNr + "> maxX:" + maxX + " minX:" + minX + " maxY:" + maxY + " minY:" + minY);
+        Debug.Log("Room<" + roomNr + "> " +//"maxX:" + maxX + " minX:" + minX + " maxY:" + maxY + " minY:" + minY+
+            " zLength" + zLength + " zPos" + position.z + " zSize: " + zSize + " posshift: " + (position.z - ((float)zSize))
+            + "poscorr: " + (position.z - (zLength / 2f)));
+            
     }
 }

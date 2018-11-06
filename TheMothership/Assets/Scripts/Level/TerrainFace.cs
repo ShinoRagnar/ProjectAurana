@@ -517,6 +517,26 @@ public class TerrainFace {
                                     , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
                             : spherinessWithWalls;
 
+
+                    //Fix the angle difference between adjacent rooms
+                    if (
+                        (localUp == Vector3.left && x >= xResolution - 2f)
+                        ||
+                        (localUp == Vector3.right && x == 1)
+                        ||
+                        (localUp == Vector3.down && y >= yResolution - 2f)
+                        ||
+                        (localUp == Vector3.up && y >= yResolution - 2f)
+                        )
+                    {
+
+                        Vector2 dPer = new Vector2(localUp == Vector3.left ? 1 : 0, 1);
+
+                        Vector3 firstPoint = localUp * zMod + (dPer.x - .5f) * 2 * axisA * ((float)xMod) + (dPer.y - .5f) * 2 * axisB * ((float)yMod);
+
+                        vertices[i].z = firstPoint.z;
+                    }
+
                 }
 
                 uvs[i] = percent; 
