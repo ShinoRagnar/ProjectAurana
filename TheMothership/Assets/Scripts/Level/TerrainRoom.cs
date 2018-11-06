@@ -44,6 +44,7 @@ public class TerrainRoom
 
     public Material[] materials;
     public MaterialNames[] grass;
+    public MaterialNames[] hangWeed;
     public PrefabNames[] faunaCentralPieces;
     public int seed;
 
@@ -54,7 +55,8 @@ public class TerrainRoom
     public void SpawnRoom(
         Transform self, 
         Material[] materials, 
-        MaterialNames[] grass, 
+        MaterialNames[] grass,
+        MaterialNames[] hangWeed,
         PrefabNames[] faunaCentralPieces, 
         float zShift, 
         int seed)
@@ -64,6 +66,7 @@ public class TerrainRoom
         this.faunaCentralPieces = faunaCentralPieces;
         this.materials = materials;
         this.grass = grass;
+        this.hangWeed = hangWeed;
         this.seed = seed;
 
         float length = (maxX - minX);
@@ -86,7 +89,7 @@ public class TerrainRoom
         this.zLength = length / 2f;
         this.yLength = height;
 
-        Vector3 pos = new Vector3(minX + xLength / 2, minY + yLength / 2, -zShift + zLength / 2);
+        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f);
 
         this.self = self;
        // this.mat = terrainMat;
@@ -139,6 +142,10 @@ public class TerrainRoom
         {
             face.ConstructMeshAndTexture(position, directionMembers[face.localUp]);
         }
+        for (int i = 0; i < directions.Length; i++)
+        {
+            meshFilters[i].gameObject.isStatic = true;
+        }
     }
 
     public TerrainRoom(int room, Ground g)
@@ -168,7 +175,7 @@ public class TerrainRoom
     {
 
         directionMembers[dir].Add(g);
-        //Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
+        Debug.Log("Room <" + roomNr + "><" + g.obj.name + "><" + g.obj.GetInstanceID().ToString() + "> dir: " + dir);
     }
 
     public void GroupMembers()
@@ -185,8 +192,17 @@ public class TerrainRoom
 
         foreach (Ground g in members)
         {
+            if (g.hints.type == GroundType.Wall)
+            {
+            }
+            else if (g.hints.type == GroundType.Floor)
+            {
+                //AddDirectionMember(Vector3.down, g);
+            }
+            else if (g.hints.type == GroundType.Roof) {
 
-            if (g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
+                //AddDirectionMember(Vector3.up, g);
+            } else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
             {
 
                 if (Mathf.Abs(g.GetLeftSide().x - minX) <= SIDE_ATTACH_DISTANCE)

@@ -7,7 +7,9 @@ public enum TerrainFaceSurfaceType {
     Cliff = 0,
     Dirt = 1,
     DarkDirt = 2,
-    Grass = 3
+    Grass = 3,
+    CliffUnderhang = 4,
+
 }
 public class TerrainFace {
 
@@ -26,6 +28,8 @@ public class TerrainFace {
 
     public static int FAUNA_DENSITY_INFLUENCE = 10;
 
+    public static int WALL_WIDTH = 2;
+    public static int STALAGMITE_LENGTH = 50;
     public static int FAUNA_CENTERPIECE_MAX_AMOUNT = 3;
     public static int FAUNA_CENTERPIECE_MIN_DISTANCE = 5;
     public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
@@ -37,6 +41,7 @@ public class TerrainFace {
         public float[,] maxHeightMap;
         public float[,] heightMap;
         public bool[,] withinAnyYBoundsMap;
+        //public bool[,] isNotOutmostWall;
         public float[,] faunaDensityMap;
         public Vector3 faunaMeshPos;
         public Vector3 faunaPreferredPos;
@@ -49,6 +54,7 @@ public class TerrainFace {
             heightMap = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
+            //isNotOutmostWall = new bool[xResolution, yResolution];
             faunaDensityMap = new float[xResolution, yResolution];
             faunaPreferredPos = Vector3.zero;
             faunaPreferredNormal = Vector3.up;
@@ -141,6 +147,9 @@ public class TerrainFace {
                             (int) (Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
 
         int maxUnderHang = (int) (Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
+
+        bool isOutmostWall = g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof || g.hints.type == GroundType.Wall;
+  
 
         int iterMinY = iterYSmoothening ? Mathf.Max(0, minY-maxOverhang) : minY;
         int iterMaxY = iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY+ maxUnderHang) : maxY;
@@ -249,6 +258,10 @@ public class TerrainFace {
                         Mathf.Min(
                             thm.maxHeightMap[x, y],
                             thm.heightMap[x, y] + persistedHeight * reducedHeight);
+
+                    //if (!isOutmostWall) {
+                    //    thm.isNotOutmostWall[x, y] = true;
+                    //}
 
                     //thm.persistanceMap[x, y] = Mathf.Max(
                     //    thm.persistanceMap[x, y],
@@ -423,59 +436,88 @@ public class TerrainFace {
                 Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
-                Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
-                float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
-                float yProgCos = Mathf.Cos(((pointOnUnitCube.y) / (room.yLength / 2f)) * (Mathf.PI / 2f));
-                float combCos = xProgCos * yProgCos;
-
-                Vector3 pointOnCosCurve =
-                    new Vector3(pointOnUnitCube.x, pointOnUnitCube.y)
-                    + new Vector3(0, 0, room.zLength) * combCos * 2
-                    + new Vector3(0, 0, -room.zLength / 2)
-                    ;
-
-                float yProgress = Mathf.Clamp01(Mathf.Abs((pointOnUnitCube.y - room.position.y) / (room.yLength / 2)));
-                float zProgress = Mathf.Clamp01((pointOnUnitCube.z) / (room.zLength / 2));
-                zProgress = zProgress * zProgress * zProgress * (zProgress * (6f * zProgress - 15f) + 10f);
-
-                Vector3 pointOnSphere = pointOnUnitCube.normalized * Mathf.Lerp(room.xLength / 2f, room.yLength / 2f, yProgress);
-
-                float reducedSmoothCosCurve = (combCos) * (combCos) * (combCos) * (combCos) * (6f * (combCos - 15f) + 10f);
-
-                float noiseVal =
-                    EvaluateNoise(pointOnCosCurve.normalized, baseRoughness, roughness, persistance, strength, layers, false);
-
-                Vector3 mergeSphereWithCosCurve = Vector3.Lerp(pointOnCosCurve, pointOnSphere, reducedSmoothCosCurve);
-                Vector3 mergeWithNoise = Vector3.Lerp(mergeSphereWithCosCurve, pointOnUnitCube, noiseVal);
-                Vector3 cubeToSphereness = Vector3.Lerp(pointOnUnitCube, mergeWithNoise, zProgress);
-
-
-                float height = thm.heightMap[x, y];
-
-                float noiseForGrounds = 0;
-                Vector3 mergeTo;
-
-                if (localUp == Vector3.forward)
+                if (
+                    (localUp == Vector3.left && x >= xResolution - 1f)
+                    ||
+                    (localUp == Vector3.right && x == 0)
+                    ||
+                    (localUp == Vector3.down && y >= yResolution - 1f)
+                    ||
+                    (localUp == Vector3.up && y >= yResolution - 1f)
+                    )
                 {
-                    mergeTo = pointOnUnitCube;
-                    noiseForGrounds = (thm.onlyFacesHeightMap[x, y] != 0 ? 0 : 1) * (noiseVal * zProgress);
-                    height *= thm.onlyFacesHeightMap[x, y] != 0 ? 1 + (noiseVal * zProgress) * 0.1f : 1;
+                    vertices[i] = pointOnUnitCube;
+
                 }
                 else {
-                    mergeTo = reversePos + new Vector3(0, 0, room.zLength * 2);
-                    noiseForGrounds = 0.2f * (noiseVal) * (1f - Mathf.Clamp01((pointOnUnitCube.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+
+                    Vector3 pointOnWall = localUp * (zMod - WALL_WIDTH) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+                    Vector3 wallNoise = localUp * (zMod - WALL_WIDTH * 2) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+
+                    Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+
+                    float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
+                    float yProgCos = Mathf.Cos(((pointOnUnitCube.y) / (room.yLength / 2f)) * (Mathf.PI / 2f));
+                    float combCos = xProgCos * yProgCos;
+
+                    Vector3 pointOnCosCurve =
+                        new Vector3(pointOnUnitCube.x, pointOnUnitCube.y)
+                        + new Vector3(0, 0, room.zLength) * combCos * 2
+                        + new Vector3(0, 0, -room.zLength / 2)
+                        ;
+
+                    float yProgress = Mathf.Clamp01(Mathf.Abs((pointOnUnitCube.y - room.position.y) / (room.yLength / 2)));
+                    float zProgress = Mathf.Clamp01((pointOnUnitCube.z) / (room.zLength / 2));
+                    zProgress = zProgress * zProgress * zProgress * (zProgress * (6f * zProgress - 15f) + 10f);
+
+                    Vector3 pointOnSphere = pointOnUnitCube.normalized * Mathf.Lerp(room.xLength / 2f, room.yLength / 2f, yProgress);
+
+                    float reducedSmoothCosCurve = (combCos) * (combCos) * (combCos) * (combCos) * (6f * (combCos - 15f) + 10f);
+
+                    float noiseVal =
+                        EvaluateNoise(pointOnCosCurve.normalized, baseRoughness, roughness, persistance, strength, layers, false);
+
+                    float zg = Mathf.Clamp01((pointOnUnitCube.z + room.zLength / 2f - TerrainGenerator.TERRAIN_Z_WIDTH * 2) / (room.zLength / 2f));
+                    float zGroundProgress = zg * zg * zg * (zg * (6f * zg - 15f) + 10f);
+
+                    Vector3 wallToNoise = Vector3.Lerp(pointOnWall, wallNoise, noiseVal);
+
+
+                    Vector3 mergeSphereWithCosCurve = Vector3.Lerp(pointOnCosCurve, pointOnSphere, reducedSmoothCosCurve);
+                    Vector3 mergeWithNoise = Vector3.Lerp(mergeSphereWithCosCurve, wallToNoise, noiseVal);
+                    Vector3 cubeToSphereness = Vector3.Lerp(wallToNoise, mergeWithNoise, zProgress);
+
+                    Vector3 spherinessWithWalls = Vector3.Lerp(wallToNoise, cubeToSphereness, zGroundProgress);
+
+
+                    float height = thm.heightMap[x, y];
+
+
+                    float noiseForGrounds = 0;
+                    Vector3 mergeTo;
+
+                    if (localUp == Vector3.forward)
+                    {
+                        mergeTo = pointOnWall;
+                        noiseForGrounds = (thm.onlyFacesHeightMap[x, y] != 0 ? 0 : 1) * (noiseVal * zProgress);
+                        height *= thm.onlyFacesHeightMap[x, y] != 0 ? 1 + (noiseVal * zProgress) * 0.1f : 1;
+                    }
+                    else
+                    {
+                        mergeTo = reversePos + new Vector3(0, 0, room.zLength * 2);
+                        noiseForGrounds = 0.2f * (noiseVal) * (1f - Mathf.Clamp01((pointOnWall.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                    }
+
+                    vertices[i] =
+                         height > 0 ?
+                            Vector3.Lerp(
+                                Vector3.Lerp(Vector3.Lerp(wallToNoise, reversePos, height),
+                                    mergeTo, noiseForGrounds)
+                                    , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
+                            : spherinessWithWalls;
+
                 }
-
-
-
-                vertices[i] = height > 0 ?
-
-                    Vector3.Lerp(
-                        Vector3.Lerp(Vector3.Lerp(pointOnUnitCube, reversePos, height),
-                            mergeTo, noiseForGrounds)
-                            , cubeToSphereness, Mathf.Clamp01(zProgress - height*4))
-                    : cubeToSphereness; 
 
                 uvs[i] = percent; 
 
@@ -505,6 +547,7 @@ public class TerrainFace {
         TerrainFaceSurfaceType[] types = GenerateTexture(normals, vertices, xResolution, yResolution);
         GenerateFauna(types, normals, triangles, vertices, xResolution, yResolution);
 
+       
     }
 
     public void GenerateFauna(
@@ -517,15 +560,21 @@ public class TerrainFace {
         int yResolution
         ) {
 
-
+        //Grass is facing up
         GameObject[] faunas = new GameObject[room.grass.Length];
         MeshRenderer[] faunaRenderers = new MeshRenderer[room.grass.Length];
         Mesh[] faunaMeshes = new Mesh[room.grass.Length];
         DictionaryList<int, List<int>> faunaTriangles = new DictionaryList<int, List<int>>();
 
+        //Hangweed is facing down
+        GameObject[] hangWeedFaunas = new GameObject[room.hangWeed.Length];
+        MeshRenderer[] hangWeedRenderers = new MeshRenderer[room.hangWeed.Length];
+        Mesh[] hangWeedMeshes = new Mesh[room.hangWeed.Length];
+        DictionaryList<int, List<int>> hangWeedTriangles = new DictionaryList<int, List<int>>();
+
         for (int a = 0; a < room.grass.Length; a++) {
 
-            faunas[a] = new GameObject("Fauna <" + room.grass[a].ToString() + "> ");
+            faunas[a] = new GameObject("Grass <" + room.grass[a].ToString() + "> ");
             faunas[a].transform.parent = self.transform;
 
             faunaRenderers[a] = faunas[a].AddComponent<MeshRenderer>();
@@ -533,6 +582,19 @@ public class TerrainFace {
             MeshFilter faunaMeshFilter = faunas[a].AddComponent<MeshFilter>();
             faunaMeshes[a] = faunaMeshFilter.sharedMesh = new Mesh();
             faunaTriangles.Add(a, new List<int>());
+        }
+
+        for (int a = 0; a < room.hangWeed.Length; a++)
+        {
+
+            hangWeedFaunas[a] = new GameObject("HangWeed <" + room.hangWeed[a].ToString() + "> ");
+            hangWeedFaunas[a].transform.parent = self.transform;
+
+            hangWeedRenderers[a] = hangWeedFaunas[a].AddComponent<MeshRenderer>();
+            // renderer.shaaredMaterial = mat;
+            MeshFilter hangWeedFilter = hangWeedFaunas[a].AddComponent<MeshFilter>();
+            hangWeedMeshes[a] = hangWeedFilter.sharedMesh = new Mesh();
+            hangWeedTriangles.Add(a, new List<int>());
         }
 
 
@@ -556,7 +618,7 @@ public class TerrainFace {
                 {
                     if (types[i] == TerrainFaceSurfaceType.Grass)
                     {
-                        int grass =(int)(((room.noise.Evaluate(grassPos + vertices[i]) + 1f) / 2f) * ((float)room.grass.Length)) ;
+                        int grass = (int)(((room.noise.Evaluate(grassPos + vertices[i]) + 1f) / 2f) * ((float)room.grass.Length));
 
                         faunaTriangles[grass].Add(triangles[triIndex]);
                         faunaTriangles[grass].Add(triangles[triIndex + 1]);
@@ -564,14 +626,18 @@ public class TerrainFace {
                         faunaTriangles[grass].Add(triangles[triIndex + 3]);
                         faunaTriangles[grass].Add(triangles[triIndex + 4]);
                         faunaTriangles[grass].Add(triangles[triIndex + 5]);
+                    }
+                    else if (types[i] == TerrainFaceSurfaceType.CliffUnderhang) {
 
-                        /*faunaTriangle.Add(triangles[triIndex]);
-                        faunaTriangle.Add(triangles[triIndex + 1]);
-                        faunaTriangle.Add(triangles[triIndex + 2]);
-                        faunaTriangle.Add(triangles[triIndex + 3]);
-                        faunaTriangle.Add(triangles[triIndex + 4]);
-                        faunaTriangle.Add(triangles[triIndex + 5]);
-                        */
+                        int weed = (int)(((room.noise.Evaluate(grassPos + vertices[i]) + 1f) / 2f) * ((float)room.hangWeed.Length));
+
+                        hangWeedTriangles[weed].Add(triangles[triIndex]);
+                        hangWeedTriangles[weed].Add(triangles[triIndex + 1]);
+                        hangWeedTriangles[weed].Add(triangles[triIndex + 2]);
+                        hangWeedTriangles[weed].Add(triangles[triIndex + 3]);
+                        hangWeedTriangles[weed].Add(triangles[triIndex + 4]);
+                        hangWeedTriangles[weed].Add(triangles[triIndex + 5]);
+
                     }
 
 
@@ -631,41 +697,19 @@ public class TerrainFace {
                 }
 
             }
-
-
-            /*bool tooClose = false;
-
-            foreach (Transform prop in room.props) {
-                if (Vector3.Distance(prop.localPosition, thm.faunaPreferredPos) < FAUNA_CENTERPIECE_MIN_DISTANCE) {
-                    tooClose = true;
-                    break;
-                }
-            }
-
-            if (!tooClose) {
-
-                PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
-                    thm.faunaPreferredPos, thm.faunaPreferredNormal, (int)thm.faunaMeshPos.x, (int)thm.faunaMeshPos.y, xResolution, yResolution);
-
-
-                GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + room.faunaCentralPieces[0].ToString() + "> ");
-                faunaCenterPieces.transform.parent = self.transform;
-
-                Transform centerpiece = Global.Create(Global.Resources[room.faunaCentralPieces[0]], faunaCenterPieces.transform);
-                centerpiece.localPosition = thm.faunaPreferredPos;
-                centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, thm.faunaPreferredNormal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
-                room.props.Add(centerpiece);
-
-            }
-            else
-            {
-                Debug.Log("Fauna density: " + thm.maxDensity + " preferred pos not found for room " + room.roomNr);
-
-            }*/
         }
 
 
-
+        for (int a = 0; a < room.hangWeed.Length; a++)
+        {
+            hangWeedMeshes[a].Clear();
+            hangWeedMeshes[a].vertices = vertices;
+            hangWeedMeshes[a].triangles = hangWeedTriangles[a].ToArray();
+            hangWeedMeshes[a].RecalculateNormals();
+            hangWeedRenderers[a].material = Global.Resources[room.hangWeed[a]];
+            hangWeedRenderers[a].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            hangWeedFaunas[a].isStatic = true;
+        }
 
         for (int a = 0; a < room.grass.Length; a++)
         {
@@ -773,6 +817,7 @@ public class TerrainFace {
                 int iPosMeshMaps = yPosMeshMaps * xResolution + xPosMeshMaps;
 
                 float nonHillyNess = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f);
+
                 //bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
 
                 bool dirtIsDark = IsDark(thm, xPosMeshMaps, yPosMeshMaps);
@@ -788,7 +833,16 @@ public class TerrainFace {
 
                 if (stone > 0.5f)
                 {
-                    types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                    float upsideDownedness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.down, normals[iPosMeshMaps])) / 90f);
+
+                    if (    upsideDownedness > 0.5f 
+                        &&  localUp == Vector3.up 
+                        &&  room.noise.Evaluate(room.position+ vertices[iPosMeshMaps]) > 0.5f) {
+
+                        types[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
+                    }else{
+                        types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                    }
                 }
                 else if (dirtIsDark)
                 {

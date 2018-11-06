@@ -5,6 +5,7 @@ public enum MaterialNames
 	CaveGrass = 200016111,
 	CaveGrassDarkBrown = 199317470,
 	CaveGrassGreen = 200919776,
+	CaveHangWeed = 200127716,
 	CaveUnderGrass = 200689792,
 	Cliff = 210649717,
 	Default = 303680664,

@@ -432,6 +432,10 @@ public class TerrainGenerator {
             MaterialNames.CaveGrassGreen
         };
 
+        MaterialNames[] hangWeeds = new MaterialNames[] {
+            MaterialNames.CaveHangWeed
+        };
+
         PrefabNames[] faunaCentralPieces = new PrefabNames[] {
             PrefabNames.CaveGrowingLamp
         };
@@ -453,7 +457,7 @@ public class TerrainGenerator {
             terr.transform.parent = terra.transform;
 
             rooms[i].GroupMembers();
-            rooms[i].SpawnRoom(terr.transform, materials, grasses, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
+            rooms[i].SpawnRoom(terr.transform, materials, grasses, hangWeeds, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
 
             /*SpawnAmbient(fog,
                 Global.Resources[PrefabNames.Fog],
