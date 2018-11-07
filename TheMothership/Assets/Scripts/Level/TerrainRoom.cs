@@ -4,11 +4,12 @@ using UnityEngine;
 using System.Threading;
 using System.Collections.Concurrent;
 
-public struct MeshSet {
+public class MeshSet {
 
     public Vector3 direction;
     public Vector3[] vertices;
     public Vector2[] uvs;
+    public Vector3[] normals;
     public int[] triangles;
     public int xResolution;
     public int yResolution;
@@ -21,6 +22,7 @@ public struct MeshSet {
         this.triangles = triangles;
         this.xResolution = xResolution;
         this.yResolution = yResolution;
+        this.normals = null;
     }
 }
 
@@ -167,22 +169,38 @@ public class TerrainRoom
 
     void GenerateMeshAndTexture()
     {
-        List<Thread> meshGenThread = new List<Thread>();
+        List<Thread> threads = new List<Thread>();
 
         foreach (TerrainFace face in terrainFaces)
         {
-            meshGenThread.Add(ConstructMeshThread(face));
+            threads.Add(ConstructMeshThread(face));
         }
 
-        ThreadWait(meshGenThread);
+        ThreadWait(threads);
+        threads.Clear();
 
+        // Find max size
+        int maxSize = 0;
         foreach (TerrainFace face in terrainFaces)
         {
-            foreach(MeshSet ms in meshsets)
+            foreach (MeshSet ms in meshsets)
             {
-                if(ms.direction == face.localUp)
+                if (ms.direction == face.localUp)
                 {
-
+                    int size = TerrainFace.GetPreferredTextureSize(ms.xResolution, ms.yResolution);
+                    if(size > maxSize){
+                        maxSize = size;
+                    }
+                }
+            }
+        }
+        // Create textures
+        foreach (TerrainFace face in terrainFaces)
+        {
+            foreach (MeshSet ms in meshsets)
+            {
+                if (ms.direction == face.localUp)
+                {
 
                     face.mesh.Clear();
                     face.mesh.vertices = ms.vertices;
@@ -190,25 +208,39 @@ public class TerrainRoom
                     face.mesh.triangles = ms.triangles;
                     face.mesh.RecalculateNormals();
 
-                    Vector3[] normals = face.mesh.normals;
+                    ms.normals = face.mesh.normals;
 
-                    TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution);
-                    face.GenerateFauna(types, normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    threads.Add(ConstructTextureThread(face, ms.normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize));
 
                     break;
                 }
             }
+        }
+
+        ThreadWait(threads);
+        threads.Clear();
 
 
+        //Generate fauna
+        foreach (TerrainFace face in terrainFaces)
+        {
+            foreach (MeshSet ms in meshsets)
+            {
+                if (ms.direction == face.localUp)
+                {
 
+                    face.SetTextureFromMaps(maxSize);
+
+                    //TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize);
+                    face.GenerateFauna(ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                }
+            }
         }
 
         foreach (Ground g in members)
         {
             g.obj.GetComponent<MeshRenderer>().enabled = false;
         }
-
-
 
         for (int i = 0; i < directions.Length; i++)
         {
@@ -240,12 +272,21 @@ public class TerrainRoom
             }
         }
     }
-
+    private void ConstructTexture(TerrainFace face, Vector3[] normals,Vector3[] vertices,int xResolution, int yResolution, int size)
+    {
+        face.GenerateTexture(normals,vertices,xResolution,yResolution, size);
+    }
     private void ConstructMeshes(TerrainFace face) {
 
         meshsets.Add(face.ConstructMeshAndTexture(position, directionMembers[face.localUp]));
     }
 
+    public Thread ConstructTextureThread(TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
+    {
+        var t = new Thread(() => ConstructTexture(face, normals, vertices, xResolution, yResolution, size));
+        t.Start();
+        return t;
+    }
 
     public Thread ConstructMeshThread(TerrainFace face)
     {

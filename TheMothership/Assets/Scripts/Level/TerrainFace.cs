@@ -47,6 +47,8 @@ public class TerrainFace {
         public Vector3 faunaPreferredPos;
         public Vector3 faunaPreferredNormal;
         public float maxDensity;
+        public Color[,] colormap;
+        public TerrainFaceSurfaceType[] types;
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
@@ -60,6 +62,8 @@ public class TerrainFace {
             faunaPreferredNormal = Vector3.up;
             faunaMeshPos = Vector3.zero;
             maxDensity = 0;
+            colormap = null;
+            types = null;
         }
 
     }
@@ -566,7 +570,6 @@ public class TerrainFace {
     }
 
     public void GenerateFauna(
-        TerrainFaceSurfaceType[] types,
         Vector3[] normals,
         int[] triangles,
         Vector3[] vertices,
@@ -574,6 +577,8 @@ public class TerrainFace {
         int xResolution,
         int yResolution
         ) {
+
+        TerrainFaceSurfaceType[] types = thm.types;
 
         //Grass is facing up
         GameObject[] faunas = new GameObject[room.grass.Length];
@@ -868,19 +873,19 @@ public class TerrainFace {
 
     }
 
-    public TerrainFaceSurfaceType[] GenerateTexture(
+    public void GenerateTexture(
         Vector3[] normals,
         Vector3[] vertices, 
         int xResolution, 
-        int yResolution
+        int yResolution,
+        int size
        // TerrainHeightMaps thm
     ) {
 
-        TerrainFaceSurfaceType[] types = new TerrainFaceSurfaceType[normals.Length];
+        thm.types = new TerrainFaceSurfaceType[normals.Length];
 
-        int size = GetPreferredTextureSize(xResolution, yResolution);
-
-        Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
+        thm.colormap = new Color[size, size];
+       
 
         //Color32[,] colors = new Color32[size, size];
         //Color32 red = new Color32(255, 0, 0, 0);
@@ -926,16 +931,16 @@ public class TerrainFace {
                         &&  localUp == Vector3.up 
                         &&  room.noise.Evaluate(room.position+ vertices[iPosMeshMaps]) > 0.5f) {
 
-                        types[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
                     }else{
-                        types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
                     }
                 }
                 else if (dirtIsDark)
                 {
                     if (isGrass)
                     {
-                        types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
 
                         //Angle against camera preferred
                         //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
@@ -977,11 +982,11 @@ public class TerrainFace {
                         }
                     }
                     else {
-                        types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
                     }
                 }
                 else{
-                    types[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
+                    thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
                 }
 
                 Color32 splat = new Color32(
@@ -991,15 +996,34 @@ public class TerrainFace {
                     (byte)(255f * grass));
 
                 //colors[x, y] = x < size / 2f ? new Color32(1,0,0,0.5f) : new Color32(0, 1, 0, 0);
-                splatmap.SetPixel((int)x, (int)y, splat);
+                thm.colormap[(int)x,(int)y] = splat;
+
                 xy++;
             }
         }
+
+
+       // return types;
+    }
+    public void SetTextureFromMaps(int size)
+    {
+        Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                splatmap.SetPixel(x, y, thm.colormap[x,y]);
+            }
+        }
+
+
         splatmap.Apply();
 
         Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
 
-        for (int i = 0; i < room.materials.Length; i++) {
+        for (int i = 0; i < room.materials.Length; i++)
+        {
             SetTexture(i, room.materials[i], terrainMat);
         }
 
@@ -1007,8 +1031,8 @@ public class TerrainFace {
 
         renderer.material = terrainMat;
 
-        return types;
     }
+
     public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps)
     {
 
@@ -1030,7 +1054,7 @@ public class TerrainFace {
                     && !thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps - 1];
     }
 
-    private void SetTexture(int num, Material from, Material to) {
+    public void SetTexture(int num, Material from, Material to) {
 
         to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
         to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
@@ -1083,7 +1107,7 @@ public class TerrainFace {
     }
 
 
-    public int GetPreferredTextureSize(int xResolution, int yResolution) {
+    public static int GetPreferredTextureSize(int xResolution, int yResolution) {
 
         int max = Mathf.Max(xResolution, yResolution);
 
