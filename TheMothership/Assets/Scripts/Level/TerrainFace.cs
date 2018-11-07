@@ -20,9 +20,9 @@ public class TerrainFace {
     Vector3 axisA;
     Vector3 axisB;
     TerrainRoom room;
-    MeshRenderer renderer;
+    public MeshRenderer renderer;
     GameObject self;
-    TerrainHeightMaps thm;
+    public TerrainHeightMaps thm;
 
     public static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
@@ -1005,7 +1005,8 @@ public class TerrainFace {
 
        // return types;
     }
-    public void SetTextureFromMaps(int size)
+
+    /*public void SetTextureFromMaps(int size)
     {
         Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
 
@@ -1031,7 +1032,7 @@ public class TerrainFace {
 
         renderer.material = terrainMat;
 
-    }
+    }*/
 
     public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps)
     {
@@ -1054,13 +1055,13 @@ public class TerrainFace {
                     && !thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps - 1];
     }
 
-    public void SetTexture(int num, Material from, Material to) {
+   /* public void SetTexture(int num, Material from, Material to) {
 
         to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
         to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
         to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
         to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
-    }
+    }*/
 
     public float EvaluateNoise(
         Vector3 point, 

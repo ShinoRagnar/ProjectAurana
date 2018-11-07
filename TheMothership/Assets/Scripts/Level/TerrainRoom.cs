@@ -122,7 +122,7 @@ public class TerrainRoom
         float diffCorrection = (zLength / 2f) - ((float)zSize);
         //Debug.Log("Diffcorrection room<" + roomNr + "> " + diffCorrection);
 
-        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f- diffCorrection);
+        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f - diffCorrection);
 
         this.self = self;
         // this.mat = terrainMat;
@@ -158,14 +158,21 @@ public class TerrainRoom
             meshObj.transform.parent = self;
 
             MeshRenderer renderer = meshObj.AddComponent<MeshRenderer>();
+            
             // renderer.sharedMaterial = mat;
             meshFilters[i] = meshObj.AddComponent<MeshFilter>();
             meshFilters[i].sharedMesh = new Mesh();
             //}
 
             terrainFaces[i] = new TerrainFace(meshObj, meshFilters[i].sharedMesh, this, directions[i], renderer);
+
+            //if (directions[i] != Vector3.forward) {
+            //    renderer.enabled = false;
+            //}
         }
     }
+
+
 
     void GenerateMeshAndTexture()
     {
@@ -188,9 +195,10 @@ public class TerrainRoom
                 if (ms.direction == face.localUp)
                 {
                     int size = TerrainFace.GetPreferredTextureSize(ms.xResolution, ms.yResolution);
-                    if(size > maxSize){
+                    if (size > maxSize) {
                         maxSize = size;
                     }
+                    break;
                 }
             }
         }
@@ -201,14 +209,7 @@ public class TerrainRoom
             {
                 if (ms.direction == face.localUp)
                 {
-
-                    face.mesh.Clear();
-                    face.mesh.vertices = ms.vertices;
-                    face.mesh.uv = ms.uvs;
-                    face.mesh.triangles = ms.triangles;
-                    face.mesh.RecalculateNormals();
-
-                    ms.normals = face.mesh.normals;
+                    ms.normals = ApplyMeshSetToMesh(ms, face.mesh); //face.mesh.normals;
 
                     threads.Add(ConstructTextureThread(face, ms.normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize));
 
@@ -221,7 +222,54 @@ public class TerrainRoom
         threads.Clear();
 
 
-        //Generate fauna
+        //Combine meshes
+        List<MeshSet> setsToCombine = new List<MeshSet>();
+        List<Color[,]> colormapsToCombine = new List<Color[,]>();
+
+        foreach (MeshSet ms in meshsets)
+        {
+            if (ms.direction != Vector3.forward)
+            {
+                setsToCombine.Add(ms);
+
+                foreach (TerrainFace face in terrainFaces)
+                {
+                    if (ms.direction == face.localUp) {
+                        colormapsToCombine.Add(face.thm.colormap);
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        // Combine left, right, up and down into one mesh
+        MeshSet mCombine = CombineMeshes(setsToCombine);
+        MeshRenderer renderer = self.gameObject.AddComponent<MeshRenderer>();
+        MeshFilter mfilter = self.gameObject.AddComponent<MeshFilter>();
+        mfilter.sharedMesh = new Mesh();
+        ApplyMeshSetToMesh(mCombine, mfilter.sharedMesh);
+        renderer.material = 
+            ApplyTextureFromColormapToMaterial(
+                CombineColorMaps(colormapsToCombine, maxSize)
+                , ((int)Mathf.Sqrt(colormapsToCombine.Count)*maxSize
+                ));
+
+
+
+        // Hide submeshes and apply material to forward mesh
+        for (int i = 0; i < directions.Length; i++)
+        {
+            if (terrainFaces[i].localUp != Vector3.forward) {
+                meshFilters[i].gameObject.SetActive(false);
+            }
+            else
+            {
+                terrainFaces[i].renderer.material = ApplyTextureFromColormapToMaterial(terrainFaces[i].thm.colormap, maxSize);
+            }
+
+        }
+
         foreach (TerrainFace face in terrainFaces)
         {
             foreach (MeshSet ms in meshsets)
@@ -229,10 +277,11 @@ public class TerrainRoom
                 if (ms.direction == face.localUp)
                 {
 
-                    face.SetTextureFromMaps(maxSize);
+                    //face.SetTextureFromMaps(maxSize);
 
                     //TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize);
                     face.GenerateFauna(ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    break;
                 }
             }
         }
@@ -249,6 +298,132 @@ public class TerrainRoom
 
         //DebugPrint();
 
+    }
+
+    public Material ApplyTextureFromColormapToMaterial(Color[,] colors, int size) {
+
+        Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                splatmap.SetPixel(x, y, colors[x, y]);
+            }
+        }
+
+
+        splatmap.Apply();
+
+        Material terrainMat = new Material(Global.Resources[MaterialNames.Terrain]);
+
+        for (int i = 0; i < materials.Length; i++)
+        {
+            SetTexture(i, materials[i], terrainMat);
+        }
+
+        terrainMat.SetTexture("_Control", splatmap);
+
+        return terrainMat;
+    }
+
+    public void SetTexture(int num, Material from, Material to)
+    {
+
+        to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
+        to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
+        to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
+        to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
+    }
+
+
+    public Vector3[] ApplyMeshSetToMesh(MeshSet ms, Mesh m) {
+
+        m.Clear();
+        m.vertices = ms.vertices;
+        m.uv = ms.uvs;
+        m.triangles = ms.triangles;
+        m.RecalculateNormals();
+
+        return m.normals;
+    }
+
+    public Color[,] CombineColorMaps(List<Color[,]> maps, int size) {
+
+        int len = (int)Mathf.Sqrt(maps.Count);
+        Color[,] ret = new Color[size * len, size * len];
+
+        int i = 0;
+        for (int lenY = 0; lenY < len; lenY++)
+        {
+            for (int lenX = 0; lenX < len; lenX++)
+            {
+                Color[,] map = maps[i];
+
+                for (int y = lenY*size; y < lenY * size+size; y++)
+                {
+                    
+                    for (int x = lenX * size; x < lenX * size + size; x++)
+                    {
+                        int innerX = x - lenX * size;
+                        int innerY = y - lenY * size;
+
+                        ret[x, y] = map[innerX, innerY];
+                    }
+                }
+                i++;
+            }
+        }
+
+        return ret;
+    }
+
+    public MeshSet CombineMeshes(List<MeshSet> ms) {
+
+        int len =(int) Mathf.Sqrt(ms.Count);
+        List<Vector2> uvs = new List<Vector2>();
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangles = new List<int>();
+
+        int i = 0;
+        float lfloat = ((float)len);
+
+        for (int lenY = 0; lenY < len; lenY++)
+        {
+            for (int lenX = 0; lenX < len; lenX++) {
+
+                float lx = ((float)lenX) / ((float)len);
+                float ly = ((float)lenY) / ((float)len);
+
+                Vector2 l = new Vector2(lx, ly);
+
+
+                MeshSet m = ms[i];
+
+                int vertCount = vertices.Count;
+
+                foreach (Vector3 vertice in m.vertices) {
+                    vertices.Add(vertice);
+                }
+                foreach (int tri in m.triangles)
+                {
+                    triangles.Add(vertCount+tri);
+                }
+                foreach(Vector2 uv in m.uvs)
+                {
+                    uvs.Add(uv / lfloat + l);
+                }
+
+
+                //face.mesh.Clear();
+                //face.mesh.vertices = ms.vertices;
+                //face.mesh.uv = ms.uvs;
+                //face.mesh.triangles = ms.triangles;
+                //face.mesh.RecalculateNormals();
+                i++;
+            }
+        }
+        return new MeshSet(Vector3.zero, vertices.ToArray(), uvs.ToArray(), triangles.ToArray(), 0, 0);
     }
 
     public void ThreadWait(List<Thread> threads) {
