@@ -570,6 +570,7 @@ public class TerrainFace {
     }
 
     public void GenerateFauna(
+        FaunaMeshSet meshSet,
         Vector3[] normals,
         int[] triangles,
         Vector3[] vertices,
@@ -581,55 +582,55 @@ public class TerrainFace {
         TerrainFaceSurfaceType[] types = thm.types;
 
         //Grass is facing up
-        GameObject[] faunas = new GameObject[room.grass.Length];
-        MeshRenderer[] faunaRenderers = new MeshRenderer[room.grass.Length];
-        Mesh[] faunaMeshes = new Mesh[room.grass.Length];
-        DictionaryList<int, List<int>> faunaTriangles = new DictionaryList<int, List<int>>();
-        DictionaryList<int, List<Vector3>> faunaVertices = new DictionaryList<int, List<Vector3>>();
+        //GameObject[] faunas = new GameObject[room.grass.Length];
+        //MeshRenderer[] faunaRenderers = new MeshRenderer[room.grass.Length];
+        //Mesh[] faunaMeshes = new Mesh[room.grass.Length];
+        //DictionaryList<int, List<int>> faunaTriangles = new DictionaryList<int, List<int>>();
+        //DictionaryList<int, List<Vector3>> faunaVertices = new DictionaryList<int, List<Vector3>>();
         DictionaryList<int, DictionaryList<int,int>> faunaVertIndex = new DictionaryList<int, DictionaryList<int, int>>();
 
-        int[] faunaVertCount = new int[room.grass.Length];
+        //int[] faunaVertCount = new int[room.grass.Length];
 
         //Hangweed is facing down
-        GameObject[] hangWeedFaunas = new GameObject[room.hangWeed.Length];
-        MeshRenderer[] hangWeedRenderers = new MeshRenderer[room.hangWeed.Length];
-        Mesh[] hangWeedMeshes = new Mesh[room.hangWeed.Length];
-        DictionaryList<int, List<int>> hangWeedTriangles = new DictionaryList<int, List<int>>();
-        DictionaryList<int, List<Vector3>> hangWeedVertices = new DictionaryList<int, List<Vector3>>();
+        //GameObject[] hangWeedFaunas = new GameObject[room.hangWeed.Length];
+        //MeshRenderer[] hangWeedRenderers = new MeshRenderer[room.hangWeed.Length];
+        //Mesh[] hangWeedMeshes = new Mesh[room.hangWeed.Length];
+        //DictionaryList<int, List<int>> hangWeedTriangles = new DictionaryList<int, List<int>>();
+        ///DictionaryList<int, List<Vector3>> hangWeedVertices = new DictionaryList<int, List<Vector3>>();
         DictionaryList<int, DictionaryList<int, int>> hangWeedVertIndex = new DictionaryList<int, DictionaryList<int, int>>();
 
-        int[] hangWeedVertCount = new int[room.hangWeed.Length];
+        //int[] hangWeedVertCount = new int[room.hangWeed.Length];
 
 
         for (int a = 0; a < room.grass.Length; a++) {
 
-            faunas[a] = new GameObject("Grass <" + room.grass[a].ToString() + "> ");
-            faunas[a].transform.parent = self.transform;
+            //faunas[a] = new GameObject("Grass <" + room.grass[a].ToString() + "> ");
+            //faunas[a].transform.parent = self.transform;
 
-            faunaRenderers[a] = faunas[a].AddComponent<MeshRenderer>();
+            //faunaRenderers[a] = faunas[a].AddComponent<MeshRenderer>();
             // renderer.shaaredMaterial = mat;
-            MeshFilter faunaMeshFilter = faunas[a].AddComponent<MeshFilter>();
-            faunaMeshes[a] = faunaMeshFilter.sharedMesh = new Mesh();
-            faunaTriangles.Add(a, new List<int>());
-            faunaVertices.Add(a, new List<Vector3>());
-            faunaVertIndex.Add(a, new DictionaryList<int, int>());
-            faunaVertCount[a] = 0;
+            //MeshFilter faunaMeshFilter = faunas[a].AddComponent<MeshFilter>();
+            //faunaMeshes[a] = faunaMeshFilter.sharedMesh = new Mesh();
+            //meshSet.faunaTriangles.AddIfNotContains(a, new List<int>());
+            //meshSet.faunaVertices.AddIfNotContains(a, new List<Vector3>());
+            faunaVertIndex.AddIfNotContains(a, new DictionaryList<int, int>());
+            //faunaVertCount[a] = 0;
         }
 
         for (int a = 0; a < room.hangWeed.Length; a++)
         {
 
-            hangWeedFaunas[a] = new GameObject("HangWeed <" + room.hangWeed[a].ToString() + "> ");
-            hangWeedFaunas[a].transform.parent = self.transform;
+            //hangWeedFaunas[a] = new GameObject("HangWeed <" + room.hangWeed[a].ToString() + "> ");
+            //hangWeedFaunas[a].transform.parent = self.transform;
 
-            hangWeedRenderers[a] = hangWeedFaunas[a].AddComponent<MeshRenderer>();
+            //hangWeedRenderers[a] = hangWeedFaunas[a].AddComponent<MeshRenderer>();
             // renderer.shaaredMaterial = mat;
-            MeshFilter hangWeedFilter = hangWeedFaunas[a].AddComponent<MeshFilter>();
-            hangWeedMeshes[a] = hangWeedFilter.sharedMesh = new Mesh();
-            hangWeedTriangles.Add(a, new List<int>());
-            hangWeedVertices.Add(a, new List<Vector3>());
-            hangWeedVertIndex.Add(a, new DictionaryList<int, int>());
-            hangWeedVertCount[a] = 0;
+            //MeshFilter hangWeedFilter = hangWeedFaunas[a].AddComponent<MeshFilter>();
+            //hangWeedMeshes[a] = hangWeedFilter.sharedMesh = new Mesh();
+            //meshSet.hangWeedTriangles.AddIfNotContains(a, new List<int>());
+            //meshSet.hangWeedVertices.AddIfNotContains(a, new List<Vector3>());
+            hangWeedVertIndex.AddIfNotContains(a, new DictionaryList<int, int>());
+           // hangWeedVertCount[a] = 0;
         }
 
 
@@ -656,35 +657,35 @@ public class TerrainFace {
                         int grass = (int)(((room.noise.Evaluate(grassPos + vertices[i]) + 1f) / 2f) * ((float)room.grass.Length));
 
                         if (!faunaVertIndex[grass].Contains(i)) {
-                            faunaVertices[grass].Add(vertices[i]);
-                            faunaVertIndex[grass].Add(i, faunaVertCount[grass]);
-                            faunaVertCount[grass]++;
+                            meshSet.faunaVertices[grass].Add(vertices[i]);
+                            faunaVertIndex[grass].Add(i, meshSet.faunaVertCount[grass]);
+                            meshSet.faunaVertCount[grass]++;
                         }
                         if (!faunaVertIndex[grass].Contains(i + xResolution))
                         {
-                            faunaVertices[grass].Add(vertices[i + xResolution]);
-                            faunaVertIndex[grass].Add(i + xResolution, faunaVertCount[grass]);
-                            faunaVertCount[grass]++;
+                            meshSet.faunaVertices[grass].Add(vertices[i + xResolution]);
+                            faunaVertIndex[grass].Add(i + xResolution, meshSet.faunaVertCount[grass]);
+                            meshSet.faunaVertCount[grass]++;
                         }
                         if (!faunaVertIndex[grass].Contains(i + xResolution + 1))
                         {
-                            faunaVertices[grass].Add(vertices[(i + xResolution + 1)]);
-                            faunaVertIndex[grass].Add(i + xResolution + 1, faunaVertCount[grass]);
-                            faunaVertCount[grass]++;
+                            meshSet.faunaVertices[grass].Add(vertices[(i + xResolution + 1)]);
+                            faunaVertIndex[grass].Add(i + xResolution + 1, meshSet.faunaVertCount[grass]);
+                            meshSet.faunaVertCount[grass]++;
                         }
                         if (!faunaVertIndex[grass].Contains(i + 1))
                         {
-                            faunaVertices[grass].Add(vertices[(i + 1)]);
-                            faunaVertIndex[grass].Add(i + 1, faunaVertCount[grass]);
-                            faunaVertCount[grass]++;
+                            meshSet.faunaVertices[grass].Add(vertices[(i + 1)]);
+                            faunaVertIndex[grass].Add(i + 1, meshSet.faunaVertCount[grass]);
+                            meshSet.faunaVertCount[grass]++;
                         }
 
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex]]);
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 1]]);
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 2]]);
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 3]]);
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 4]]);
-                        faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 5]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 1]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 2]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 3]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 4]]);
+                        meshSet.faunaTriangles[grass].Add(faunaVertIndex[grass][triangles[triIndex + 5]]);
 
                         //triangles[triIndex] = i;
                         //triangles[triIndex + 1] = i + xResolution;
@@ -700,35 +701,35 @@ public class TerrainFace {
 
                         if (!hangWeedVertIndex[weed].Contains(i))
                         {
-                            hangWeedVertices[weed].Add(vertices[i]);
-                            hangWeedVertIndex[weed].Add(i, hangWeedVertCount[weed]);
-                            hangWeedVertCount[weed]++;
+                            meshSet.hangWeedVertices[weed].Add(vertices[i]);
+                            hangWeedVertIndex[weed].Add(i, meshSet.hangWeedVertCount[weed]);
+                            meshSet.hangWeedVertCount[weed]++;
                         }
                         if (!hangWeedVertIndex[weed].Contains(i + xResolution))
                         {
-                            hangWeedVertices[weed].Add(vertices[i + xResolution]);
-                            hangWeedVertIndex[weed].Add(i + xResolution, hangWeedVertCount[weed]);
-                            hangWeedVertCount[weed]++;
+                            meshSet.hangWeedVertices[weed].Add(vertices[i + xResolution]);
+                            hangWeedVertIndex[weed].Add(i + xResolution, meshSet.hangWeedVertCount[weed]);
+                            meshSet.hangWeedVertCount[weed]++;
                         }
                         if (!hangWeedVertIndex[weed].Contains(i + xResolution + 1))
                         {
-                            hangWeedVertices[weed].Add(vertices[(i + xResolution + 1)]);
-                            hangWeedVertIndex[weed].Add(i + xResolution + 1, hangWeedVertCount[weed]);
-                            hangWeedVertCount[weed]++;
+                            meshSet.hangWeedVertices[weed].Add(vertices[(i + xResolution + 1)]);
+                            hangWeedVertIndex[weed].Add(i + xResolution + 1, meshSet.hangWeedVertCount[weed]);
+                            meshSet.hangWeedVertCount[weed]++;
                         }
                         if (!hangWeedVertIndex[weed].Contains(i + 1))
                         {
-                            hangWeedVertices[weed].Add(vertices[(i + 1)]);
-                            hangWeedVertIndex[weed].Add(i + 1, hangWeedVertCount[weed]);
-                            hangWeedVertCount[weed]++;
+                            meshSet.hangWeedVertices[weed].Add(vertices[(i + 1)]);
+                            hangWeedVertIndex[weed].Add(i + 1, meshSet.hangWeedVertCount[weed]);
+                            meshSet.hangWeedVertCount[weed]++;
                         }
 
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex]]);
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 1]]);
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 2]]);
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 3]]);
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 4]]);
-                        hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 5]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 1]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 2]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 3]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 4]]);
+                        meshSet.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][triangles[triIndex + 5]]);
                     }
                     triIndex += 6;
                 }
@@ -781,7 +782,7 @@ public class TerrainFace {
         }
 
 
-        for (int a = 0; a < room.hangWeed.Length; a++)
+        /*for (int a = 0; a < room.hangWeed.Length; a++)
         {
             hangWeedMeshes[a].Clear();
             hangWeedMeshes[a].vertices = vertices;
@@ -801,7 +802,7 @@ public class TerrainFace {
             faunaRenderers[a].material = Global.Resources[room.grass[a]];
             faunaRenderers[a].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             faunas[a].isStatic = true;
-        }
+        }*/
 
         /*faunaMesh.Clear();
         faunaMesh.vertices = vertices;

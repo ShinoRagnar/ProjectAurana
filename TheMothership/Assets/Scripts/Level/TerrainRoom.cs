@@ -26,6 +26,36 @@ public class MeshSet {
     }
 }
 
+public class FaunaMeshSet{
+
+    public DictionaryList<int, List<int>> faunaTriangles = new DictionaryList<int, List<int>>();
+    public DictionaryList<int, List<Vector3>> faunaVertices = new DictionaryList<int, List<Vector3>>();
+    public DictionaryList<int, List<int>> hangWeedTriangles = new DictionaryList<int, List<int>>();
+    public DictionaryList<int, List<Vector3>> hangWeedVertices = new DictionaryList<int, List<Vector3>>();
+    public int[] faunaVertCount; 
+    public int[] hangWeedVertCount;
+
+    public FaunaMeshSet(int grass, int weed) {
+        faunaVertCount = new int[grass];
+        hangWeedVertCount = new int[weed];
+
+        for (int a = 0; a < grass; a++)
+        {
+            faunaTriangles.AddIfNotContains(a, new List<int>());
+            faunaVertices.AddIfNotContains(a, new List<Vector3>());
+            faunaVertCount[a] = 0;
+        }
+
+        for (int a = 0; a < weed; a++)
+        {
+            hangWeedTriangles.AddIfNotContains(a, new List<int>());
+            hangWeedVertices.AddIfNotContains(a, new List<Vector3>());
+            hangWeedVertCount[a] = 0;
+        }
+    }
+}
+
+
 public class TerrainRoom
 {
     public static float SIDE_ATTACH_DISTANCE = 3f;
@@ -269,6 +299,7 @@ public class TerrainRoom
             }
 
         }
+        FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
 
         foreach (TerrainFace face in terrainFaces)
         {
@@ -280,11 +311,14 @@ public class TerrainRoom
                     //face.SetTextureFromMaps(maxSize);
 
                     //TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize);
-                    face.GenerateFauna(ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    face.GenerateFauna(fms,ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
                     break;
                 }
             }
         }
+
+        CreateFaunaMeshes(fms);
+
 
         foreach (Ground g in members)
         {
@@ -297,6 +331,50 @@ public class TerrainRoom
         }
 
         //DebugPrint();
+
+    }
+
+    public void CreateFaunaMeshes(FaunaMeshSet fms) {
+
+          for (int a = 0; a < hangWeed.Length; a++)
+          {
+            GameObject go = new GameObject("HangWeed <" + hangWeed[a].ToString() + "> ");
+            go.transform.parent = self.transform;
+
+            MeshRenderer ren = go.AddComponent<MeshRenderer>();
+            // renderer.shaaredMaterial = mat;
+            MeshFilter fil = go.AddComponent<MeshFilter>();
+            Mesh m = fil.sharedMesh = new Mesh();
+
+            m.Clear();
+            m.vertices = fms.hangWeedVertices[a].ToArray();
+            m.triangles = fms.hangWeedTriangles[a].ToArray();
+            m.RecalculateNormals();
+
+            ren.material = Global.Resources[hangWeed[a]];
+            ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            go.isStatic = true;
+          }
+
+          for (int a = 0; a < grass.Length; a++)
+          {
+            GameObject go = new GameObject("Grass <" + grass[a].ToString() + "> ");
+            go.transform.parent = self.transform;
+
+            MeshRenderer ren = go.AddComponent<MeshRenderer>();
+            // renderer.shaaredMaterial = mat;
+            MeshFilter fil = go.AddComponent<MeshFilter>();
+            Mesh m = fil.sharedMesh = new Mesh();
+
+            m.Clear();
+            m.vertices = fms.faunaVertices[a].ToArray();
+            m.triangles = fms.faunaTriangles[a].ToArray();
+            m.RecalculateNormals();
+
+            ren.material = Global.Resources[grass[a]];
+            ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            go.isStatic = true;
+        }
 
     }
 
