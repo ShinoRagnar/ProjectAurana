@@ -570,6 +570,7 @@ public class TerrainFace {
     }
 
     public void GenerateFauna(
+        GameObject props,
         FaunaMeshSet meshSet,
         Vector3[] normals,
         int[] triangles,
@@ -741,7 +742,7 @@ public class TerrainFace {
         // Place centerpiece light
         if (thm.maxDensity > 0)
         {
-            bool placedProp = PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
+            bool placedProp = PlaceCenterpiece(props, room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
             thm.faunaPreferredPos, thm.faunaPreferredNormal, (int)thm.faunaMeshPos.x, (int)thm.faunaMeshPos.y, xResolution, yResolution);
 
             int placedAmount = placedProp ? 1 : 0;
@@ -771,7 +772,7 @@ public class TerrainFace {
 
                     int iPosFaunaMaps = (int)(foundPos.y * xResolution + foundPos.x);
 
-                    placedProp = PlaceCenterpiece(room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
+                    placedProp = PlaceCenterpiece(props, room.faunaCentralPieces[(int)Random.Range(0, room.faunaCentralPieces.Length - 1)],
                         vertices[iPosFaunaMaps], normals[iPosFaunaMaps], (int)foundPos.x, (int)foundPos.y, xResolution, yResolution);
 
                     placedAmount += placedProp ? 1 : 0;
@@ -814,6 +815,7 @@ public class TerrainFace {
 
     }
     public bool PlaceCenterpiece(
+        GameObject props,
         PrefabNames centralPiece,
         Vector3 pos,
         Vector3 normal,
@@ -845,10 +847,10 @@ public class TerrainFace {
 
                 placedProp = true;
 
-                GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
-                faunaCenterPieces.transform.parent = self.transform;
+                //GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
+                //faunaCenterPieces.transform.parent = self.transform;
 
-                Transform centerpiece = Global.Create(Global.Resources[centralPiece], faunaCenterPieces.transform);
+                Transform centerpiece = Global.Create(Global.Resources[centralPiece], props.transform); //faunaCenterPieces.transform);
                 centerpiece.localPosition = pos;
                 centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
                 room.props.Add(centerpiece);

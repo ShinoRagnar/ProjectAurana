@@ -301,17 +301,16 @@ public class TerrainRoom
         }
         FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
 
+        GameObject props = new GameObject("Props for <"+roomNr+">");
+        props.transform.parent = self;
+
         foreach (TerrainFace face in terrainFaces)
         {
             foreach (MeshSet ms in meshsets)
             {
                 if (ms.direction == face.localUp)
                 {
-
-                    //face.SetTextureFromMaps(maxSize);
-
-                    //TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize);
-                    face.GenerateFauna(fms,ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    face.GenerateFauna(props, fms, ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
                     break;
                 }
             }
