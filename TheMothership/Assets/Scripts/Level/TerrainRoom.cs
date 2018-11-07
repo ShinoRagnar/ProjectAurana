@@ -1,6 +1,28 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
+using System.Collections.Concurrent;
+
+public struct MeshSet {
+
+    public Vector3 direction;
+    public Vector3[] vertices;
+    public Vector2[] uvs;
+    public int[] triangles;
+    public int xResolution;
+    public int yResolution;
+
+    public MeshSet(Vector3 direction, Vector3[] vertices, Vector2[] uvs, int[] triangles, int xResolution, int yResolution) {
+
+        this.direction = direction;
+        this.vertices = vertices;
+        this.uvs = uvs;
+        this.triangles = triangles;
+        this.xResolution = xResolution;
+        this.yResolution = yResolution;
+    }
+}
 
 public class TerrainRoom
 {
@@ -37,6 +59,8 @@ public class TerrainRoom
     private Transform self;
 
     public float textureSize;
+
+    public ConcurrentBag<MeshSet> meshsets = new ConcurrentBag<MeshSet>();
 
     public Noise noise;
 
@@ -143,10 +167,49 @@ public class TerrainRoom
 
     void GenerateMeshAndTexture()
     {
+        List<Thread> meshGenThread = new List<Thread>();
+
         foreach (TerrainFace face in terrainFaces)
         {
-            face.ConstructMeshAndTexture(position, directionMembers[face.localUp]);
+            meshGenThread.Add(ConstructMeshThread(face));
         }
+
+        ThreadWait(meshGenThread);
+
+        foreach (TerrainFace face in terrainFaces)
+        {
+            foreach(MeshSet ms in meshsets)
+            {
+                if(ms.direction == face.localUp)
+                {
+
+
+                    face.mesh.Clear();
+                    face.mesh.vertices = ms.vertices;
+                    face.mesh.uv = ms.uvs;
+                    face.mesh.triangles = ms.triangles;
+                    face.mesh.RecalculateNormals();
+
+                    Vector3[] normals = face.mesh.normals;
+
+                    TerrainFaceSurfaceType[] types = face.GenerateTexture(normals, ms.vertices, ms.xResolution, ms.yResolution);
+                    face.GenerateFauna(types, normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+
+                    break;
+                }
+            }
+
+
+
+        }
+
+        foreach (Ground g in members)
+        {
+            g.obj.GetComponent<MeshRenderer>().enabled = false;
+        }
+
+
+
         for (int i = 0; i < directions.Length; i++)
         {
             meshFilters[i].gameObject.isStatic = true;
@@ -154,6 +217,41 @@ public class TerrainRoom
 
         //DebugPrint();
 
+    }
+
+    public void ThreadWait(List<Thread> threads) {
+        bool threadsWait = true;
+
+        while (threadsWait)
+        {
+            threadsWait = false;
+            foreach (Thread t in threads)
+            {
+                if (t.IsAlive)
+                {
+
+                    threadsWait = true;
+                    break;
+                }
+            }
+            if (threadsWait)
+            {
+                Thread.Sleep(10);
+            }
+        }
+    }
+
+    private void ConstructMeshes(TerrainFace face) {
+
+        meshsets.Add(face.ConstructMeshAndTexture(position, directionMembers[face.localUp]));
+    }
+
+
+    public Thread ConstructMeshThread(TerrainFace face)
+    {
+        var t = new Thread(() => ConstructMeshes(face));
+        t.Start();
+        return t;
     }
 
     public TerrainRoom(int room, Ground g)

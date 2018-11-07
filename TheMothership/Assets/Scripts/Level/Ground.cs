@@ -18,82 +18,112 @@ public class Ground {
     private static ListHash<Ground> curr = new ListHash<Ground>();
     private static ListHash<Ground> fdd = new ListHash<Ground>();
 
+    public float localScaleX;
+    public float localScaleY;
+    public float localScaleZ;
+
+    public float halfScaleX;
+    public float halfScaleY;
+    public float halfScaleZ;
+
+    public float positionX;
+    public float positionY;
+    public float positionZ;
+
     public Ground(Transform groundObject)
     {
         this.obj = groundObject;
+        RecalcBounds();
+
         this.links = new DictionaryList<Vector3, Ground>();
         this.startPointToEndPoint = new DictionaryList<Vector3, Vector3>();
         this.distances = new DictionaryList<Vector3, DictionaryList<Ground, int>>();
     }
+    public void RecalcBounds()
+    {
+        localScaleX = obj.transform.localScale.x;
+        localScaleY = obj.transform.localScale.y;
+        localScaleZ = obj.transform.localScale.z;
+
+        halfScaleX = obj.transform.localScale.x/2f;
+        halfScaleY = obj.transform.localScale.y/2f;
+        halfScaleZ = obj.transform.localScale.z/2f;
+
+        positionX = obj.transform.position.x;
+        positionY = obj.transform.position.y;
+        positionZ = obj.transform.position.z;
+
+    }
+
     public Vector3 GetMidPoint()
     {
-        return new Vector3(obj.transform.position.x, obj.transform.position.y + obj.transform.localScale.y / 2);
+        return new Vector3(positionX, positionY + halfScaleY);
     }
     public Vector3 GetLeftSide()
     {
-        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2);
+        return new Vector3(positionX - halfScaleX,
+            positionY + halfScaleY);
     }
     public float GetDepth()
     {
-        return obj.transform.localScale.z;
+        return localScaleZ;
     }
 
     public Vector3 GetRightSide()
     {
-        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2);
+        return new Vector3(positionX + halfScaleX,
+            positionY + halfScaleY);
     }
 
     public Vector3 GetBottomRightSideAgainstCamera()
     {
-        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
-            obj.transform.position.y - obj.transform.localScale.y / 2,
-            obj.transform.position.z - obj.transform.localScale.z / 2);
+        return new Vector3(positionX + halfScaleX,
+            positionY - halfScaleY,
+            positionZ - halfScaleZ);
     }
 
     public Vector3 GetBottomRightSideAwayFromCamera()
     {
-        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
-            obj.transform.position.y - obj.transform.localScale.y / 2,
-            obj.transform.position.z + obj.transform.localScale.z / 2);
+        return new Vector3(positionX + halfScaleX,
+            positionY - halfScaleY,
+            positionZ + halfScaleZ);
     }
 
     public Vector3 GetTopRightSideAwayFromCamera()
     {
-        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2,
-            obj.transform.position.z + obj.transform.localScale.z / 2);
+        return new Vector3(positionX + halfScaleX,
+            positionY + halfScaleY,
+            positionZ + halfScaleZ);
     }
 
     public Vector3 GetTopRightSideAgainstCamera()
     {
-        return new Vector3(obj.transform.position.x + obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2,
-            obj.transform.position.z - obj.transform.localScale.z / 2);
+        return new Vector3(positionX + halfScaleX,
+            positionY + halfScaleY,
+            positionZ - halfScaleZ);
     }
 
 
     public Vector3 GetTopLeftSideAgainstCamera()
     {
-        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2,
-            obj.transform.position.z - obj.transform.localScale.z / 2);
+        return new Vector3(positionX - halfScaleX,
+            positionY + halfScaleY,
+            positionZ - halfScaleZ);
     }
 
 
     public Vector3 GetBottomLeftSideAgainstCamera()
     {
-        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
-            obj.transform.position.y - obj.transform.localScale.y / 2,
-            obj.transform.position.z - obj.transform.localScale.z / 2);
+        return new Vector3(positionX - halfScaleX,
+            positionY - halfScaleY,
+            positionZ - halfScaleZ);
     }
 
     public Vector3 GetTopLeftSideAwayFromCamera()
     {
-        return new Vector3(obj.transform.position.x - obj.transform.localScale.x / 2,
-            obj.transform.position.y + obj.transform.localScale.y / 2,
-            obj.transform.position.z + obj.transform.localScale.z / 2);
+        return new Vector3(positionX - halfScaleX,
+            positionY + halfScaleY,
+            positionZ + halfScaleZ);
     }
 
 

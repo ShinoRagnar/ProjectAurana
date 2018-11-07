@@ -15,7 +15,7 @@ public class TerrainFace {
 
 
 
-    Mesh mesh;
+    public Mesh mesh;
     public Vector3 localUp;
     Vector3 axisA;
     Vector3 axisB;
@@ -89,10 +89,9 @@ public class TerrainFace {
     }
 
 
-    public void Imprint(Vector3 position, Ground g, TerrainHeightMaps thm, float xResolution, float yResolution, float xMod, float yMod, float zMod)
+    public void Imprint( Vector3 position, Ground g, TerrainHeightMaps thm, float xResolution, float yResolution, float xMod, float yMod, float zMod)
     {
-        g.obj.GetComponent<MeshRenderer>().enabled = false;
-
+ 
 
         Vector3 firstPoint = Vector3.zero;
         Vector3 secondPoint = Vector3.zero;
@@ -375,7 +374,7 @@ public class TerrainFace {
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
-    public void ConstructMeshAndTexture(Vector3 position, List<Ground> members)
+    public MeshSet ConstructMeshAndTexture(Vector3 position, List<Ground> members)
     {
         int xMod = 1;
         int yMod = 1;
@@ -561,18 +560,8 @@ public class TerrainFace {
                 i++;
             }
         }
-        mesh.Clear();
 
-        mesh.vertices = vertices;
-        mesh.uv = uvs;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-
-        Vector3[] normals = mesh.normals;
-
-        TerrainFaceSurfaceType[] types = GenerateTexture(normals, vertices, xResolution, yResolution);
-        GenerateFauna(types, normals, triangles, vertices, xResolution, yResolution);
-
+        return new MeshSet(localUp, vertices, uvs, triangles,xResolution,yResolution);
 
     }
 
