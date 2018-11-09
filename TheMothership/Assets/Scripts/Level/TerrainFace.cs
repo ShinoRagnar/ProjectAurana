@@ -412,6 +412,7 @@ public class TerrainFace {
                         float yProg = y < minY ? (y) / (lengthBottomY) : (1f - ((y - maxY - lengthTopY) / lengthTopY));
                         yProgress = Mathf.Clamp01(yProg);
 
+                        bool xWithinBoundsPlusOne = x >= minX - 1 && x <= maxX + 1;
 
                         if (localUp == Vector3.right)
                         {
@@ -419,9 +420,11 @@ public class TerrainFace {
                             {
                                 thm.groundRoundErrorMap[x, y] = minYUnrounded - ((float)minY);
                             }
-                            else if (y == minY - 1)
+                            else if (y == minY - 1 && xWithinBoundsPlusOne)
                             {
-                                thm.groundRoundErrorMap[x, y] = 1 + minYUnrounded - ((float)minY);
+                                float xP = Mathf.Sin(Mathf.Clamp01(((float)x - (float)minX) / ((float)maxX - (float)minX)) * Mathf.PI);
+
+                                thm.groundRoundErrorMap[x, y] = xP * (1 + minYUnrounded - ((float)minY));
                             }
                             float xEnd = iterMaxX - maxX;
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x - maxX) / xEnd) * Mathf.PI);
@@ -431,9 +434,11 @@ public class TerrainFace {
                         {
                             if (y == minY) {
                                 thm.groundRoundErrorMap[x, y] = minYUnrounded-((float)minY);
-                            }else if (y == minY-1)
+                            }else if (y == minY-1 && xWithinBoundsPlusOne)
                             {
-                                thm.groundRoundErrorMap[x, y] = 1+minYUnrounded - ((float)minY);
+                                float xP = Mathf.Sin(Mathf.Clamp01(((float)x - (float)minX) / ((float)maxX - (float)minX)) * Mathf.PI);
+
+                                thm.groundRoundErrorMap[x, y] =xP*(1 + minYUnrounded - ((float)minY)) ;
                             }
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x / minX)) * Mathf.PI);
                             yProgress = yWithinBounds ? 1 : 0;//yProgSideConstruct; // yProgress = Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
