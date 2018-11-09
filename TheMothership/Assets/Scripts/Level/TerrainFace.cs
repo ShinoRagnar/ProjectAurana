@@ -49,7 +49,7 @@ public class TerrainFace {
 
     public class TerrainHeightMaps
     {
-
+        public float[,] groundRoundErrorMap;
         public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
@@ -66,6 +66,7 @@ public class TerrainFace {
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
+            groundRoundErrorMap = new float[xResolution, yResolution];
             maxHeightMap = new float[xResolution, yResolution];
             heightMap = new float[xResolution, yResolution];
             onlyFacesHeightMap = new float[xResolution, yResolution];
@@ -268,6 +269,11 @@ public class TerrainFace {
         int minX = (int)Mathf.Min(firstPoint.x, secondPoint.x);
         int maxX = (int)Mathf.Max(firstPoint.x, secondPoint.x);
 
+        float minYUnrounded = Mathf.Min(secondPoint.y, firstPoint.y);
+        float maxYUnrounded = Mathf.Max(secondPoint.y, firstPoint.y);
+        float minXUnrounded = Mathf.Min(firstPoint.x, secondPoint.x);
+        float maxXUnrounded = Mathf.Max(firstPoint.x, secondPoint.x);
+
 
         if (g.hints.type == GroundType.Door)
         {
@@ -409,17 +415,41 @@ public class TerrainFace {
 
                         if (localUp == Vector3.right)
                         {
+                            if (y == minY)
+                            {
+                                thm.groundRoundErrorMap[x, y] = minYUnrounded - ((float)minY);
+                            }
+                            else if (y == minY - 1)
+                            {
+                                thm.groundRoundErrorMap[x, y] = 1 + minYUnrounded - ((float)minY);
+                            }
                             float xEnd = iterMaxX - maxX;
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x - maxX) / xEnd) * Mathf.PI);
                             yProgress = yWithinBounds ? 1 : 0; //yProgSideConstruct; //Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
                         }
                         else if (localUp == Vector3.left)
                         {
+                            if (y == minY) {
+                                thm.groundRoundErrorMap[x, y] = minYUnrounded-((float)minY);
+                            }else if (y == minY-1)
+                            {
+                                thm.groundRoundErrorMap[x, y] = 1+minYUnrounded - ((float)minY);
+                            }
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x / minX)) * Mathf.PI);
                             yProgress = yWithinBounds ? 1 : 0;//yProgSideConstruct; // yProgress = Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
                         }
                         else if (localUp == Vector3.forward)
                         {
+                            bool yWithinBoundsPlusOne = y >= minY-1 && y <= maxY+1;
+
+                            if (x == maxX)
+                            {
+                                thm.groundRoundErrorMap[x, y] = maxXUnrounded - ((float)maxX);
+
+                            }else if (x == maxX+1 && yWithinBoundsPlusOne)
+                            {
+                                thm.groundRoundErrorMap[x, y] = -1+maxXUnrounded - ((float)maxX);
+                            }
                             float withDividor = 2f;
                             float lenX = Mathf.Min(midX / withDividor, (xResolution - 1f - midX) / withDividor);
                             float lenY = Mathf.Min(midY / withDividor, (yResolution - 1f - midY) / withDividor);
@@ -542,8 +572,8 @@ public class TerrainFace {
         float yProgression = (start.y + room.yLength / 2f) / room.yLength;
         float zProgression = 1 - (start.z - TerrainGenerator.TERRAIN_Z_WIDTH + room.zLength / 2f) / room.zLength;
 
-        float startY = (int)(xProgression * (yResolution - 1f));
-        float startX = (int)(yProgression * (xResolution - 1f));
+        float startY = /*(int)*/(xProgression * (yResolution - 1f));
+        float startX = /*(int)*/(yProgression * (xResolution - 1f));
 
         return new Vector3(startX, startY, zProgression); //xProgression * xBind + yProgression * yBind; //
     }
@@ -553,6 +583,7 @@ public class TerrainFace {
         Vector3 groundPositon,
         float xResolution,
         float yResolution
+
     )
     {
         Vector3 start = groundPositon - centerPosition;
@@ -561,10 +592,14 @@ public class TerrainFace {
         float yProgression = 1 - ((start.y + room.yLength / 2f) / room.yLength);
         float zProgression = 1 - ((start.z + room.zLength / 2f) / room.zLength);
 
-        float startY = (int)(yProgression * (yResolution - 1f));
-        float startX = (int)(zProgression * (xResolution - 1f));
+        float startYfloat = yProgression * (yResolution - 1f);
+        float startXfloat = zProgression * (xResolution - 1f);
 
-        return new Vector3(startX, startY, xProgression); //xProgression * xBind + yProgression * yBind; //
+        //float startY = (int)(startYfloat);
+        //float startX = (int)(startXfloat);
+
+
+        return new Vector3(startXfloat, startYfloat, xProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
     public Vector3 PositionToHeightMapPosRight(
@@ -580,8 +615,8 @@ public class TerrainFace {
         float yProgression = 1 - ((start.y + room.yLength / 2f) / room.yLength);
         float zProgression = ((start.z + room.zLength / 2f) / room.zLength);
 
-        float startY = (int)(yProgression * (yResolution - 1f));
-        float startX = (int)(zProgression * (xResolution - 1f));
+        float startY = /*(int)*/(yProgression * (yResolution - 1f));
+        float startX = /*(int)*/(zProgression * (xResolution - 1f));
 
         return new Vector3(startX, startY, xProgression); //xProgression * xBind + yProgression * yBind; //
     }
@@ -600,8 +635,8 @@ public class TerrainFace {
         float yProgression = 1 - ((start.y + room.yLength / 2f) / room.yLength);
         float zProgression = 1 - ((start.z + room.zLength / 2f) / room.zLength);
 
-        float startY = (int)(zProgression * (yResolution - 1f));
-        float startX = (int)(xProgression * (xResolution - 1f));
+        float startY = /*(int)*/(zProgression * (yResolution - 1f));
+        float startX = /*(int)*/(xProgression * (xResolution - 1f));
 
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
@@ -620,8 +655,8 @@ public class TerrainFace {
         float yProgression = ((start.y + room.yLength / 2f) / room.yLength);
         float zProgression = 1 - ((start.z + room.zLength / 2f) / room.zLength);
 
-        float startY = (int)(zProgression * (yResolution - 1f));
-        float startX = (int)(xProgression * (xResolution - 1f));
+        float startY = /*(int)*/(zProgression * (yResolution - 1f));
+        float startX = /*(int)*/(xProgression * (xResolution - 1f));
 
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
@@ -786,18 +821,55 @@ public class TerrainFace {
                     // else {
 
                     vertices[i] =
-                                     Vector3.Lerp(
+                                  //   Vector3.Lerp(
                                             height > 0 ?
                                             Vector3.Lerp(
                                             Vector3.Lerp(pointOnHeightMap,mergeTo, noiseForGrounds)
                                                 , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
                                         : spherinessWithWalls
-                                        ,pointOnUnitCube
-                                       ,depth
-                                )
+                                      //  ,pointOnUnitCube
+                                       //,depth
+                               // )
                             ;
                     // }
 
+                    if (localUp == Vector3.left && thm.groundRoundErrorMap[x,y] != 0) {
+
+                        float yD = ((float)room.ySize) / ((float)yResolution - 1f);
+
+
+                        vertices[i] = new Vector3(
+                            vertices[i].x, 
+                            vertices[i].y-yD * thm.groundRoundErrorMap[x, y]*2, 
+                            vertices[i].z
+                            );
+
+                    }else if (localUp == Vector3.right && thm.groundRoundErrorMap[x, y] != 0)
+                    {
+
+                        float yD = ((float)room.ySize) / ((float)yResolution - 1f);
+
+
+                        vertices[i] = new Vector3(
+                            vertices[i].x,
+                            vertices[i].y - yD * thm.groundRoundErrorMap[x, y] * 2,
+                            vertices[i].z
+                            );
+
+                    }
+                    else if (localUp == Vector3.forward && thm.groundRoundErrorMap[x, y] != 0)
+                    {
+
+                        float yD = ((float)room.ySize) / ((float)xResolution - 1f);
+
+
+                        vertices[i] = new Vector3(
+                            vertices[i].x,
+                            vertices[i].y +  yD * thm.groundRoundErrorMap[x, y] * 2,
+                            vertices[i].z
+                            );
+
+                    }
 
 
                     //Fix the angle difference between adjacent rooms
