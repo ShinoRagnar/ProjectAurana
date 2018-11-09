@@ -591,20 +591,16 @@ public class TerrainRoom
 
         foreach (Ground g in members)
         {
-            if (g.hints.type == GroundType.Wall)
+            if (g.hints.type == GroundType.Wall || g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof)
             {
                 g.obj.GetComponent<MeshRenderer>().enabled = false;
-            }
-            else if (g.hints.type == GroundType.Floor)
+
+            }else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
             {
-                g.obj.GetComponent<MeshRenderer>().enabled = false;
-                //AddDirectionMember(Vector3.down, g);
-            }
-            else if (g.hints.type == GroundType.Roof) {
-                g.obj.GetComponent<MeshRenderer>().enabled = false;
-                //AddDirectionMember(Vector3.up, g);
-            } else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
-            {
+                if (g.hints.type == GroundType.Door) {
+
+                    g.obj.gameObject.SetActive(false);
+                }
 
                 if (Mathf.Abs(g.GetLeftSide().x - minX) <= SIDE_ATTACH_DISTANCE)
                 {

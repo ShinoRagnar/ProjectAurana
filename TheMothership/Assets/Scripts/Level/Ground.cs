@@ -10,6 +10,8 @@ public class Ground {
     public DictionaryList<Vector3, Vector3> startPointToEndPoint;
     public DictionaryList<Vector3, DictionaryList<Ground, int>> distances;
 
+    public string name = "noname";
+
     // public ListHash<Ground> group;
     // public Color groupColor;
 
@@ -33,6 +35,7 @@ public class Ground {
     public Ground(Transform groundObject)
     {
         this.obj = groundObject;
+        this.name = obj.name;
         RecalcBounds();
 
         this.links = new DictionaryList<Vector3, Ground>();

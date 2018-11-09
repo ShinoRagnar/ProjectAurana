@@ -11,9 +11,21 @@ public enum TerrainFaceSurfaceType {
     CliffUnderhang = 4,
 
 }
+
+
 public class TerrainFace {
 
+    private struct GroundBounds
+    {
+        public Vector3 firstPoint;
+        public Vector3 secondPoint;
 
+        public GroundBounds(Vector3 first, Vector3 last) {
+            this.firstPoint = first;
+            this.secondPoint = last;
+        }
+
+    }
 
     public Mesh mesh;
     public Vector3 localUp;
@@ -35,8 +47,10 @@ public class TerrainFace {
     public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
 
 
-    public struct TerrainHeightMaps
+    public class TerrainHeightMaps
     {
+
+        public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
         public float[,] heightMap;
@@ -58,6 +72,8 @@ public class TerrainFace {
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
             grassDisabled = new bool[xResolution, yResolution];
             faunaDensityMap = new float[xResolution, yResolution];
+            depthMap = new float[xResolution, yResolution];
+
             faunaPreferredPos = Vector3.zero;
             faunaPreferredNormal = Vector3.up;
             faunaMeshPos = Vector3.zero;
@@ -80,36 +96,118 @@ public class TerrainFace {
         axisB = Vector3.Cross(localUp, axisA);
     }
 
-    public TerrainHeightMaps GenerateHeightMap(List<Ground> members, Vector3 position, int xResolution, int yResolution, int xMod, int yMod, int zMod) {
+    public void GenerateHeightMap(
+        List<Ground> members, 
+        Vector3 position, 
+        int xResolution, 
+        int yResolution, 
+        int xMod, 
+        int yMod, 
+        int zMod) {
 
-        TerrainHeightMaps thm = new TerrainHeightMaps(xResolution, yResolution);
+        thm = new TerrainHeightMaps(xResolution, yResolution);
 
         //float[,] heightMap = new float[xResolution, yResolution];
 
         foreach (Ground member in members) {
-            Imprint(position, member, thm, xResolution, yResolution, xMod, yMod, zMod);
+
+            GroundBounds gb = GetBoundsOf(member, position, (int)xResolution, (int)yResolution);
+
+            int minY = (int)Mathf.Min(gb.secondPoint.y, gb.firstPoint.y);
+            int maxY = (int)Mathf.Max(gb.secondPoint.y, gb.firstPoint.y);
+            int minX = (int)Mathf.Min(gb.firstPoint.x, gb.secondPoint.x);
+            int maxX = (int)Mathf.Max(gb.firstPoint.x, gb.secondPoint.x);
+
+            int closestTopY = yResolution - 1;
+            int closestBottomY = 0;
+            int closestLeftX = xResolution - 1;
+            int closestRightX = 0;
+
+            //Ground closestTopYGround  = member;
+            //Ground closestBottomYGround = member;
+            //Ground closestLeftXGround = member;
+           // Ground closestRightXGround = member;
+
+            if (localUp != Vector3.forward) {
+
+                foreach (Ground comparisons in members)
+                {
+                    if (comparisons != member && comparisons.hints.type != GroundType.Door)
+                    {
+
+                        GroundBounds comp = GetBoundsOf(comparisons, position, (int)xResolution, (int)yResolution);
+                        int compminY = (int)Mathf.Min(comp.secondPoint.y, comp.firstPoint.y);
+                        int compmaxY = (int)Mathf.Max(comp.secondPoint.y, comp.firstPoint.y);
+                        int compminX = (int)Mathf.Min(comp.firstPoint.x, comp.secondPoint.x);
+                        int compmaxX = (int)Mathf.Max(comp.firstPoint.x, comp.secondPoint.x);
+
+                        if (maxY < compminY && compminY < closestTopY)
+                        {
+                            closestTopY = compminY;
+                           // closestTopYGround = comparisons;
+                            // Debug.Log("found top");
+                        }
+                        if (minY > compmaxY && compmaxY > closestBottomY)
+                        {
+                            closestBottomY = compminY;
+                           // closestBottomYGround = comparisons;
+                        }
+                        if (maxX < compminX && compminX < closestLeftX)
+                        {
+                            closestLeftX = compminX;
+                           // closestLeftXGround = comparisons;
+                        }
+                        if (minX > compmaxX && compmaxX > closestRightX)
+                        {
+                            closestRightX = compminY;
+                           // closestRightXGround = comparisons;
+                        }
+                    }
+                }
+            }
+
+
+           // Debug.Log("Imprinting: " + member.name + " closestTopY " + closestTopYGround.name
+            //    + " closest BottomY:" + closestBottomYGround.name);
+
+
+            Imprint(
+                position, 
+                member, 
+                xResolution, 
+                yResolution, 
+                xMod, 
+                yMod, 
+                zMod,
+                closestTopY,
+                closestBottomY,
+                closestLeftX,
+                closestRightX,
+                gb.firstPoint,
+                gb.secondPoint
+                );
         }
-        return thm;
+       // return thm;
     }
 
-
-    public void Imprint( Vector3 position, Ground g, TerrainHeightMaps thm, float xResolution, float yResolution, float xMod, float yMod, float zMod)
-    {
- 
-
+    private GroundBounds GetBoundsOf(
+        Ground g,
+        Vector3 position, 
+        int xResolution, 
+        int yResolution
+    ) {
         Vector3 firstPoint = Vector3.zero;
         Vector3 secondPoint = Vector3.zero;
 
-        float underHangMultiplier = 0.5f;
-        float overHangMultiplier = 2;
 
-        if (localUp == Vector3.forward) {
-            overHangMultiplier = 2f;
-            underHangMultiplier = 2f;
+        if (localUp == Vector3.forward)
+        {
+
             firstPoint = PositionToHeightMapPosForward(position, g.GetLeftSide(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosForward(position, g.GetBottomRightSideAgainstCamera(), xResolution, yResolution);
 
-        } else if (localUp == Vector3.left)
+        }
+        else if (localUp == Vector3.left)
         {
             firstPoint = PositionToHeightMapPosLeft(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosLeft(position, g.GetBottomRightSideAgainstCamera(), xResolution, yResolution);
@@ -121,164 +219,314 @@ public class TerrainFace {
         }
         else if (localUp == Vector3.up)
         {
-            overHangMultiplier = 0.25f;
-            underHangMultiplier = 0.25f;
             firstPoint = PositionToHeightMapPosUp(position, g.GetBottomRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosUp(position, g.GetBottomLeftSideAgainstCamera(), xResolution, yResolution);
         }
         else if (localUp == Vector3.down)
         {
-            overHangMultiplier = 0.25f;
-            underHangMultiplier = 0.25f;
             firstPoint = PositionToHeightMapPosDown(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution);
             secondPoint = PositionToHeightMapPosDown(position, g.GetTopLeftSideAgainstCamera(), xResolution, yResolution);
         }
 
-        //int i = 0;
+        return new GroundBounds(firstPoint, secondPoint);
+    }
+
+    public void Imprint(
+
+        Vector3 position,
+        Ground g,
+
+        // TerrainHeightMaps thm, 
+        float xResolution,
+        float yResolution,
+
+        float xMod,
+        float yMod,
+        float zMod,
+
+        int iterMaxY, //closestTopY,
+        int iterMinY, //closestBottomY,
+        int iterMaxX, //closestLeftX,
+        int iterMinX, //closestRightX,
+        //int iterMinY = closestBottomY; // 0; //iterYSmoothening ? Mathf.Max(0, minY - maxOverhang) : minY;
+        //int iterMaxY = closestTopY; // (int)(yResolution - 1f); //iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY + maxUnderHang) : maxY;
+        //int iterMinX = closestRightX; //0; //iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
+        //int iterMaxX = closestLeftX; //(int)(xResolution - 1f); //iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
+
+        Vector3 firstPoint,
+        Vector3 secondPoint
+    )
+    {
+       // GroundBounds gb = GetBoundsOf(g, position, (int)xResolution, (int)yResolution);
+
+       // Vector3 firstPoint = gb.firstPoint; //Vector3.zero;
+       // Vector3 secondPoint = gb.secondPoint; //Vector3.zero;
+
 
         int minY = (int)Mathf.Min(secondPoint.y, firstPoint.y);
         int maxY = (int)Mathf.Max(secondPoint.y, firstPoint.y);
         int minX = (int)Mathf.Min(firstPoint.x, secondPoint.x);
         int maxX = (int)Mathf.Max(firstPoint.x, secondPoint.x);
 
-        bool iterXSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
-        bool iterYSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
 
-
-
-        int maxOverhang = localUp == Vector3.left || localUp == Vector3.right ? minY :
-                            (int)(Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
-
-        int maxUnderHang = (int)(Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
-
-        bool isOutmostWall = g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof || g.hints.type == GroundType.Wall;
-
-
-        int iterMinY = iterYSmoothening ? Mathf.Max(0, minY - maxOverhang) : minY;
-        int iterMaxY = iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY + maxUnderHang) : maxY;
-        int iterMinX = iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
-        int iterMaxX = iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
-
-        float height = firstPoint.z;
-        float innerHeight = localUp != Vector3.up ? height : PositionToHeightMapPosForward(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution).z;
-
-        float xProgress = 1;
-        float yProgress = 1;
-
-        for (int y = iterMinY; y <= iterMaxY; y++)
+        if (g.hints.type == GroundType.Door)
         {
-            for (int x = iterMinX; x <= iterMaxX; x++)
+            int margin = 0; // room.resolution;
+
+            //int iterMinY = Mathf.Max(0, minY - margin);
+            //int iterMaxY = Mathf.Min((int)(yResolution - 1), maxY + margin);
+            //int iterMinX = Mathf.Max(0, minX - margin);
+            //int iterMaxX = Mathf.Min((int)(xResolution - 1), maxX + margin);
+
+            for (int yi = minY; yi <= maxY; yi++)
             {
-                if (y >= 0 && x >= 0 && x < xResolution && y < yResolution)
+                for (int xi = minX; xi <= maxX; xi++)
                 {
-                    bool xWithinBounds = x >= minX && x <= maxX;
-                    bool yWithinBounds = y >= minY && y <= maxY;
-
-                    if (iterXSmoothening)
-                    {
-                        float maxLenX = iterMaxX - maxX;
-                        float xEndProg = 1;
-                        float xStartProg = 1;
-
-                        if (maxLenX != 0)
-                        {
-                            xEndProg = 1f - Mathf.Clamp01(((float)x - maxX) / (maxLenX));
-                        }
-                        if (minY != 0)
-                        {
-                            xStartProg = Mathf.Clamp01((float)x / minX);
-                        }
-                        if (localUp == Vector3.up)
-                        {
-                            xEndProg = 1f - Mathf.Clamp01(((float)x - (float)maxX) / (float)(maxUnderHang));
-                            xStartProg = Mathf.Clamp01(((float)x - (float)iterMinX) / (float)(maxOverhang));
-                        }
-
-                        xProgress = x < maxX ? xStartProg : xEndProg;
-                    }
-                    if (iterYSmoothening)
-                    {
-                        float maxLenY = iterMaxY - maxY;
-                        float yEndProg = 1;
-                        float yStartProg = 1;
-
-                        yEndProg = 1f - Mathf.Clamp01(((float)y - (float)maxY) / (float)(maxUnderHang));
-                        yStartProg = Mathf.Clamp01(((float)y - (float)iterMinY) / (float)(maxOverhang));
-
-                        yProgress = y < maxY ? yStartProg : yEndProg;
-                    }
-
-                    //float morphIntoNoiseFactor = 0;
-
-                    float p = yProgress * xProgress;
-                    float persistance = p * p * p * (p *
-                        (6f * p - 15f) + 10f);
-
-                    float persistedHeight = height * persistance;
+                    bool xWithinBounds = xi >= minX && xi <= maxX;
+                    bool yWithinBounds = yi >= minY && yi <= maxY;
 
                     if (xWithinBounds && yWithinBounds)
                     {
-                        thm.onlyFacesHeightMap[x, y] = Mathf.Max(thm.onlyFacesHeightMap[x, y], height);
-                        thm.grassDisabled[x, y] = true;
-                    }
-                    else if (localUp == Vector3.forward) {
-
-                        //persistedHeight *= 0.7f;
-
-                        if (persistedHeight < 0.02f) {
-                            persistedHeight = 0f;
-
+                        if (xi == minX || xi == maxX - 1 || yi == minY || yi == maxY - 1)
+                        {
+                            thm.depthMap[xi, yi] = 1;  // Depth to edge
                         }
-                        //morphIntoNoiseFactor = 1 - persistedHeight;
-                    }
+                        else
+                        {
 
-                    if (yWithinBounds) {
-                        thm.withinAnyYBoundsMap[x, y] = true;
-
-                        if (localUp == Vector3.left || localUp == Vector3.right) {
-                            thm.grassDisabled[x, y] = true;
+                            thm.depthMap[xi, yi] = 1;  // Cut hole
                         }
                     }
-
-                    thm.maxHeightMap[x, y] = Mathf.Max(thm.maxHeightMap[x, y], persistedHeight);
-
-                    float inverseProgress = (1 - xProgress);
-
-                    float xTotalLength = (maxX - minX);
-                    float halfpoint = maxX - xTotalLength / 2;
-                    float o = (1f - Mathf.Clamp01((x - minX + xTotalLength / 2) / (xTotalLength)));
-
-                    if (localUp == Vector3.right)
-                    {
-                        o = (Mathf.Clamp01((x - maxX + xTotalLength / 2) / (xTotalLength)));
-                    }
-                    else if (localUp == Vector3.up || localUp == Vector3.down || localUp == Vector3.forward) {
-
-                        o = 1;
-                    }
-                    float cliffRolloff = o * o * o * o;
-                    float reducedHeight = y < minY ? o : 1;
-
-
-
-                    thm.heightMap[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
-                        Mathf.Min(
-                            thm.maxHeightMap[x, y],
-                            thm.heightMap[x, y] + persistedHeight * reducedHeight);
-
-                    //if (!isOutmostWall) {
-                    //    thm.isNotOutmostWall[x, y] = true;
-                    //}
-
-                    //thm.persistanceMap[x, y] = Mathf.Max(
-                    //    thm.persistanceMap[x, y],
-                    //    morphIntoNoiseFactor
-                    //    );
-
-                    // i++;
                 }
             }
+            
+
         }
+        else {
+        
+        //bool iterXSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
+        //    bool iterYSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
+
+
+
+            //int maxOverhang = localUp == Vector3.left || localUp == Vector3.right ? minY :
+            //                    (int)(Mathf.Max(maxX - minX, maxY - minY) * overHangMultiplier);
+
+            //int maxUnderHang = (int)(Mathf.Max(maxX - minX, maxY - minY) * underHangMultiplier);
+
+            bool isOutmostWall = g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof || g.hints.type == GroundType.Wall;
+
+
+            //int iterMinY = closestBottomY; // 0; //iterYSmoothening ? Mathf.Max(0, minY - maxOverhang) : minY;
+            //int iterMaxY = closestTopY; // (int)(yResolution - 1f); //iterYSmoothening ? Mathf.Min((int)(yResolution - 1), maxY + maxUnderHang) : maxY;
+            //int iterMinX = closestRightX; //0; //iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
+            //int iterMaxX = closestLeftX; //(int)(xResolution - 1f); //iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
+
+            float height = firstPoint.z;
+            float innerHeight = localUp != Vector3.up ? height : PositionToHeightMapPosForward(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution).z;
+
+            float xProgress = 1;
+            float yProgress = 1;
+            float xProgSideConstruct = 0;
+            float yProgSideConstruct = 0;
+
+            for (int y = iterMinY; y <= iterMaxY; y++)
+            {
+                for (int x = iterMinX; x <= iterMaxX; x++)
+                {
+                    if (y >= 0 && x >= 0 && x < xResolution && y < yResolution)
+                    {
+                        bool xWithinBounds = x >= minX && x <= maxX;
+                        bool yWithinBounds = y >= minY && y <= maxY;
+
+                        /*if (iterXSmoothening)
+                        {
+                            float maxLenX = iterMaxX - maxX;
+                            float xEndProg = 1;
+                            float xStartProg = 1;
+
+                            if (maxLenX != 0)
+                            {
+                                xEndProg = 1f - Mathf.Clamp01(((float)x - maxX) / (maxLenX));
+                            }
+                            if (minY != 0)
+                            {
+                                xStartProg = Mathf.Clamp01((float)x / minX);
+                            }
+                            if (localUp == Vector3.up)
+                            {
+                                xEndProg = 1f - Mathf.Clamp01(((float)x - (float)maxX) / (float)(maxUnderHang));
+                                xStartProg = Mathf.Clamp01(((float)x - (float)iterMinX) / (float)(maxOverhang));
+                            }
+
+                            xProgress = x < maxX ? xStartProg : xEndProg;
+                        }
+                        if (iterYSmoothening)
+                        {
+                            float maxLenY = iterMaxY - maxY;
+                            float yEndProg = 1;
+                            float yStartProg = 1;
+
+                            yEndProg = 1f - Mathf.Clamp01(((float)y - (float)maxY) / (float)(maxUnderHang));
+                            yStartProg = Mathf.Clamp01(((float)y - (float)iterMinY) / (float)(maxOverhang));
+
+                            yProgress = y < maxY ? yStartProg : yEndProg;
+                        }*/
+
+                        float midY = ((float)minY) + ((float)(maxY - minY)) / 2f;
+                        float lengthTopY = (iterMaxY - midY); ///2f;
+                        float lengthBottomY = (midY - iterMinY); ///2f;
+
+                        //if (localUp == Vector3.forward)
+                        //{
+                       //     lengthTopY /= 4f;
+                       //     lengthBottomY /= 4f;
+                        //}
+                        yProgSideConstruct = y < midY ? (y - iterMinY-0 ) / lengthBottomY : (1f - ((y - midY) / lengthTopY));
+                        yProgSideConstruct = Mathf.Clamp01(yProgSideConstruct);
+
+
+                        float midX = ((float)minX) + ((float)(maxX - minX)) / 2f;
+                        float lengthTopX = (iterMaxX - maxX)/2f;
+                        float lengthBottomX = (minX - iterMinX)/2f;
+
+                        //if (localUp == Vector3.forward)
+                        //{
+                        //    lengthTopX /= 2f;
+                        //    lengthBottomX /= 2f;
+                        //}
+                        xProgSideConstruct = x < midX ? (x - iterMinX - 0) / lengthBottomX : (1f - ((x - midX) / lengthTopX));
+                        xProgSideConstruct = Mathf.Clamp01(xProgSideConstruct);
+
+
+
+                        float xProg = x < minX ? (x) / (lengthBottomX) : (1f - ((x - maxX- lengthTopX) / lengthTopX));
+                        xProgress = Mathf.Clamp01(xProg);
+
+                        float yProg = y < minY ? (y) / (lengthBottomY) : (1f - ((y - maxY - lengthTopY) / lengthTopY));
+                        yProgress = Mathf.Clamp01(yProg);
+
+
+                        if (localUp == Vector3.right)
+                        {
+                            float xEnd = iterMaxX - maxX;
+                            xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x - maxX) / xEnd) * Mathf.PI);
+                            yProgress = yWithinBounds ? 1 : 0; //yProgSideConstruct; //Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
+                        }
+                        else if (localUp == Vector3.left)
+                        {
+                            xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x / minX)) * Mathf.PI);
+                            yProgress = yWithinBounds ? 1 : 0;//yProgSideConstruct; // yProgress = Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
+                        }
+                        else if (localUp == Vector3.forward)
+                        {
+                            float withDividor = 2f;
+                            float lenX = Mathf.Min(midX / withDividor, (xResolution - 1f - midX) / withDividor);
+                            float lenY = Mathf.Min(midY / withDividor, (yResolution - 1f - midY) / withDividor);
+                            xProgress = Mathf.Sin(Mathf.Clamp01(((float)x - ((float)midX - lenX)) / (lenX * 2)) * Mathf.PI);
+                            yProgress = Mathf.Sin(Mathf.Clamp01(((float)y - ((float)midY - lenY)) / (lenY * 2)) * Mathf.PI);
+                            yProgSideConstruct = 0;
+                            xProgSideConstruct = 0;
+
+                        }else {
+
+                            xProgress = 0;
+                            yProgress = 0;
+                            yProgSideConstruct = 0;
+                            xProgSideConstruct = 0;
+                        }
+
+                        //yProgress = ((float)y) / ((float)iterMaxY-minY);
+
+
+                        //float morphIntoNoiseFactor = 0;
+
+                        float p = Mathf.Max(yProgress * xProgress, xProgSideConstruct*yProgSideConstruct);
+                        float persistance = p * p * p * (p *
+                            (6f * p - 15f) + 10f);
+
+                        float persistedHeight = height * persistance;
+
+                        // Fix heightmap not matching up with forward wallss noise
+                        if ((localUp == Vector3.left || localUp == Vector3.right) && persistedHeight != 0) {
+                            persistedHeight = Mathf.Max(persistedHeight, (WALL_WIDTH / room.xLength));
+                        }
+
+                        if (xWithinBounds && yWithinBounds)
+                        {
+                            thm.onlyFacesHeightMap[x, y] = Mathf.Max(thm.onlyFacesHeightMap[x, y], height);
+                            thm.grassDisabled[x, y] = true;
+                        }
+                        else if (localUp == Vector3.forward)
+                        {
+
+                            //persistedHeight *= 0.7f;
+
+                            if (persistedHeight < 0.02f)
+                            {
+                                persistedHeight = 0f;
+
+                            }
+                            //morphIntoNoiseFactor = 1 - persistedHeight;
+                        }
+
+                        if (yWithinBounds)
+                        {
+                            thm.withinAnyYBoundsMap[x, y] = true;
+
+                            if (localUp == Vector3.left || localUp == Vector3.right)
+                            {
+                                thm.grassDisabled[x, y] = true;
+                            }
+                        }
+
+                        thm.maxHeightMap[x, y] = Mathf.Max(thm.maxHeightMap[x, y], persistedHeight);
+
+                        //float inverseProgress = (1 - xProgress);
+
+                        //float xTotalLength = (maxX - minX);
+                        //float halfpoint = maxX - xTotalLength / 2f;
+
+                        /*
+                        float o = (1f - Mathf.Clamp01((x - minX + xTotalLength / 2f) / (xTotalLength)));
+
+                        if (localUp == Vector3.right)
+                        {
+                            o = (Mathf.Clamp01((x - maxX + xTotalLength / 2f) / (xTotalLength)));
+                        }
+                        else if (localUp == Vector3.up || localUp == Vector3.down || localUp == Vector3.forward)
+                        {
+
+                            o = 1;
+                        }
+                        float cliffRolloff = o * o * o * o;
+                        float reducedHeight = 1; //y < minY ? o : 1;
+                        */
+
+
+                        thm.heightMap[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
+                            Mathf.Min(
+                                thm.maxHeightMap[x, y],
+                                thm.heightMap[x, y] + persistedHeight /** reducedHeight*/);
+
+                        //if (!isOutmostWall) {
+                        //    thm.isNotOutmostWall[x, y] = true;
+                        //}
+
+                        //thm.persistanceMap[x, y] = Mathf.Max(
+                        //    thm.persistanceMap[x, y],
+                        //    morphIntoNoiseFactor
+                        //    );
+
+                        // i++;
+                    }
+                }
+            }
+
+        }
+
+
+        
     }
 
     public Vector3 PositionToHeightMapPosForward(
@@ -408,7 +656,7 @@ public class TerrainFace {
         int xResolution = room.resolution * xMod;
         int yResolution = room.resolution * yMod;
 
-        this.thm = GenerateHeightMap(members, position, xResolution, yResolution, xMod, yMod, zMod);
+        GenerateHeightMap(members, position, xResolution, yResolution, xMod, yMod, zMod);
 
         //Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), 1f / (float)(yResolution - 1f));
 
@@ -488,21 +736,24 @@ public class TerrainFace {
                     float zg = Mathf.Clamp01((pointOnUnitCube.z + room.zLength / 2f - TerrainGenerator.TERRAIN_Z_WIDTH * 2) / (room.zLength / 2f));
                     float zGroundProgress = zg * zg * zg * (zg * (6f * zg - 15f) + 10f);
 
-                    Vector3 wallToNoise = Vector3.Lerp(pointOnWall, wallNoise, noiseVal);
+                    Vector3 wallToNoise = Vector3.Lerp(pointOnWall, wallNoise, 0); //localUp == Vector3.down ? 0 : noiseVal);
 
 
                     Vector3 mergeSphereWithCosCurve = Vector3.Lerp(pointOnCosCurve, pointOnSphere, reducedSmoothCosCurve);
                     Vector3 mergeWithNoise = Vector3.Lerp(mergeSphereWithCosCurve, wallToNoise, noiseVal);
-                    Vector3 cubeToSphereness = Vector3.Lerp(wallToNoise, mergeWithNoise, zProgress);
+                    Vector3 cubeToSphereness = Vector3.Lerp(wallToNoise, mergeWithNoise, zProgress); //0); //zProgress);
 
                     Vector3 spherinessWithWalls = Vector3.Lerp(wallToNoise, cubeToSphereness, zGroundProgress);
 
 
                     float height = thm.heightMap[x, y];
+                    float depth = thm.depthMap[x, y];
 
 
                     float noiseForGrounds = 0;
                     Vector3 mergeTo;
+
+                    Vector3 pointOnHeightMap = Vector3.Lerp(pointOnUnitCube, /*wallToNoise,*/ reversePos, height);
 
                     if (localUp == Vector3.forward)
                     {
@@ -514,17 +765,39 @@ public class TerrainFace {
                     {
                         bool isUpOrDown = localUp == Vector3.up || localUp == Vector3.down;
 
-                        mergeTo = reversePos + new Vector3(0, 0, isUpOrDown ? 0 : room.zLength * 2);
-                        noiseForGrounds = (isUpOrDown ? 0.05f : 0.2f) * (noiseVal) * (1f - Mathf.Clamp01((pointOnWall.z) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                        mergeTo = pointOnWall; //reversePos; //+ new Vector3(0, 0, isUpOrDown ? 0 : room.zLength);
+
+                        float heightNoise =
+                          EvaluateNoise(pointOnHeightMap, baseRoughness/35f, 1, 1, strength,1 , true);
+
+                        float n = (1f - Mathf.Clamp01((pointOnWall.z - TerrainGenerator.TERRAIN_Z_WIDTH) / -(TerrainGenerator.TERRAIN_Z_WIDTH * 2)));
+                        n = n * n * n * (n * (6f * n - 15f) + 10f);
+
+                        noiseForGrounds = (isUpOrDown ? 0 : 0.5f) * (heightNoise) * n;
+                          
                     }
 
+
+                    // Carve out doors
+                    //if (depth < 0)
+                    //{
+                    //    vertices[i] = pointOnUnitCube;
+                    //}
+                    // else {
+
                     vertices[i] =
-                         height > 0 ?
-                            Vector3.Lerp(
-                                Vector3.Lerp(Vector3.Lerp(wallToNoise, reversePos, height),
-                                    mergeTo, noiseForGrounds)
-                                    , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
-                            : spherinessWithWalls;
+                                     Vector3.Lerp(
+                                            height > 0 ?
+                                            Vector3.Lerp(
+                                            Vector3.Lerp(pointOnHeightMap,mergeTo, noiseForGrounds)
+                                                , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
+                                        : spherinessWithWalls
+                                        ,pointOnUnitCube
+                                       ,depth
+                                )
+                            ;
+                    // }
+
 
 
                     //Fix the angle difference between adjacent rooms
@@ -915,10 +1188,10 @@ public class TerrainFace {
 
                 //bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
 
-                bool dirtIsDark = IsDark(thm, xPosMeshMaps, yPosMeshMaps);
+                bool dirtIsDark = IsDark(thm, xPosMeshMaps, yPosMeshMaps, nonHillyNess);
 
 
-                bool isGrass = IsGrass(thm, xPosMeshMaps, yPosMeshMaps, xResolution, yResolution);
+                bool isGrass = IsGrass(thm, xPosMeshMaps, yPosMeshMaps, xResolution, yResolution, nonHillyNess);
 
 
                 float dirt = dirtIsDark ? 0 : nonHillyNess;
@@ -926,71 +1199,98 @@ public class TerrainFace {
                 float darkDirt = dirtIsDark ? isGrass ? 0 : nonHillyNess : 0;
                 float grass = dirtIsDark && isGrass ? nonHillyNess : 0;
 
-                if (stone > 0.5f)
+                if (localUp == Vector3.down)
                 {
-                    float upsideDownedness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.down, normals[iPosMeshMaps])) / 90f);
-
-                    if (    upsideDownedness > 0.5f 
-                        &&  localUp == Vector3.up 
-                        &&  room.noise.Evaluate(room.position+ vertices[iPosMeshMaps]) > 0.5f) {
-
-                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
-                    }else{
+                    darkDirt = nonHillyNess; // thm.heightMap[(int)x, (int)y] > 0 ? 0f : 1f;
+                    stone = (1f - nonHillyNess); // - darkDirt;
+                    grass = 0;
+                    dirt = 0;
+                    if (stone > 0.5f)
+                    {
                         thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+
+                    }else{
+
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
                     }
                 }
-                else if (dirtIsDark)
-                {
-                    if (isGrass)
+                else {
+                    if (stone > 0.5f)
                     {
-                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+                        float upsideDownedness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.down, normals[iPosMeshMaps])) / 90f);
 
-                        //Angle against camera preferred
-                        //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
-                        int faunaMinX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
-                        int faunaMaxX = Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
-                        int faunaMinY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
-                        int faunaMaxY = Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
+                        if (upsideDownedness > 0.5f
+                            && localUp == Vector3.up
+                            && room.noise.Evaluate(room.position + vertices[iPosMeshMaps]) > 0.5f)
+                        {
 
-                        if (faunaMaxX != faunaMinX && faunaMinY != faunaMaxY) {
-                            for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
+                            thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
+                        }
+                        else
+                        {
+                            thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                        }
+                    }
+                    else if (dirtIsDark)
+                    {
+                        if (isGrass)
+                        {
+                            thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+
+                            //Angle against camera preferred
+                            //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
+                            int faunaMinX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
+                            int faunaMaxX = Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, xResolution);
+                            int faunaMinY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
+                            int faunaMaxY = Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, yResolution);
+
+                            if (faunaMaxX != faunaMinX && faunaMinY != faunaMaxY)
                             {
-                                for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
+                                for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
                                 {
-                                    if (IsDark(thm, faunaX, faunaY) && IsGrass(thm, faunaX, faunaY, xResolution, yResolution))
+                                    for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
                                     {
 
-                                        float percentX = Mathf.Abs((float)(xPosMeshMaps - faunaX)) / ((float)(faunaMaxX - faunaMinX)/2f);
-                                        float percentY = Mathf.Abs((float)(yPosMeshMaps - faunaY)) / ((float)(faunaMaxY - faunaMinY)/2f);
-
-                                        float percent = (1f - percentX) * (1f - percentY);
-
-                                        thm.faunaDensityMap[faunaX, faunaY] += nonHillyNess * percent; //forwardness;
-
-                                        if (thm.faunaDensityMap[faunaX, faunaY] > thm.maxDensity)
+                                        if (IsDark(thm, faunaX, faunaY, 0) && IsGrass(thm, faunaX, faunaY, xResolution, yResolution, 0))
                                         {
-
                                             int iPosFaunaMaps = faunaY * xResolution + faunaX;
 
-                                            //Debug.Log("It happened? " + thm.faunaDensityMap[faunaX, faunaY] + " was bigger than " + thm.maxDensity + " pos " + vertices[iPosFaunaMaps].ToString());
+                                            float percentX = Mathf.Abs((float)(xPosMeshMaps - faunaX)) / ((float)(faunaMaxX - faunaMinX) / 2f);
+                                            float percentY = Mathf.Abs((float)(yPosMeshMaps - faunaY)) / ((float)(faunaMaxY - faunaMinY) / 2f);
 
-                                            thm.maxDensity = thm.faunaDensityMap[faunaX, faunaY];
-                                            thm.faunaPreferredPos = vertices[iPosFaunaMaps];
-                                            thm.faunaPreferredNormal = normals[iPosFaunaMaps];
-                                            thm.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                            float percent = (1f - percentX) * (1f - percentY);
+
+                                            thm.faunaDensityMap[faunaX, faunaY] += nonHillyNess * percent; //forwardness;
+
+                                            if (thm.faunaDensityMap[faunaX, faunaY] > thm.maxDensity)
+                                            {
+
+
+                                                //Debug.Log("It happened? " + thm.faunaDensityMap[faunaX, faunaY] + " was bigger than " + thm.maxDensity + " pos " + vertices[iPosFaunaMaps].ToString());
+
+                                                thm.maxDensity = thm.faunaDensityMap[faunaX, faunaY];
+                                                thm.faunaPreferredPos = vertices[iPosFaunaMaps];
+                                                thm.faunaPreferredNormal = normals[iPosFaunaMaps];
+                                                thm.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                        else
+                        {
+                            thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                        }
                     }
-                    else {
-                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                    else
+                    {
+                        thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
                     }
+
                 }
-                else{
-                    thm.types[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
-                }
+
+                
 
                 Color32 splat = new Color32(
                     (byte)(255f * dirt), 
@@ -1037,17 +1337,18 @@ public class TerrainFace {
 
     }*/
 
-    public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps)
+    public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, float nonHillyness)
     {
 
         return (localUp == Vector3.left || localUp == Vector3.right)
-            || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f);
+            || (localUp == Vector3.forward && thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f)
+            || (localUp == Vector3.down && nonHillyness == 1);
     }
-    public bool IsGrass(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, int xResolution, int yResolution) {
+    public bool IsGrass(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, int xResolution, int yResolution, float nonHillyness) {
        
-        return      xPosMeshMaps - 1 > 0 
-                    && yPosMeshMaps - 1 > 0 
-                    && xPosMeshMaps + 1 < xResolution 
+        return      xPosMeshMaps - 1 > 0
+                    && yPosMeshMaps - 1 > 0
+                    && xPosMeshMaps + 1 < xResolution
                     && yPosMeshMaps + 1 < yResolution
                     && !thm.grassDisabled[xPosMeshMaps, yPosMeshMaps]
                     && !thm.grassDisabled[xPosMeshMaps + 1, yPosMeshMaps + 0]
