@@ -49,8 +49,10 @@ public class TerrainFace {
 
     public class TerrainHeightMaps
     {
+        public bool[,] ignoreForDoors;
+        public Vector2[,] doormap;
         public float[,] groundRoundErrorMap;
-        public float[,] depthMap;
+       // public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
         public float[,] heightMap;
@@ -66,6 +68,7 @@ public class TerrainFace {
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
+            doormap = new Vector2[xResolution, yResolution];
             groundRoundErrorMap = new float[xResolution, yResolution];
             maxHeightMap = new float[xResolution, yResolution];
             heightMap = new float[xResolution, yResolution];
@@ -73,7 +76,9 @@ public class TerrainFace {
             withinAnyYBoundsMap = new bool[xResolution, yResolution];
             grassDisabled = new bool[xResolution, yResolution];
             faunaDensityMap = new float[xResolution, yResolution];
-            depthMap = new float[xResolution, yResolution];
+            ignoreForDoors = new bool[xResolution, yResolution];
+
+            // depthMap = new float[xResolution, yResolution];
 
             faunaPreferredPos = Vector3.zero;
             faunaPreferredNormal = Vector3.up;
@@ -274,34 +279,61 @@ public class TerrainFace {
         float minXUnrounded = Mathf.Min(firstPoint.x, secondPoint.x);
         float maxXUnrounded = Mathf.Max(firstPoint.x, secondPoint.x);
 
+        float midY = ((float)minY) + ((float)(maxY - minY)) / 2f;
+        float midX = ((float)minX) + ((float)(maxX - minX)) / 2f;
 
         if (g.hints.type == GroundType.Door)
         {
-            int margin = 0; // room.resolution;
+            //int margin = 0; // room.resolution;
 
             //int iterMinY = Mathf.Max(0, minY - margin);
             //int iterMaxY = Mathf.Min((int)(yResolution - 1), maxY + margin);
             //int iterMinX = Mathf.Max(0, minX - margin);
             //int iterMaxX = Mathf.Min((int)(xResolution - 1), maxX + margin);
 
+            int startXI = (localUp == Vector3.right) ? 0 : minX;
+            int endXI = (localUp == Vector3.right) ? maxX : (int)(xResolution - 1);
+
+
             for (int yi = minY; yi <= maxY; yi++)
             {
-                for (int xi = minX; xi <= maxX; xi++)
+                for (int xi = startXI; xi <= endXI; xi++)
                 {
                     bool xWithinBounds = xi >= minX && xi <= maxX;
                     bool yWithinBounds = yi >= minY && yi <= maxY;
 
-                    if (xWithinBounds && yWithinBounds)
+                    if (yWithinBounds)
                     {
+                        float xd = 0;
+                        float yd = 0;
+
+                        if (localUp == Vector3.right) {
+                            xd = xi - maxX;
+
+                        }else if (localUp == Vector3.left)
+                        {
+                            xd = (minX-xi);
+                        }
+
+
+                        thm.doormap[xi, yi] = new Vector2(xd, yd);
+                        /*
                         if (xi == minX || xi == maxX - 1 || yi == minY || yi == maxY - 1)
                         {
-                            thm.depthMap[xi, yi] = 1;  // Depth to edge
+                           // thm.depthMap[xi, yi] = 1;  // Depth to edge
                         }
                         else
                         {
+                          //  thm.depthMap[xi, yi] = 1;
 
-                            thm.depthMap[xi, yi] = 1;  // Cut hole
-                        }
+                            // Cut hole
+                            if (localUp == Vector3.left || localUp == Vector3.right) {
+                                //float diff = midY - minY;
+
+                                thm.doormap[xi, yi] = xi-maxX;
+                            }
+
+                        }*/
                     }
                 }
             }
@@ -345,66 +377,19 @@ public class TerrainFace {
                         bool xWithinBounds = x >= minX && x <= maxX;
                         bool yWithinBounds = y >= minY && y <= maxY;
 
-                        /*if (iterXSmoothening)
-                        {
-                            float maxLenX = iterMaxX - maxX;
-                            float xEndProg = 1;
-                            float xStartProg = 1;
 
-                            if (maxLenX != 0)
-                            {
-                                xEndProg = 1f - Mathf.Clamp01(((float)x - maxX) / (maxLenX));
-                            }
-                            if (minY != 0)
-                            {
-                                xStartProg = Mathf.Clamp01((float)x / minX);
-                            }
-                            if (localUp == Vector3.up)
-                            {
-                                xEndProg = 1f - Mathf.Clamp01(((float)x - (float)maxX) / (float)(maxUnderHang));
-                                xStartProg = Mathf.Clamp01(((float)x - (float)iterMinX) / (float)(maxOverhang));
-                            }
-
-                            xProgress = x < maxX ? xStartProg : xEndProg;
-                        }
-                        if (iterYSmoothening)
-                        {
-                            float maxLenY = iterMaxY - maxY;
-                            float yEndProg = 1;
-                            float yStartProg = 1;
-
-                            yEndProg = 1f - Mathf.Clamp01(((float)y - (float)maxY) / (float)(maxUnderHang));
-                            yStartProg = Mathf.Clamp01(((float)y - (float)iterMinY) / (float)(maxOverhang));
-
-                            yProgress = y < maxY ? yStartProg : yEndProg;
-                        }*/
-
-                        float midY = ((float)minY) + ((float)(maxY - minY)) / 2f;
                         float lengthTopY = (iterMaxY - midY); ///2f;
                         float lengthBottomY = (midY - iterMinY); ///2f;
 
-                        //if (localUp == Vector3.forward)
-                        //{
-                       //     lengthTopY /= 4f;
-                       //     lengthBottomY /= 4f;
-                        //}
                         yProgSideConstruct = y < midY ? (y - iterMinY-0 ) / lengthBottomY : (1f - ((y - midY) / lengthTopY));
                         yProgSideConstruct = Mathf.Clamp01(yProgSideConstruct);
 
 
-                        float midX = ((float)minX) + ((float)(maxX - minX)) / 2f;
                         float lengthTopX = (iterMaxX - maxX)/2f;
                         float lengthBottomX = (minX - iterMinX)/2f;
 
-                        //if (localUp == Vector3.forward)
-                        //{
-                        //    lengthTopX /= 2f;
-                        //    lengthBottomX /= 2f;
-                        //}
                         xProgSideConstruct = x < midX ? (x - iterMinX - 0) / lengthBottomX : (1f - ((x - midX) / lengthTopX));
                         xProgSideConstruct = Mathf.Clamp01(xProgSideConstruct);
-
-
 
                         float xProg = x < minX ? (x) / (lengthBottomX) : (1f - ((x - maxX- lengthTopX) / lengthTopX));
                         xProgress = Mathf.Clamp01(xProg);
@@ -414,8 +399,8 @@ public class TerrainFace {
 
                         bool xWithinBoundsPlusOne = x >= minX - 1 && x <= maxX + 1;
 
-                        if (localUp == Vector3.right)
-                        {
+                        //Fixes rounding error for grounds
+                        if (localUp == Vector3.right || localUp == Vector3.left) {
                             if (y == minY)
                             {
                                 thm.groundRoundErrorMap[x, y] = minYUnrounded - ((float)minY);
@@ -426,20 +411,20 @@ public class TerrainFace {
 
                                 thm.groundRoundErrorMap[x, y] = xP * (1 + minYUnrounded - ((float)minY));
                             }
+                            if (y == minY || y == minY - 1) {
+                                thm.ignoreForDoors[x, y] = true;
+                            }
+                        }
+
+
+                        if (localUp == Vector3.right)
+                        {
                             float xEnd = iterMaxX - maxX;
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x - maxX) / xEnd) * Mathf.PI);
                             yProgress = yWithinBounds ? 1 : 0; //yProgSideConstruct; //Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
                         }
                         else if (localUp == Vector3.left)
                         {
-                            if (y == minY) {
-                                thm.groundRoundErrorMap[x, y] = minYUnrounded-((float)minY);
-                            }else if (y == minY-1 && xWithinBoundsPlusOne)
-                            {
-                                float xP = Mathf.Sin(Mathf.Clamp01(((float)x - (float)minX) / ((float)maxX - (float)minX)) * Mathf.PI);
-
-                                thm.groundRoundErrorMap[x, y] =xP*(1 + minYUnrounded - ((float)minY)) ;
-                            }
                             xProgSideConstruct = Mathf.Sin(Mathf.Clamp01(((float)x / minX)) * Mathf.PI);
                             yProgress = yWithinBounds ? 1 : 0;//yProgSideConstruct; // yProgress = Mathf.Sin(Mathf.Clamp01((y - closestBottomY) / (closestTopY - closestBottomY) * Mathf.PI));
                         }
@@ -447,7 +432,7 @@ public class TerrainFace {
                         {
                             bool yWithinBoundsPlusOne = y >= minY-1 && y <= maxY+1;
 
-                            if (x == maxX)
+                            if (x == maxX && yWithinBoundsPlusOne)
                             {
                                 thm.groundRoundErrorMap[x, y] = maxXUnrounded - ((float)maxX);
 
@@ -517,43 +502,11 @@ public class TerrainFace {
 
                         thm.maxHeightMap[x, y] = Mathf.Max(thm.maxHeightMap[x, y], persistedHeight);
 
-                        //float inverseProgress = (1 - xProgress);
-
-                        //float xTotalLength = (maxX - minX);
-                        //float halfpoint = maxX - xTotalLength / 2f;
-
-                        /*
-                        float o = (1f - Mathf.Clamp01((x - minX + xTotalLength / 2f) / (xTotalLength)));
-
-                        if (localUp == Vector3.right)
-                        {
-                            o = (Mathf.Clamp01((x - maxX + xTotalLength / 2f) / (xTotalLength)));
-                        }
-                        else if (localUp == Vector3.up || localUp == Vector3.down || localUp == Vector3.forward)
-                        {
-
-                            o = 1;
-                        }
-                        float cliffRolloff = o * o * o * o;
-                        float reducedHeight = 1; //y < minY ? o : 1;
-                        */
-
-
                         thm.heightMap[x, y] = thm.onlyFacesHeightMap[x, y] > 0 ? thm.onlyFacesHeightMap[x, y] :
                             Mathf.Min(
                                 thm.maxHeightMap[x, y],
                                 thm.heightMap[x, y] + persistedHeight /** reducedHeight*/);
 
-                        //if (!isOutmostWall) {
-                        //    thm.isNotOutmostWall[x, y] = true;
-                        //}
-
-                        //thm.persistanceMap[x, y] = Mathf.Max(
-                        //    thm.persistanceMap[x, y],
-                        //    morphIntoNoiseFactor
-                        //    );
-
-                        // i++;
                     }
                 }
             }
@@ -732,6 +685,8 @@ public class TerrainFace {
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
+                //float depth = thm.depthMap[x, y];
+
                 if (
                     (localUp == Vector3.left && x >= xResolution - 1f)
                     ||
@@ -787,7 +742,7 @@ public class TerrainFace {
 
 
                     float height = thm.heightMap[x, y];
-                    float depth = thm.depthMap[x, y];
+
 
 
                     float noiseForGrounds = 0;
@@ -825,57 +780,45 @@ public class TerrainFace {
                     //}
                     // else {
 
-                    vertices[i] =
-                                  //   Vector3.Lerp(
+                    //if (thm.groundRoundErrorMap[x, y]  != 0 && depth == 1) {
+                    //    depth = 0;
+                    //}
+
+                    vertices[i] = 
+                                     //Vector3.Lerp(
                                             height > 0 ?
                                             Vector3.Lerp(
                                             Vector3.Lerp(pointOnHeightMap,mergeTo, noiseForGrounds)
                                                 , spherinessWithWalls, Mathf.Clamp01(zProgress - height * 4))
                                         : spherinessWithWalls
                                       //  ,pointOnUnitCube
-                                       //,depth
-                               // )
+                                      //  ,depth)
                             ;
                     // }
 
-                    if (localUp == Vector3.left && thm.groundRoundErrorMap[x,y] != 0) {
-
-                        float yD = ((float)room.ySize) / ((float)yResolution - 1f);
-
-
-                        vertices[i] = new Vector3(
-                            vertices[i].x, 
-                            vertices[i].y-yD * thm.groundRoundErrorMap[x, y]*2, 
-                            vertices[i].z
-                            );
-
-                    }else if (localUp == Vector3.right && thm.groundRoundErrorMap[x, y] != 0)
+                    //Rounding error for grounds
+                    if ((localUp == Vector3.left || localUp == Vector3.right) && thm.groundRoundErrorMap[x, y] != 0)
                     {
 
                         float yD = ((float)room.ySize) / ((float)yResolution - 1f);
-
 
                         vertices[i] = new Vector3(
                             vertices[i].x,
                             vertices[i].y - yD * thm.groundRoundErrorMap[x, y] * 2,
                             vertices[i].z
                             );
-
                     }
                     else if (localUp == Vector3.forward && thm.groundRoundErrorMap[x, y] != 0)
                     {
 
                         float yD = ((float)room.ySize) / ((float)xResolution - 1f);
 
-
                         vertices[i] = new Vector3(
                             vertices[i].x,
-                            vertices[i].y +  yD * thm.groundRoundErrorMap[x, y] * 2,
+                            vertices[i].y + yD * thm.groundRoundErrorMap[x, y] * 2,
                             vertices[i].z
                             );
-
                     }
-
 
                     //Fix the angle difference between adjacent rooms
                     if (
@@ -898,7 +841,24 @@ public class TerrainFace {
 
                 }
 
+                // Carve holes for doors
+                if ((localUp == Vector3.left || localUp == Vector3.right) 
+                    && thm.doormap[x, y].x != 0 
+                    && !thm.ignoreForDoors[x, y])
+                {
+
+                    float zD = ((float)room.zSize) / ((float)xResolution - 1f);
+                    float yD = ((float)room.ySize) / ((float)yResolution - 1f);
+
+                    vertices[i] = new Vector3(
+                                    vertices[i].x,
+                                    vertices[i].y - yD * thm.doormap[x, y].y * 2,
+                                    vertices[i].z - zD * thm.doormap[x, y].x * 2
+                                    );
+                }
+
                 uvs[i] = percent;
+
 
                 if (x != xResolution - 1 && y != yResolution - 1)
                 {
@@ -911,6 +871,8 @@ public class TerrainFace {
                     triangles[triIndex + 5] = i + 1;
                     triIndex += 6;
                 }
+
+
                 i++;
             }
         }
@@ -1269,6 +1231,14 @@ public class TerrainFace {
 
 
                 bool isGrass = IsGrass(thm, xPosMeshMaps, yPosMeshMaps, xResolution, yResolution, nonHillyNess);
+
+                //Removes grass at edges
+                if (!(vertices[iPosMeshMaps].x + room.position.x > room.minX + WALL_WIDTH
+                  && vertices[iPosMeshMaps].x + room.position.x < room.maxX - WALL_WIDTH
+                  && vertices[iPosMeshMaps].y + room.position.y > room.minY + WALL_WIDTH
+                  && vertices[iPosMeshMaps].y + room.position.y < room.maxY - WALL_WIDTH)) {
+                    isGrass = false;
+                }
 
 
                 float dirt = dirtIsDark ? 0 : nonHillyNess;
