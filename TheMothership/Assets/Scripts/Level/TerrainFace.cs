@@ -50,7 +50,7 @@ public class TerrainFace {
     public class TerrainHeightMaps
     {
         public bool[,] ignoreForDoors;
-        public Vector2[,] doormap;
+        public float[,] doormap;
         public float[,] groundRoundErrorMap;
        // public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
@@ -68,7 +68,7 @@ public class TerrainFace {
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
-            doormap = new Vector2[xResolution, yResolution];
+            doormap = new float[xResolution, yResolution];
             groundRoundErrorMap = new float[xResolution, yResolution];
             maxHeightMap = new float[xResolution, yResolution];
             heightMap = new float[xResolution, yResolution];
@@ -304,19 +304,18 @@ public class TerrainFace {
 
                     if (yWithinBounds)
                     {
-                        float xd = 0;
-                        float yd = 0;
 
                         if (localUp == Vector3.right) {
-                            xd = xi - maxX;
+                            thm.doormap[xi, yi] =  xi - maxX;
 
                         }else if (localUp == Vector3.left)
                         {
-                            xd = (minX-xi);
+                            thm.doormap[xi, yi] = (minX-xi);
+                            //if (yi > midY) {
+                            //    yd = yi - minY;
+                           // }
                         }
 
-
-                        thm.doormap[xi, yi] = new Vector2(xd, yd);
                         /*
                         if (xi == minX || xi == maxX - 1 || yi == minY || yi == maxY - 1)
                         {
@@ -843,7 +842,7 @@ public class TerrainFace {
 
                 // Carve holes for doors
                 if ((localUp == Vector3.left || localUp == Vector3.right) 
-                    && thm.doormap[x, y].x != 0 
+                    && thm.doormap[x, y] != 0 
                     && !thm.ignoreForDoors[x, y])
                 {
 
@@ -852,8 +851,8 @@ public class TerrainFace {
 
                     vertices[i] = new Vector3(
                                     vertices[i].x,
-                                    vertices[i].y - yD * thm.doormap[x, y].y * 2,
-                                    vertices[i].z - zD * thm.doormap[x, y].x * 2
+                                    vertices[i].y,
+                                    vertices[i].z - zD * thm.doormap[x, y] * 2
                                     );
                 }
 
