@@ -600,6 +600,7 @@ public class TerrainRoom
                 if (g.hints.type == GroundType.Door) {
 
                     g.obj.gameObject.SetActive(false);
+                    AddDirectionMember(Vector3.forward, g);
                 }
 
                 if (Mathf.Abs(g.GetLeftSide().x - minX) <= SIDE_ATTACH_DISTANCE)

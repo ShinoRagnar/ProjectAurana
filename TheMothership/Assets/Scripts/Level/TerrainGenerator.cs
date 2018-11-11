@@ -592,6 +592,8 @@ public class TerrainGenerator {
             }
         }
 
+        Debug.Log("!!!!!!!Global.Grounds[slot] " + Global.Grounds[slot].Count);
+
 
 
         gSurfaces.Sort((a, b) => a.obj.position.x.CompareTo(b.obj.position.x));

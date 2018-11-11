@@ -294,6 +294,7 @@ public class TerrainFace {
             int startXI = (localUp == Vector3.right) ? 0 : minX;
             int endXI = (localUp == Vector3.right) ? maxX : (int)(xResolution - 1);
 
+            Vector3 reversePoint = PositionToHeightMapPosForward(position, g.GetBottomRightSideAwayFromCamera(), xResolution, yResolution);
 
             for (int yi = minY; yi <= maxY; yi++)
             {
@@ -305,15 +306,19 @@ public class TerrainFace {
                     if (yWithinBounds)
                     {
 
-                        if (localUp == Vector3.right) {
-                            thm.doormap[xi, yi] =  xi - maxX;
-
-                        }else if (localUp == Vector3.left)
+                        if (localUp == Vector3.right)
                         {
-                            thm.doormap[xi, yi] = (minX-xi);
-                            //if (yi > midY) {
-                            //    yd = yi - minY;
-                           // }
+                            thm.doormap[xi, yi] = xi - maxX;
+
+                        }
+                        else if (localUp == Vector3.left)
+                        {
+                            thm.doormap[xi, yi] = (minX - xi);
+                        }
+                        else if (localUp == Vector3.forward) {
+
+                            thm.doormap[xi, yi] = reversePoint.z;
+
                         }
 
                         /*
@@ -683,6 +688,7 @@ public class TerrainFace {
                 Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+                Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
                 //float depth = thm.depthMap[x, y];
 
@@ -704,7 +710,6 @@ public class TerrainFace {
                     Vector3 pointOnWall = localUp * (zMod - WALL_WIDTH) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
                     Vector3 wallNoise = localUp * (zMod - WALL_WIDTH * 2) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
-                    Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
                     float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
                     float yProgCos = Mathf.Cos(((pointOnUnitCube.y) / (room.yLength / 2f)) * (Mathf.PI / 2f));
@@ -841,8 +846,8 @@ public class TerrainFace {
                 }
 
                 // Carve holes for doors
-                if ((localUp == Vector3.left || localUp == Vector3.right) 
-                    && thm.doormap[x, y] != 0 
+                if ((localUp == Vector3.left || localUp == Vector3.right)
+                    && thm.doormap[x, y] != 0
                     && !thm.ignoreForDoors[x, y])
                 {
 
@@ -854,6 +859,14 @@ public class TerrainFace {
                                     vertices[i].y,
                                     vertices[i].z - zD * thm.doormap[x, y] * 2
                                     );
+                } else if (localUp == Vector3.forward && thm.doormap[x, y] != 0  && !thm.ignoreForDoors[x, y]) {
+
+                    Vector3 pointOnDoorMap = Vector3.Lerp(pointOnUnitCube, /*wallToNoise,*/ reversePos, thm.doormap[x, y]);
+
+                    if (Vector3.Distance(pointOnUnitCube, pointOnDoorMap) < Vector3.Distance(pointOnUnitCube, vertices[i])) {
+                   //     vertices[i] = pointOnDoorMap;
+                    }
+
                 }
 
                 uvs[i] = percent;
