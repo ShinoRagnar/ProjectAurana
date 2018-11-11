@@ -50,7 +50,7 @@ public class TerrainFace {
     public class TerrainHeightMaps
     {
         public bool[,] ignoreForDoors;
-        public float[,] doormap;
+        //public float[,] doormap;
         public float[,] groundRoundErrorMap;
        // public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
@@ -68,7 +68,7 @@ public class TerrainFace {
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
-            doormap = new float[xResolution, yResolution];
+          //  doormap = new float[xResolution, yResolution];
             groundRoundErrorMap = new float[xResolution, yResolution];
             maxHeightMap = new float[xResolution, yResolution];
             heightMap = new float[xResolution, yResolution];
@@ -282,7 +282,7 @@ public class TerrainFace {
         float midY = ((float)minY) + ((float)(maxY - minY)) / 2f;
         float midX = ((float)minX) + ((float)(maxX - minX)) / 2f;
 
-        if (g.hints.type == GroundType.Door)
+        /*if (g.hints.type == GroundType.Door)
         {
             //int margin = 0; // room.resolution;
 
@@ -294,7 +294,7 @@ public class TerrainFace {
             int startXI = (localUp == Vector3.right) ? 0 : minX;
             int endXI = (localUp == Vector3.right) ? maxX : (int)(xResolution - 1);
 
-            Vector3 reversePoint = PositionToHeightMapPosForward(position, g.GetBottomRightSideAwayFromCamera(), xResolution, yResolution);
+           // float reversePoint = GetHeightForward(position, g.GetBottomRightSideAwayFromCamera());
 
             for (int yi = minY; yi <= maxY; yi++)
             {
@@ -315,29 +315,12 @@ public class TerrainFace {
                         {
                             thm.doormap[xi, yi] = (minX - xi);
                         }
-                        else if (localUp == Vector3.forward) {
+                      //  else if (localUp == Vector3.forward) {
 
-                            thm.doormap[xi, yi] = reversePoint.z;
+                         //   thm.doormap[xi, yi] = reversePoint;
 
-                        }
+                       // }
 
-                        /*
-                        if (xi == minX || xi == maxX - 1 || yi == minY || yi == maxY - 1)
-                        {
-                           // thm.depthMap[xi, yi] = 1;  // Depth to edge
-                        }
-                        else
-                        {
-                          //  thm.depthMap[xi, yi] = 1;
-
-                            // Cut hole
-                            if (localUp == Vector3.left || localUp == Vector3.right) {
-                                //float diff = midY - minY;
-
-                                thm.doormap[xi, yi] = xi-maxX;
-                            }
-
-                        }*/
                     }
                 }
             }
@@ -345,7 +328,7 @@ public class TerrainFace {
 
         }
         else {
-        
+        */
         //bool iterXSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
         //    bool iterYSmoothening = true; //localUp == Vector3.left || localUp == Vector3.right || localUp == Vector3.up || localUp == Vector3.down;
 
@@ -515,7 +498,7 @@ public class TerrainFace {
                 }
             }
 
-        }
+       // }
 
 
         
@@ -539,6 +522,18 @@ public class TerrainFace {
 
         return new Vector3(startX, startY, zProgression); //xProgression * xBind + yProgression * yBind; //
     }
+
+    /*public float GetHeightForward(
+    Vector3 centerPosition,
+    Vector3 groundPositon
+    //float xResolution,
+    //float yResolution
+    )
+    {
+        Vector3 start = groundPositon - centerPosition;
+
+        return  1f - (start.z + room.zLength / 2f) / room.zLength;
+    }*/
 
     public Vector3 PositionToHeightMapPosLeft(
         Vector3 centerPosition,
@@ -846,7 +841,7 @@ public class TerrainFace {
                 }
 
                 // Carve holes for doors
-                if ((localUp == Vector3.left || localUp == Vector3.right)
+                /*if ((localUp == Vector3.left || localUp == Vector3.right)
                     && thm.doormap[x, y] != 0
                     && !thm.ignoreForDoors[x, y])
                 {
@@ -859,15 +854,20 @@ public class TerrainFace {
                                     vertices[i].y,
                                     vertices[i].z - zD * thm.doormap[x, y] * 2
                                     );
-                } else if (localUp == Vector3.forward && thm.doormap[x, y] != 0  && !thm.ignoreForDoors[x, y]) {
+                } */
+                
+                
+                //else if (localUp == Vector3.forward && thm.doormap[x, y] != 0) {
 
-                    Vector3 pointOnDoorMap = Vector3.Lerp(pointOnUnitCube, /*wallToNoise,*/ reversePos, thm.doormap[x, y]);
+                // Vector3 pointOnDoorMap = Vector3.Lerp(pointOnUnitCube, /*wallToNoise,*/ reversePos, thm.doormap[x, y]);
 
-                    if (Vector3.Distance(pointOnUnitCube, pointOnDoorMap) < Vector3.Distance(pointOnUnitCube, vertices[i])) {
-                   //     vertices[i] = pointOnDoorMap;
-                    }
+                // if (Vector3.Distance(pointOnUnitCube, pointOnDoorMap) < Vector3.Distance(pointOnUnitCube, vertices[i])) {
+                //     vertices[i] = new Vector3(vertices[i].x, vertices[i].y, pointOnDoorMap.z);
+                //  }
 
-                }
+                //}
+
+
 
                 uvs[i] = percent;
 
@@ -888,6 +888,60 @@ public class TerrainFace {
                 i++;
             }
         }
+
+        //Move to make room for doors lastly
+       // i = 0;
+        for (int y = 0; y < yResolution; y++){
+            for (int x = 0; x < xResolution; x++) {
+                i = y * xResolution + x;
+                if (!thm.ignoreForDoors[x, y])
+                {
+
+                    foreach (Ground door in room.doors)
+                    {
+
+                        if (door.IsIn(room.position + vertices[i]))
+                        {
+                            vertices[i] = new Vector3(
+                                vertices[i].x, 
+                                vertices[i].y, 
+                                (door.positionZ + door.halfScaleZ) - room.position.z);
+
+                            break;
+                        }
+                        /*else {
+
+                            if (localUp == Vector3.left || localUp == Vector3.right)
+                            {
+                                int nextI = (y + 1) * xResolution + x;
+                                int prevI = (y - 1) * xResolution + x;
+
+                            
+                                if (nextI < yResolution && door.IsIn(room.position + vertices[nextI]))
+                                {
+                                    vertices[i] = new Vector3(
+                                       vertices[i].x,
+                                       (door.positionY + door.halfScaleY) - room.position.y,
+                                       vertices[i].z);
+
+                                }
+                                else if (prevI >= 0 && door.IsIn(room.position + vertices[prevI]))
+                                {
+                                    vertices[i] = new Vector3(
+                                       vertices[i].x,
+                                       (door.positionY - door.halfScaleY) - room.position.y,
+                                        vertices[i].z
+                                       );
+
+                                }
+                            }
+                        }*/
+                    }
+                }
+               // i++;
+            }
+        }
+
 
         return new MeshSet(localUp, vertices, uvs, triangles,xResolution,yResolution);
 
@@ -1151,10 +1205,10 @@ public class TerrainFace {
         bool placedProp = false;
         bool tooClose = false;
 
-        if (pos.x+room.position.x > room.minX + WALL_WIDTH
-            && pos.x + room.position.x < room.maxX - WALL_WIDTH
-            && pos.y + room.position.y > room.minY + WALL_WIDTH
-            && pos.y + room.position.y < room.maxY - WALL_WIDTH
+        if (pos.x+room.position.x > room.minX + WALL_WIDTH*2
+            && pos.x + room.position.x < room.maxX - WALL_WIDTH * 2
+            && pos.y + room.position.y > room.minY + WALL_WIDTH * 2
+            && pos.y + room.position.y < room.maxY - WALL_WIDTH * 2
             ) {
 
             foreach (Transform prop in room.props)

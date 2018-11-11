@@ -105,6 +105,7 @@ public class TerrainRoom
     public int seed;
 
     public List<Transform> props = new List<Transform>();
+    public List<Ground> doors = new List<Ground>();
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
@@ -117,6 +118,7 @@ public class TerrainRoom
         float zShift,
         int seed)
     {
+        
         noise = new Noise();
 
         this.faunaCentralPieces = faunaCentralPieces;
@@ -591,17 +593,17 @@ public class TerrainRoom
 
         foreach (Ground g in members)
         {
-            if (g.hints.type == GroundType.Wall || g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof)
+            if (g.hints.type == GroundType.Wall || g.hints.type == GroundType.Floor || g.hints.type == GroundType.Roof )
             {
                 g.obj.GetComponent<MeshRenderer>().enabled = false;
 
-            }else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
-            {
-                if (g.hints.type == GroundType.Door) {
+            } else if (g.hints.type == GroundType.Door) {
 
-                    g.obj.gameObject.SetActive(false);
-                    AddDirectionMember(Vector3.forward, g);
-                }
+                g.obj.gameObject.SetActive(false);
+                doors.Add(g);
+
+            } else //(true) //g.hints.type == GroundType.Branch || g.hints.type == GroundType.EntranceFloor || g.hints.type == GroundType.Blockage)
+            {
 
                 if (Mathf.Abs(g.GetLeftSide().x - minX) <= SIDE_ATTACH_DISTANCE)
                 {

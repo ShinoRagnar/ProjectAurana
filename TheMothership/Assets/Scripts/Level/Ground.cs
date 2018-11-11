@@ -58,6 +58,17 @@ public class Ground {
 
     }
 
+    public bool IsIn(Vector3 point) {
+
+        return
+        point.x >= positionX - halfScaleX && point.x <= positionX + halfScaleX
+        &&
+        point.y >= positionY - halfScaleY && point.y <= positionY + halfScaleY
+        &&
+        point.z >= positionZ - halfScaleZ && point.z <= positionZ + halfScaleZ;
+    }
+
+
     public Vector3 GetMidPoint()
     {
         return new Vector3(positionX, positionY + halfScaleY);
