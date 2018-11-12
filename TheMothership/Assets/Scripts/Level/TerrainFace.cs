@@ -347,13 +347,20 @@ public class TerrainFace {
             //int iterMinX = closestRightX; //0; //iterXSmoothening ? Mathf.Max(0, minX - maxOverhang) : minX;
             //int iterMaxX = closestLeftX; //(int)(xResolution - 1f); //iterXSmoothening ? Mathf.Min((int)(xResolution - 1), maxX + maxUnderHang) : maxX;
 
-            float height = firstPoint.z;
-            float innerHeight = localUp != Vector3.up ? height : PositionToHeightMapPosForward(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution).z;
+            
+            //float innerHeight = localUp != Vector3.up ? height : PositionToHeightMapPosForward(position, g.GetTopRightSideAwayFromCamera(), xResolution, yResolution).z;
 
             float xProgress = 1;
             float yProgress = 1;
             float xProgSideConstruct = 0;
             float yProgSideConstruct = 0;
+
+        float vlen = 1;
+        float variableLength = (localUp == Vector3.right || localUp == Vector3.left) ? vlen / room.xLength :
+                               (localUp == Vector3.up || localUp == Vector3.down) ? vlen / room.yLength : vlen / room.zLength;
+
+
+
 
             for (int y = iterMinY; y <= iterMaxY; y++)
             {
@@ -443,14 +450,21 @@ public class TerrainFace {
                             xProgSideConstruct = 0;
                         }
 
-                        //yProgress = ((float)y) / ((float)iterMaxY-minY);
+                    //yProgress = ((float)y) / ((float)iterMaxY-minY);
 
+                    float xVar = Mathf.Sin(Mathf.Clamp01(((float)x - minX) / (((float)maxX - minX))) * Mathf.PI);
+                    float yVar = Mathf.Sin(Mathf.Clamp01(((float)y - minY) / (((float)maxY - minY))) * Mathf.PI);
+                    float v = Mathf.Max(xVar,yVar);
+                    float var = v * v * v * (v * (6f * v - 15f) + 10f);
 
-                        //float morphIntoNoiseFactor = 0;
+                    // Creates smoothed edges
+                    float varHeight = -variableLength / 2f + variableLength * var;
 
-                        float p = Mathf.Max(yProgress * xProgress, xProgSideConstruct*yProgSideConstruct);
-                        float persistance = p * p * p * (p *
-                            (6f * p - 15f) + 10f);
+                    float height = Mathf.Clamp01(firstPoint.z + varHeight);
+                    //float morphIntoNoiseFactor = 0;
+
+                    float p = Mathf.Max(yProgress * xProgress, xProgSideConstruct*yProgSideConstruct);
+                        float persistance = p * p * p * (p *(6f * p - 15f) + 10f);
 
                         float persistedHeight = height * persistance;
 
@@ -703,7 +717,7 @@ public class TerrainFace {
                 else {
 
                     Vector3 pointOnWall = localUp * (zMod - WALL_WIDTH) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
-                    Vector3 wallNoise = localUp * (zMod - WALL_WIDTH * 2) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+                    Vector3 wallNoise = localUp * (zMod - WALL_WIDTH/2f) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
 
                     float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
@@ -727,10 +741,12 @@ public class TerrainFace {
                     float noiseVal =
                         EvaluateNoise(pointOnCosCurve.normalized, baseRoughness, roughness, persistance, strength, layers, false);
 
-                    float zg = Mathf.Clamp01((pointOnUnitCube.z + room.zLength / 2f - TerrainGenerator.TERRAIN_Z_WIDTH * 2) / (room.zLength / 2f));
+                    float zg = Mathf.Clamp01((pointOnUnitCube.z + room.zLength / 2f - TerrainGenerator.TERRAIN_Z_WIDTH * 2) 
+                        / (room.zLength / 2f));
+
                     float zGroundProgress = zg * zg * zg * (zg * (6f * zg - 15f) + 10f);
 
-                    Vector3 wallToNoise = Vector3.Lerp(pointOnWall, wallNoise, 0); //localUp == Vector3.down ? 0 : noiseVal);
+                    Vector3 wallToNoise = Vector3.Lerp(pointOnWall, wallNoise, 0);
 
 
                     Vector3 mergeSphereWithCosCurve = Vector3.Lerp(pointOnCosCurve, pointOnSphere, reducedSmoothCosCurve);
@@ -748,6 +764,21 @@ public class TerrainFace {
                     Vector3 mergeTo;
 
                     Vector3 pointOnHeightMap = Vector3.Lerp(pointOnUnitCube, /*wallToNoise,*/ reversePos, height);
+
+                    //Small noise to edges
+                    if (localUp == Vector3.left || localUp == Vector3.right)
+                    {
+                        float smallNoiseOnHeightmap = EvaluateNoise(pointOnHeightMap, 0.3f, 0.3f, 1, 1, 1, false);
+
+                        pointOnHeightMap = Vector3.Lerp(pointOnHeightMap, reversePos, (1f / room.xLength) * smallNoiseOnHeightmap);
+                    }
+                    else if (localUp == Vector3.forward && thm.onlyFacesHeightMap[x,y] != 0)
+                    {
+                        float smallNoiseOnHeightmap = EvaluateNoise(pointOnHeightMap, 0.3f, 0.3f, 1, 1, 1, false);
+
+                        pointOnHeightMap = Vector3.Lerp(pointOnHeightMap, reversePos, (10f / room.zLength) * smallNoiseOnHeightmap);
+                    }
+
 
                     if (localUp == Vector3.forward)
                     {

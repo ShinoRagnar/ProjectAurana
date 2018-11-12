@@ -73,6 +73,15 @@ public class DictionaryList<T, U> : IEnumerable , IEnumerator<T>{
         }
         return ret;
     }
+    public List<U> GetCopyOfValueList()
+    {
+        List<U> ret = new List<U>();
+        foreach (T r in list)
+        {
+            ret.Add(dictionary[r]);
+        }
+        return ret;
+    }
     public DictionaryList<T, U> CloneSimple()
     {
         DictionaryList<T, U> clone = new DictionaryList<T, U>();

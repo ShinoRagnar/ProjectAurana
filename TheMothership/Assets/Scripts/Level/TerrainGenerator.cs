@@ -471,6 +471,8 @@ public class TerrainGenerator {
                 rooms[i].xLength, rooms[i].zLength, rooms[i].yLength, "Dust < " + i + " > ");
         }
 
+        FillUndergroundTerrain();
+
         terra.name = "Terrain (" + terra.transform.childCount + ")";
         fog.name = "Fog (" + fog.transform.childCount + ")";
         dust.name = "Dust (" + dust.transform.childCount + ")";
@@ -495,7 +497,49 @@ public class TerrainGenerator {
     }
 
 
-    public void GenerateOverGroundTerrain(int seed)
+    public void FillUndergroundTerrain() {
+
+
+        List<TerrainRoom> roomlist = rooms.GetCopyOfValueList();
+
+        foreach (TerrainRoom room in roomlist)
+        {
+            foreach (TerrainRoom comparison in roomlist)
+            {
+                if (room != comparison) {
+                    
+
+                    if (
+                            room.IsIn(comparison.GetTopLeft() + Vector3.left) || 
+                            room.IsIn(comparison.GetBottomLeft() + Vector3.left) ||
+                            comparison.IsIn(room.GetTopRight() + Vector3.right) ||
+                            comparison.IsIn(room.GetBottomRight() + Vector3.right)
+                            ) {
+                        room.Intersect(Vector3.left, comparison);
+                        comparison.Intersect(Vector3.right, room);
+
+                    }else if (
+                       room.IsIn(comparison.GetTopLeft() + Vector3.up) ||
+                       room.IsIn(comparison.GetTopRight() + Vector3.up) ||
+                       comparison.IsIn(room.GetBottomLeft() + Vector3.down) ||
+                       comparison.IsIn(room.GetBottomRight() + Vector3.down)
+                       )
+                    {
+                        room.Intersect(Vector3.up, comparison);
+                        comparison.Intersect(Vector3.down, room);
+                    }
+                }
+
+            }
+        }
+        foreach (TerrainRoom room in roomlist)
+        {
+            room.DebugShowCoverage();
+        }
+
+    }
+
+        public void GenerateOverGroundTerrain(int seed)
     {
 
 
@@ -591,10 +635,6 @@ public class TerrainGenerator {
                 AddAmbient(Global.Grounds[slot][t], dust, dustPrefab, DUST_MAX_LENGTH, 3, 8, "Dust");
             }
         }
-
-        Debug.Log("!!!!!!!Global.Grounds[slot] " + Global.Grounds[slot].Count);
-
-
 
         gSurfaces.Sort((a, b) => a.obj.position.x.CompareTo(b.obj.position.x));
 

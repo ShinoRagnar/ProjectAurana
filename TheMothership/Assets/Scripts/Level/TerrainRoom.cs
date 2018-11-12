@@ -109,6 +109,13 @@ public class TerrainRoom
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
+    //public 
+
+    public bool[] topCovered;
+    public bool[] bottomCovered;
+    public bool[] leftCovered;
+    public bool[] rightCovered;
+
     public void SpawnRoom(
         Transform self,
         Material[] materials,
@@ -146,6 +153,11 @@ public class TerrainRoom
         this.xLength = length;
         this.zLength = length / 2f;
         this.yLength = height;
+
+        topCovered = new bool[(int)xLength];
+        bottomCovered = new bool[(int)xLength];
+        leftCovered = new bool[(int)yLength];
+        rightCovered = new bool[(int)yLength];
 
         this.xSize = (int)(xLength / 2f);
         this.ySize = (int)(yLength / 2f);
@@ -204,6 +216,104 @@ public class TerrainRoom
         }
     }
 
+    public bool IsIn(Vector3 point, bool ignoreZ = true) {
+
+        return
+            point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)
+            &&
+            point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)
+            &&
+            (ignoreZ || point.z >= position.z - (zLength / 2f) && point.z <= position.z + (zLength / 2f));
+
+    }
+
+    public Vector3 GetTopLeft()
+    {
+        return new Vector3(position.x - (xLength / 2f), position.y + (yLength / 2f));
+    }
+    public Vector3 GetTopRight()
+    {
+        return new Vector3(position.x + (xLength / 2f), position.y + (yLength / 2f));
+    }
+    public Vector3 GetBottomRight()
+    {
+        return new Vector3(position.x + (xLength / 2f), position.y - (yLength / 2f));
+    }
+    public Vector3 GetBottomLeft()
+    {
+        return new Vector3(position.x - (xLength / 2f), position.y - (yLength / 2f));
+    }
+
+    public void Intersect(Vector3 direction, TerrainRoom room) {
+
+        if (direction == Vector3.left || direction == Vector3.right) {
+
+            int start = (int)Mathf.Clamp(GetTopLeft().y - room.GetTopRight().y,0,yLength);
+            int end = (int)Mathf.Clamp(GetTopLeft().y - room.GetBottomRight().y, 0, yLength);
+
+            for (int i = start; i < end; i++) {
+                if (direction == Vector3.right)
+                {
+                    leftCovered[i] = true;
+                }
+                else {
+                    rightCovered[i] = true;
+                }
+                
+            }
+        }else if (direction == Vector3.up || direction == Vector3.down)
+        {
+
+            int start = (int)Mathf.Clamp(GetTopLeft().x - room.GetTopLeft().x, 0, xLength);
+            int end = (int)Mathf.Clamp(GetTopLeft().x - room.GetTopRight().x, 0, xLength);
+
+            for (int i = start; i < end; i++)
+            {
+                if (direction == Vector3.up)
+                {
+                    topCovered[i] = true;
+                }
+                else
+                {
+                    bottomCovered[i] = true;
+                }
+            }
+        }
+
+    }
+
+    public void DebugShowCoverage() {
+
+        for (int i = 0; i < xLength; i++) {
+            if (!topCovered[i]) {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = GetTopLeft()+Vector3.up * 0.5f + new Vector3(0.5f+i,0,-8);
+                cube.transform.parent = self;
+            }
+            if (!bottomCovered[i])
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = GetBottomLeft() + Vector3.down*0.5f + new Vector3(0.5f + i, 0, -8);
+                cube.transform.parent = self;
+            }
+        }
+        for (int i = 0; i < yLength; i++)
+        {
+            if (!leftCovered[i])
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = GetTopLeft() + Vector3.left * 0.5f + new Vector3(0, -0.5f -i, -8);
+                cube.transform.parent = self;
+            }
+            if (!rightCovered[i])
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = GetTopRight() + Vector3.right * 0.5f + new Vector3(0, -0.5f -i, -8);
+                cube.transform.parent = self;
+            }
+        }
+
+    }
 
 
     void GenerateMeshAndTexture()
