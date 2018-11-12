@@ -458,6 +458,7 @@ public class TerrainGenerator {
 
             rooms[i].GroupMembers();
             rooms[i].SpawnRoom(terr.transform, materials, grasses, hangWeeds, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
+            rooms[i].DebugPrint();
 
             /*SpawnAmbient(fog,
                 Global.Resources[PrefabNames.Fog],
@@ -507,8 +508,12 @@ public class TerrainGenerator {
             foreach (TerrainRoom comparison in roomlist)
             {
                 if (room != comparison) {
-                    
 
+                    bool debug = false;
+                    if (room.roomNr == 0 && comparison.roomNr == 3) {
+
+                        debug = true;
+                    }
                     if (
                             room.IsIn(comparison.GetTopLeft() + Vector3.left) || 
                             room.IsIn(comparison.GetBottomLeft() + Vector3.left) ||
@@ -518,7 +523,19 @@ public class TerrainGenerator {
                         room.Intersect(Vector3.left, comparison);
                         comparison.Intersect(Vector3.right, room);
 
-                    }else if (
+                    }
+                    /*if (
+                            comparison.IsIn(room.GetTopLeft() + Vector3.left * 2) ||
+                            comparison.IsIn(room.GetBottomLeft() + Vector3.left * 2) ||
+                            room.IsIn(comparison.GetTopRight() + Vector3.right * 2) ||
+                            room.IsIn(comparison.GetBottomRight() + Vector3.right * 2)
+                            )
+                    {
+                        comparison.Intersect(Vector3.left, room);
+                        room.Intersect(Vector3.right, comparison);
+
+                    }*/
+                    if (
                        room.IsIn(comparison.GetTopLeft() + Vector3.up) ||
                        room.IsIn(comparison.GetTopRight() + Vector3.up) ||
                        comparison.IsIn(room.GetBottomLeft() + Vector3.down) ||
@@ -527,7 +544,19 @@ public class TerrainGenerator {
                     {
                         room.Intersect(Vector3.up, comparison);
                         comparison.Intersect(Vector3.down, room);
+
                     }
+                    /*
+                    if (
+                      comparison.IsIn(room.GetTopLeft() + Vector3.up * 2) ||
+                      comparison.IsIn(room.GetTopRight() + Vector3.up * 2) ||
+                      room.IsIn(comparison.GetBottomLeft() + Vector3.down * 2) ||
+                      room.IsIn(comparison.GetBottomRight() + Vector3.down * 2)
+                      )
+                    {
+                        comparison.Intersect(Vector3.up, room);
+                        room.Intersect(Vector3.down, comparison);
+                    }*/
                 }
 
             }

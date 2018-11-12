@@ -216,14 +216,21 @@ public class TerrainRoom
         }
     }
 
-    public bool IsIn(Vector3 point, bool ignoreZ = true) {
+    public bool IsIn(Vector3 point, bool debug = false,  bool ignoreZ = true) {
+
+        if (debug) {
+            Debug.Log("!!!!!! Point: " + point 
+                + " <" + (point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)) + ">"
+                + " <" + (point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)) + ">");
+
+        }
 
         return
             point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)
             &&
             point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)
             &&
-            (ignoreZ || point.z >= position.z - (zLength / 2f) && point.z <= position.z + (zLength / 2f));
+            (ignoreZ || (point.z >= position.z - (zLength / 2f) && point.z <= position.z + (zLength / 2f)));
 
     }
 
@@ -246,6 +253,11 @@ public class TerrainRoom
 
     public void Intersect(Vector3 direction, TerrainRoom room) {
 
+       // if ((room.roomNr ==0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0)) {
+           // Debug.Log("!!!Room; " + roomNr + " intersects: " + room.roomNr + " in direction:" + direction.ToString());
+
+       // }
+
         if (direction == Vector3.left || direction == Vector3.right) {
 
             int start = (int)Mathf.Clamp(GetTopLeft().y - room.GetTopRight().y,0,yLength);
@@ -264,12 +276,20 @@ public class TerrainRoom
         }else if (direction == Vector3.up || direction == Vector3.down)
         {
 
-            int start = (int)Mathf.Clamp(GetTopLeft().x - room.GetTopLeft().x, 0, xLength);
-            int end = (int)Mathf.Clamp(GetTopLeft().x - room.GetTopRight().x, 0, xLength);
+            int start = (int)Mathf.Clamp(GetTopRight().x - room.GetTopLeft().x, 0, xLength); //GetTopLeft().x - room.GetTopLeft().x, 0, xLength);
+            int end = (int)Mathf.Clamp(GetTopRight().x - room.GetTopRight().x, 0, xLength); //GetTopLeft().x - room.GetTopRight().x, 0, xLength);
 
-            for (int i = start; i < end; i++)
+            //if ((room.roomNr == 0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0))
+            //{
+             //   Debug.Log("!!!roominters<"+roomNr+">;  start" + start + " end: " +end);
+               // Debug.Log("!!!room2<" + roomNr + ">;  GetTopLeft()" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopLeft().x);
+              //  Debug.Log("!!!room3<" + roomNr + ">;  GetTopLeft().x" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopRight().x);
+
+            //}
+
+            for (int i = Mathf.Min(start,end); i < Mathf.Max(start,end); i++)
             {
-                if (direction == Vector3.up)
+                if (direction == Vector3.down)
                 {
                     topCovered[i] = true;
                 }
@@ -287,13 +307,13 @@ public class TerrainRoom
         for (int i = 0; i < xLength; i++) {
             if (!topCovered[i]) {
                 GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetTopLeft()+Vector3.up * 0.5f + new Vector3(0.5f+i,0,-8);
+                cube.transform.position = GetTopRight()+Vector3.up * 0.5f + new Vector3(-0.5f-i,0,-8);
                 cube.transform.parent = self;
             }
             if (!bottomCovered[i])
             {
                 GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetBottomLeft() + Vector3.down*0.5f + new Vector3(0.5f + i, 0, -8);
+                cube.transform.position = GetBottomRight() + Vector3.down*0.5f + new Vector3(-0.5f + -i, 0, -8);
                 cube.transform.parent = self;
             }
         }
@@ -772,8 +792,8 @@ public class TerrainRoom
     public void DebugPrint()
     {
         Debug.Log("Room<" + roomNr + "> " +//"maxX:" + maxX + " minX:" + minX + " maxY:" + maxY + " minY:" + minY+
-            " zLength" + zLength + " zPos" + position.z + " zSize: " + zSize + " posshift: " + (position.z - ((float)zSize))
-            + "poscorr: " + (position.z - (zLength / 2f)));
+            " Topleft" + GetTopLeft().ToString() + " GetTopRight" + GetTopRight().ToString() 
+            + " BottomLeft: " + GetBottomLeft().ToString() + " BottomRight: " + GetBottomRight().ToString());
             
     }
 }
