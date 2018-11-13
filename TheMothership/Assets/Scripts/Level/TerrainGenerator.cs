@@ -453,6 +453,7 @@ public class TerrainGenerator {
         {
             GatherMembersForRoom(Global.NonNavigateableGrounds[slot][t]);
         }
+        float startTime;
 
         foreach (int i in rooms)
         {
@@ -461,8 +462,11 @@ public class TerrainGenerator {
             terr.transform.parent = terra.transform;
 
             rooms[i].GroupMembers();
+
+            startTime = Time.realtimeSinceStartup;
             rooms[i].SpawnRoom(terr.transform, materials, grasses, hangWeeds, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
-            rooms[i].DebugPrint();
+            Debug.Log("SpawnRoom() " + (Time.realtimeSinceStartup - startTime));
+            //rooms[i].DebugPrint();
 
             /*SpawnAmbient(fog,
                 Global.Resources[PrefabNames.Fog],
@@ -476,7 +480,11 @@ public class TerrainGenerator {
                 rooms[i].xLength, rooms[i].zLength, rooms[i].yLength, "Dust < " + i + " > ");
         }
 
+
+        startTime = Time.realtimeSinceStartup;
         FillUndergroundTerrain();
+        Debug.Log("FillUndergroundTerrain() " + (Time.realtimeSinceStartup - startTime));
+
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";
         fog.name = "Fog (" + fog.transform.childCount + ")";
@@ -1852,10 +1860,12 @@ public class TerrainGenerator {
                 int xNoisePos = (int)(xIterations * WIDTH);
 
                 //Create the heightmap
+                //float startTime = Time.realtimeSinceStartup;
                 iter = CreateTerrain(
                     terra, WIDTH, resolution, x, zPos, iter.first, iter.groundPos,
                     row, iter.previousHeight, iter.nextHeight, iter.lastFalloffLength,
                     noiseMap, cliffMap, xNoisePos, zNoisePos, iter.lastRowStitch, seamOffset);//, tex, normalMap);
+                //Debug.Log("CreateTerrain() " + (Time.realtimeSinceStartup - startTime));
 
                 //Set up prototypes
                 //iter.terrain.terrainData.treePrototypes = prototype;
