@@ -418,6 +418,9 @@ public class TerrainGenerator {
         GameObject dust = new GameObject();
         dust.transform.parent = terra.transform;
 
+        GameObject boundries = new GameObject();
+        boundries.transform.parent = terra.transform;
+
         Material[] materials = new Material[] {
             Global.Resources[MaterialNames.Dirt],
             Global.Resources[MaterialNames.Cliff],
@@ -482,13 +485,14 @@ public class TerrainGenerator {
 
 
         startTime = Time.realtimeSinceStartup;
-        FillUndergroundTerrain();
+        FillUndergroundTerrain(boundries);
         Debug.Log("FillUndergroundTerrain() " + (Time.realtimeSinceStartup - startTime));
 
 
         terra.name = "Terrain (" + terra.transform.childCount + ")";
         fog.name = "Fog (" + fog.transform.childCount + ")";
         dust.name = "Dust (" + dust.transform.childCount + ")";
+        boundries.name = "Boundries (" + boundries.transform.childCount + ")";
 
     }
 
@@ -515,41 +519,40 @@ public class TerrainGenerator {
 
         foreach (TerrainRoom tr in roomlist)
         {
-            for (int x = (int)tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++)
-            {
-                for (int y = (int)tr.maxY; y <= tr.maxY + BOUNDARY_DISTANCE; y++)
-                {
+            bool first = true;
+            for (float y = tr.maxY; y <= tr.maxY + BOUNDARY_DISTANCE; y++){
+                for (float x = tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++){
                     point = new Vector3(x, y, 1);
-                    CheckOverlap(points, roomlist, tr, point);
+                    CheckOverlap(points, roomlist, tr, point, first, Vector3.up);
+                }
+                first = false;
+            }
+            first = true;
+            for (float y = tr.minY; y >= tr.minY - BOUNDARY_DISTANCE; y--){
+                for (float x = tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++){
+                    point = new Vector3(x, y, 1);
+                    CheckOverlap(points, roomlist, tr, point, first, Vector3.down);
                 }
             }
-            for (int x = (int)tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++)
-            {
-                for (int y = (int)tr.minY; y >= tr.minY - BOUNDARY_DISTANCE; y--)
-                {
+            first = true;
+            for (float x = tr.minX; x >= tr.minX - BOUNDARY_DISTANCE; x--){
+                for (float y = tr.minY; y <= tr.maxY; y++){
                     point = new Vector3(x, y, 1);
-                    CheckOverlap(points, roomlist, tr, point);
+                    CheckOverlap(points, roomlist, tr, point, first, Vector3.left);
                 }
+                first = false;
             }
-            for (int x = (int)tr.minX; x > tr.minX - BOUNDARY_DISTANCE; x--)
-            {
-                for (int y = (int)tr.minY; y <= tr.maxY; y++)
-                {
+            first = true;
+            for (float x = tr.maxX; x <= tr.maxX + BOUNDARY_DISTANCE; x++){
+                for (float y = tr.minY; y <= tr.maxY; y++){
                     point = new Vector3(x, y, 1);
-                    CheckOverlap(points, roomlist, tr, point);
+                    CheckOverlap(points, roomlist, tr, point, first, Vector3.right);
                 }
-            }
-            for (int x = (int)tr.maxX; x < tr.maxX + BOUNDARY_DISTANCE; x++)
-            {
-                for (int y = (int)tr.minY; y <= tr.maxY; y++)
-                {
-                    point = new Vector3(x, y, 1);
-                    CheckOverlap(points, roomlist, tr, point);
-                }
+                first = false;
             }
         }
     }
-    private void CheckOverlap(ListHash<Vector3> points, List<TerrainRoom> roomlist, TerrainRoom tr, Vector3 point) {
+    private void CheckOverlap(ListHash<Vector3> points, List<TerrainRoom> roomlist, TerrainRoom tr, Vector3 point, bool firstIter, Vector3 direction) {
         bool overlaps = false;
 
         if (!points.Contains(point))
@@ -558,10 +561,57 @@ public class TerrainGenerator {
             {
                 if (compare != tr)
                 {
-                    if (compare.IsIn(point))
+                    if (!firstIter)
                     {
-                        overlaps = true;
-                        break;
+                        if (compare.IsIn(point))
+                        {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    else if (direction == Vector3.up)
+                    {
+                        // Bugfix for corners
+                        if (compare.IsIn(point.x - 0.5f, point.y + 0.5f)
+                            && compare.IsIn(point.x + 0.5f, point.y + 0.5f)
+                                )
+                        {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    else if (direction == Vector3.down)
+                    {
+                        // Bugfix for corners
+                        if (compare.IsIn(point.x - 0.5f, point.y - 0.5f)
+                            && compare.IsIn(point.x + 0.5f, point.y - 0.5f)
+                                )
+                        {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    else if (direction == Vector3.left)
+                    {
+                        // Bugfix for corners
+                        if (compare.IsIn(point.x - 0.5f, point.y - 0.5f)
+                            && compare.IsIn(point.x - 0.5f, point.y + 0.5f)
+                                )
+                        {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    else if (direction == Vector3.right)
+                    {
+                        // Bugfix for corners
+                        if (compare.IsIn(point.x + 0.5f, point.y - 0.5f)
+                            && compare.IsIn(point.x + 0.5f, point.y + 0.5f)
+                        )
+                        {
+                            overlaps = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -575,35 +625,15 @@ public class TerrainGenerator {
 
 
 
-    public void FillUndergroundTerrain() {
+    public void FillUndergroundTerrain(GameObject boundries) {
 
         List<TerrainRoom> roomlist = rooms.GetCopyOfValueList();
         ListHash<Vector3> points = new ListHash<Vector3>();
 
-        // points.Add(1, new ListHash<Vector3>());
-
-
         FillUndergroundPoints(points, roomlist);
 
-        //ListHash<Vector3> list = points[1];
-        //Add all boundaries
-
-        //Merge boundaries
-        //Vector3 right = Vector3.zero;
-        //Vector3 down = Vector3.zero;
-        //Vector3 rightDown = Vector3.zero;
-
         ListHash<Vector3> removeLater = new ListHash<Vector3>();
-
-        //float length = 2;
-        //points.Add((int)length, new ListHash<Vector3>());
-
-        //List<Vector3> newList = list.ToList() //points[(int)length];
-
-        //float move = length/4f;
-
         Vector3 iter = Vector3.zero;
-
         DictionaryList<Vector2, Vector2> merged = new DictionaryList<Vector2, Vector2>();
 
 
@@ -738,125 +768,33 @@ public class TerrainGenerator {
 
             }
         }
-        /*
-        foreach (Vector3 poi in list) {
-
-            if (!removeLater.Contains(poi)) {
-
-                for()
-
-                right = poi + Vector3.right;
-                down = poi + Vector3.down;
-                rightDown = poi + Vector3.right + Vector3.down;
-
-                if (!removeLater.Contains(right) && !removeLater.Contains(down) && !removeLater.Contains(rightDown) 
-                    && list.Contains(right) && list.Contains(down) && list.Contains(rightDown))
-                {
-                    removeLater.Add(poi);
-                    removeLater.Add(right);
-                    removeLater.Add(down);
-                    removeLater.Add(rightDown);
-
-                    newList.Add(new Vector3(poi.x + move, poi.y - move, length));
-                }
-            }
-
-        }
-
-        foreach (Vector3 poi in removeLater) {
-            list.Remove(poi);
-        }
-        */
+        int count = 0;
+        float width = 100;
 
         foreach (Vector2 pos in merged)
         {
             Vector2 size = merged[pos];
+            count++;
 
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = new Vector3(pos.x, pos.y, -7);
-            cube.transform.localScale = new Vector3(size.x, size.y, 1);
+            cube.name = "Boundary<"+ count + ">";
+            cube.GetComponent<BoxCollider>().enabled = false;
+            MeshRenderer mr = cube.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = Global.Resources[MaterialNames.UnlitBlack];
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+
+            cube.transform.position = new Vector3(pos.x, pos.y, width/2f - 8+ 0.01f);
+            cube.transform.localScale = new Vector3(size.x, size.y, width);
+            cube.transform.parent = boundries.transform;
+
         }
 
-        /*
-        List<BoundaryRectangle> rectangles = new List<BoundaryRectangle>();
-        DictionaryList<Vector3, BoundaryRectangle> points = new DictionaryList<Vector3, BoundaryRectangle>();
-        List<TerrainRoom> roomlist = rooms.GetCopyOfValueList();
-
-        float maxY = 0;
-        float maxX = 0;
-        float minY = 0;
-        float minX = 0;
-        bool first = true;
-
-        foreach (TerrainRoom room in roomlist)
-        {
-            if (room.maxX > maxX || first) {
-                maxX = room.maxX;
-            }
-            if (room.maxY > maxY || first)
-            {
-                maxY = room.maxY;
-            }
-            if (room.minX < minX || first)
-            {
-                minX = room.minX;
-            }
-            if (room.minY < minY || first)
-            {
-                minY = room.minY;
-            }
-
-            first = false;
-
-            foreach (TerrainRoom comparison in roomlist)
-            {
-                room.Collide(points,comparison);
-            }
-        }
-
-
-
-        maxX += BOUNDARY_DISTANCE;
-        maxY += BOUNDARY_DISTANCE;
-        minX -= BOUNDARY_DISTANCE;
-        minY -= BOUNDARY_DISTANCE;
-
-        foreach (TerrainRoom room in roomlist)
-        {
-            rectangles.Add(room);
-            room.AddCoverage(points);
-        }
-
-        List<BoundaryRectangle> addNextRound = new List<BoundaryRectangle>();
-        foreach (BoundaryRectangle rect in rectangles) {
-
-            BoundaryRectangle br = rect.Spread(points, maxX, maxY, minX, minY);
-
-            if (br != null) {
-
-                foreach (BoundaryRectangle co in rectangles)
-                {
-                    br.Collide(points, co);
-                }
-                foreach (BoundaryRectangle next in addNextRound)
-                {
-                    br.Collide(points, next);
-                }
-                br.AddCoverage(points, false);
-                addNextRound.Add(br);
-            }
-        }
-        foreach (BoundaryRectangle next in addNextRound) {
-            rectangles.Add(next);
-        }
-        addNextRound.Clear();
-        
-
-        foreach (Vector3 p in points)
-        {
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = p;
-        }*/
+        //foreach (Vector3 p in points)
+        //{
+        //    GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //    cube.transform.position = new Vector3(p.x, p.y, -7.5f); ;
+       // }
     }
 
     public void GenerateOverGroundTerrain(int seed)

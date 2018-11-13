@@ -451,6 +451,15 @@ public class TerrainRoom
     public float bottomY;
 
 
+    public bool IsIn(float pointx, float pointy)//, bool debug = false, bool ignoreZ = true)
+    {
+        return
+            pointx >= leftX && pointx <= rightX
+            &&
+            pointy >= bottomY && pointy <= topY
+            ;
+    }
+
     public bool IsIn(Vector3 point)//, bool debug = false, bool ignoreZ = true)
     {
 

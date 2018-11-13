@@ -504,6 +504,8 @@ MonoBehaviour:
     prefab: {fileID: 2100000, guid: dbecff3eb79143a4ba40c9216357af8e, type: 2}
   - name: CaveHangWeed
     prefab: {fileID: 2100000, guid: a2d03859c0a39484aa7e8f8c1cbe2d20, type: 2}
+  - name: UnlitBlack
+    prefab: {fileID: 2100000, guid: 34f446fe7375a2a459310e2c874df4a9, type: 2}
   sprites:
   - name: BloodCrystal
     prefab: {fileID: 21300000, guid: 0ec905e7963467f4baf9a00c7c32d7fb, type: 3}

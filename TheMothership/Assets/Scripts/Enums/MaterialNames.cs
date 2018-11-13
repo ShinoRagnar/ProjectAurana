@@ -30,6 +30,7 @@ public enum MaterialNames
 	Shield = 1806890527,
 	ShieldSelectedEnemy = 1806555065,
 	Terrain = 1904937367,
+	UnlitBlack = 2012038782,
 	Water = 2099941357,
 	WaterBottom = 2099799603,
 	Yellow = 2103167273,
