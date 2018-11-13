@@ -54,13 +54,339 @@ public class FaunaMeshSet{
         }
     }
 }
+/*
+public class BoundaryRectangle {
 
+
+
+    public bool[] topCovered;
+    public bool[] bottomCovered;
+    public bool[] leftCovered;
+    public bool[] rightCovered;
+
+    bool topIsCovered = false;
+    bool bottomIsCovered = false;
+    bool leftIsCovered = false;
+    bool rightIsCovered = false;
+
+    public void SetBounds(Transform self, Vector3 pos, float xLength, float yLength, float zLength) {
+
+        this.self = self;
+        this.position = pos;
+        this.xLength = xLength;
+        this.yLength = yLength;
+        this.zLength = zLength;
+
+        topCovered = new bool[(int)xLength];
+        bottomCovered = new bool[(int)xLength];
+        leftCovered = new bool[(int)yLength];
+        rightCovered = new bool[(int)yLength];
+
+    }
+
+
+
+    
+    public void Intersect(
+        DictionaryList<Vector3, BoundaryRectangle> points, 
+        Vector3 direction, 
+        BoundaryRectangle room
+        )
+    {
+
+        // if ((room.roomNr ==0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0)) {
+        // Debug.Log("!!!Room; " + roomNr + " intersects: " + room.roomNr + " in direction:" + direction.ToString());
+
+        // }
+
+        if (direction == Vector3.left || direction == Vector3.right)
+        {
+
+            int start = (int)Mathf.Clamp(GetTopLeft().y - room.GetTopRight().y, 0, yLength);
+            int end = (int)Mathf.Clamp(GetTopLeft().y - room.GetBottomRight().y, 0, yLength);
+
+            for (int i = start; i < end; i++)
+            {
+                if (direction == Vector3.right)
+                {
+                    leftCovered[i] = true;
+
+                    Vector3 p = GetLeft(i);
+                    if (points.Contains(p)) {
+                        points.Remove(p);
+                    }
+                }
+                else
+                {
+                    rightCovered[i] = true;
+
+                    Vector3 p = GetRight(i);
+                    if (points.Contains(p))
+                    {
+                        points.Remove(p);
+                    }
+                }
+
+            }
+        }
+        else if (direction == Vector3.up || direction == Vector3.down)
+        {
+
+            int start = (int)Mathf.Clamp(GetTopRight().x - room.GetTopLeft().x, 0, xLength); //GetTopLeft().x - room.GetTopLeft().x, 0, xLength);
+            int end = (int)Mathf.Clamp(GetTopRight().x - room.GetTopRight().x, 0, xLength); //GetTopLeft().x - room.GetTopRight().x, 0, xLength);
+
+            //if ((room.roomNr == 0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0))
+            //{
+            //   Debug.Log("!!!roominters<"+roomNr+">;  start" + start + " end: " +end);
+            // Debug.Log("!!!room2<" + roomNr + ">;  GetTopLeft()" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopLeft().x);
+            //  Debug.Log("!!!room3<" + roomNr + ">;  GetTopLeft().x" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopRight().x);
+
+            //}
+
+            for (int i = Mathf.Min(start, end); i < Mathf.Max(start, end); i++)
+            {
+                if (direction == Vector3.down)
+                {
+                    topCovered[i] = true;
+
+                    Vector3 p = GetTop(i);
+                    if (points.Contains(p))
+                    {
+                        points.Remove(p);
+                    }
+                }
+                else
+                {
+                    bottomCovered[i] = true;
+
+                    Vector3 p = GetBottom(i);
+                    if (points.Contains(p))
+                    {
+                       points.Remove(p);
+                    }
+                }
+            }
+        }
+
+    }
+
+    
+    private Vector3 GetTop(int i) {
+        return GetTopRight() - Vector3.up * 0.5f + new Vector3(-0.5f - i, 0, ZMARGIN);
+    }
+    private Vector3 GetBottom(int i) {
+        return GetBottomRight() - Vector3.down * 0.5f + new Vector3(-0.5f + -i, 0, ZMARGIN);
+    }
+    private Vector3 GetLeft(int i) {
+        return GetTopLeft() - Vector3.left * 0.5f + new Vector3(0, -0.5f - i, ZMARGIN);
+    }
+    private Vector3 GetRight(int i) {
+        return GetTopRight() - Vector3.right * 0.5f + new Vector3(0, -0.5f - i, ZMARGIN);
+    }
+
+    
+    public void AddCoverage(DictionaryList<Vector3, BoundaryRectangle> points, bool debug = false)
+    {
+
+        for (int i = 0; i < xLength; i++)
+        {
+            if (!topCovered[i])
+            {
+                Vector3 point = GetTop(i);
+                points.AddIfNotContains(point, this);
+
+                //if (debug)
+                //{
+                //    Cube(point, 1, 1, 1, true);
+                //}
+            }
+            if (!bottomCovered[i])
+            {
+                Vector3 point = GetBottom(i);
+                points.AddIfNotContains(point, this);
+
+                //if (debug)
+                //{
+                //    Cube(point, 1, 1, 1, true);
+                //}
+            }
+        }
+        for (int i = 0; i < yLength; i++)
+        {
+            if (!leftCovered[i])
+            {
+                Vector3 point = GetLeft(i);
+                points.AddIfNotContains(point, this);
+                
+                //if(debug)
+                //{
+                //    Cube(point, 1, 1, 1, true);
+                //}
+            }
+            if (!rightCovered[i])
+            {
+                Vector3 point = GetRight(i);
+                points.AddIfNotContains(point, this);
+
+                //if (debug)
+                //{
+                //    Cube(point,1,1,1,true);
+               // }
+            }
+        }
+
+    }
+
+
+    public BoundaryRectangle Spread(DictionaryList<Vector3, BoundaryRectangle> points, float maxX, float maxY, float minX, float minY) {
+
+        if (!topIsCovered)
+        {
+            for (int i = 0; i < xLength; i++)
+            {
+                if (!topCovered[i]) {
+                    Vector3 iter = GetTop(i);
+                    //Up
+                    while (iter.y <= maxY) {
+                        iter += Vector3.up;
+
+                        if (points.Contains(iter)) {
+                            break;
+                        }
+                    }
+                    float maxFoundY = iter.y;
+                    
+
+                    iter = GetTop(i)+ Vector3.up;
+
+                    float iterOrigX = iter.x;
+                    float iterOrigY = iter.y;
+
+
+
+                    //Right
+                    float maxFoundX = iterOrigX;
+                    for (; maxFoundX <= maxX; maxFoundX++)
+                    {
+                        bool foundObstruction = false;
+
+
+                        for (float y = maxFoundY; y >= iterOrigY; y--)
+                        {
+                            if (points.Contains(new Vector3(maxFoundX, y, ZMARGIN)))
+                            {
+                                foundObstruction = true;
+                                break;
+                            }
+                        }
+
+                        if (foundObstruction)
+                        {
+                            maxFoundX--;
+                            break;
+                        }
+                    }
+
+                    //Left
+                    float minFoundX = iterOrigX;
+
+                    for (; minFoundX >= minX; minFoundX--)
+                    {
+                        bool foundObstruction = false;
+
+
+                        for (float y = maxFoundY; y >= iterOrigY; y--)
+                        {
+                            if (points.Contains(new Vector3(minFoundX, y, ZMARGIN)))
+                            {
+                                foundObstruction = true;
+                                break;
+                            }
+                        }
+
+                        if (foundObstruction)
+                        {
+                            minFoundX++;
+                            break;
+                        }
+                    }
+
+                    topCovered[i] = true;
+
+                    float xl = (maxFoundX - minFoundX)+1;
+                    float yl = (maxFoundY - iterOrigY)+1;
+
+                    if (xl > 0 && yl > 0) {
+                        BoundaryRectangle br = new BoundaryRectangle();
+
+                        Vector3 point = new Vector3(-0.5f+minFoundX + (xl) / 2f, -0.5f + iterOrigY + (yl) / 2f, ZMARGIN);
+
+                        br.SetBounds(Cube(point, xl, yl), point, xl, yl, 1);
+
+                        return br;
+                    }
+
+                }
+            }
+            topIsCovered = true;
+        }
+
+        return null;
+
+    }
+
+    public void Collide(DictionaryList<Vector3, BoundaryRectangle> points, BoundaryRectangle comparison) {
+        if (this != comparison)
+        {
+            if (
+                    this.IsIn(comparison.GetTopLeft() + Vector3.left) ||
+                    this.IsIn(comparison.GetBottomLeft() + Vector3.left) ||
+                    comparison.IsIn(this.GetTopRight() + Vector3.right) ||
+                    comparison.IsIn(this.GetBottomRight() + Vector3.right)
+                    )
+            {
+                this.Intersect(points,Vector3.left, comparison);
+                comparison.Intersect(points, Vector3.right, this);
+
+            }
+            if (
+               this.IsIn(comparison.GetTopLeft() + Vector3.up) ||
+               this.IsIn(comparison.GetTopRight() + Vector3.up) ||
+               comparison.IsIn(this.GetBottomLeft() + Vector3.down) ||
+               comparison.IsIn(this.GetBottomRight() + Vector3.down)
+               )
+            {
+                this.Intersect(points, Vector3.up, comparison);
+                comparison.Intersect(points, Vector3.down, this);
+
+            }
+        }
+    }
+
+    private Transform Cube(Vector3 possr, float x = 1f, float y =1f, float z =1f, bool debug = false) {
+        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.transform.position = possr;
+        cube.transform.parent = self;
+        cube.transform.localScale = new Vector3(x, y, z);
+
+        if (!debug) {
+           // cube.GetComponent<MeshRenderer>().sharedMaterial = Global.Resources[MaterialNames.Black];
+        }
+        
+        return cube.transform;
+    }
+
+}
+*/
 
 public class TerrainRoom
 {
     public static float SIDE_ATTACH_DISTANCE = 3f;
     public static float ROOF_FLOOR_ATTACH_DISTANCE = 3f;
     public static float GROUP_ATTACH_DISTANCE = 1;
+
+    public static float ZMARGIN = -8;
+    public static float MIN_ROOM_SIZE = 10;
 
     DictionaryList<Vector3, List<Ground>> directionMembers;
 
@@ -80,15 +406,19 @@ public class TerrainRoom
     public int ySize = 2;
     public int zSize = 1;
 
+
+    public Transform self;
+    public Vector3 position;
+
     public float xLength;
     public float zLength;
     public float yLength;
 
-    public Vector3 position;
+    //public Vector3 position;
 
     // private Material mat;
 
-    private Transform self;
+    // private Transform self;
 
     public float textureSize;
 
@@ -110,12 +440,56 @@ public class TerrainRoom
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
 
     //public 
+    public Vector3 topLeft;
+    public Vector3 topRight;
+    public Vector3 bottomRight;
+    public Vector3 bottomLeft;
 
-    public bool[] topCovered;
-    public bool[] bottomCovered;
-    public bool[] leftCovered;
-    public bool[] rightCovered;
+    public float leftX;
+    public float rightX;
+    public float topY;
+    public float bottomY;
 
+
+    public bool IsIn(Vector3 point)//, bool debug = false, bool ignoreZ = true)
+    {
+
+        // if (debug) {
+        //     Debug.Log("!!!!!! Point: " + point 
+        //         + " <" + (point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)) + ">"
+        //         + " <" + (point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)) + ">");
+        //
+        // }
+
+        return
+            point.x >= leftX && point.x <= rightX
+            &&
+            point.y >= bottomY && point.y <= topY
+            ;
+            //point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)
+            //&&
+            //point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)
+            //&&
+            //(ignoreZ || (point.z >= position.z - (zLength / 2f) && point.z <= position.z + (zLength / 2f)));
+
+    }
+
+    private Vector3 GetTopLeft()
+    {
+        return new Vector3(position.x - (xLength / 2f), position.y + (yLength / 2f));
+    }
+    private Vector3 GetTopRight()
+    {
+        return new Vector3(position.x + (xLength / 2f), position.y + (yLength / 2f));
+    }
+    private Vector3 GetBottomRight()
+    {
+        return new Vector3(position.x + (xLength / 2f), position.y - (yLength / 2f));
+    }
+    private Vector3 GetBottomLeft()
+    {
+        return new Vector3(position.x - (xLength / 2f), position.y - (yLength / 2f));
+    }
     public void SpawnRoom(
         Transform self,
         Material[] materials,
@@ -154,10 +528,10 @@ public class TerrainRoom
         this.zLength = length / 2f;
         this.yLength = height;
 
-        topCovered = new bool[(int)xLength];
-        bottomCovered = new bool[(int)xLength];
-        leftCovered = new bool[(int)yLength];
-        rightCovered = new bool[(int)yLength];
+       // topCovered = new bool[(int)xLength];
+      //  bottomCovered = new bool[(int)xLength];
+      //  leftCovered = new bool[(int)yLength];
+      //  rightCovered = new bool[(int)yLength];
 
         this.xSize = (int)(xLength / 2f);
         this.ySize = (int)(yLength / 2f);
@@ -171,6 +545,16 @@ public class TerrainRoom
         this.self = self;
         // this.mat = terrainMat;
         this.position = pos;
+
+        this.bottomLeft = GetBottomLeft();
+        this.bottomRight = GetBottomRight();
+        this.topLeft = GetTopLeft();
+        this.topRight = GetTopRight();
+
+        this.leftX = topLeft.x;
+        this.rightX = topRight.x;
+        this.topY = topRight.y;
+        this.bottomY = bottomRight.y;
 
 
         FullUpdate();
@@ -216,124 +600,13 @@ public class TerrainRoom
         }
     }
 
-    public bool IsIn(Vector3 point, bool debug = false,  bool ignoreZ = true) {
 
-        if (debug) {
-            Debug.Log("!!!!!! Point: " + point 
-                + " <" + (point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)) + ">"
-                + " <" + (point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)) + ">");
 
-        }
 
-        return
-            point.x >= position.x - (xLength / 2f) && point.x <= position.x + (xLength / 2f)
-            &&
-            point.y >= position.y - (yLength / 2f) && point.y <= position.y + (yLength / 2f)
-            &&
-            (ignoreZ || (point.z >= position.z - (zLength / 2f) && point.z <= position.z + (zLength / 2f)));
 
-    }
 
-    public Vector3 GetTopLeft()
-    {
-        return new Vector3(position.x - (xLength / 2f), position.y + (yLength / 2f));
-    }
-    public Vector3 GetTopRight()
-    {
-        return new Vector3(position.x + (xLength / 2f), position.y + (yLength / 2f));
-    }
-    public Vector3 GetBottomRight()
-    {
-        return new Vector3(position.x + (xLength / 2f), position.y - (yLength / 2f));
-    }
-    public Vector3 GetBottomLeft()
-    {
-        return new Vector3(position.x - (xLength / 2f), position.y - (yLength / 2f));
-    }
 
-    public void Intersect(Vector3 direction, TerrainRoom room) {
 
-       // if ((room.roomNr ==0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0)) {
-           // Debug.Log("!!!Room; " + roomNr + " intersects: " + room.roomNr + " in direction:" + direction.ToString());
-
-       // }
-
-        if (direction == Vector3.left || direction == Vector3.right) {
-
-            int start = (int)Mathf.Clamp(GetTopLeft().y - room.GetTopRight().y,0,yLength);
-            int end = (int)Mathf.Clamp(GetTopLeft().y - room.GetBottomRight().y, 0, yLength);
-
-            for (int i = start; i < end; i++) {
-                if (direction == Vector3.right)
-                {
-                    leftCovered[i] = true;
-                }
-                else {
-                    rightCovered[i] = true;
-                }
-                
-            }
-        }else if (direction == Vector3.up || direction == Vector3.down)
-        {
-
-            int start = (int)Mathf.Clamp(GetTopRight().x - room.GetTopLeft().x, 0, xLength); //GetTopLeft().x - room.GetTopLeft().x, 0, xLength);
-            int end = (int)Mathf.Clamp(GetTopRight().x - room.GetTopRight().x, 0, xLength); //GetTopLeft().x - room.GetTopRight().x, 0, xLength);
-
-            //if ((room.roomNr == 0 && roomNr == 3) || (room.roomNr == 3 && roomNr == 0))
-            //{
-             //   Debug.Log("!!!roominters<"+roomNr+">;  start" + start + " end: " +end);
-               // Debug.Log("!!!room2<" + roomNr + ">;  GetTopLeft()" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopLeft().x);
-              //  Debug.Log("!!!room3<" + roomNr + ">;  GetTopLeft().x" + GetTopLeft().x + " room.GetTopLeft(): " + room.GetTopRight().x);
-
-            //}
-
-            for (int i = Mathf.Min(start,end); i < Mathf.Max(start,end); i++)
-            {
-                if (direction == Vector3.down)
-                {
-                    topCovered[i] = true;
-                }
-                else
-                {
-                    bottomCovered[i] = true;
-                }
-            }
-        }
-
-    }
-
-    public void DebugShowCoverage() {
-
-        for (int i = 0; i < xLength; i++) {
-            if (!topCovered[i]) {
-                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetTopRight()+Vector3.up * 0.5f + new Vector3(-0.5f-i,0,-8);
-                cube.transform.parent = self;
-            }
-            if (!bottomCovered[i])
-            {
-                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetBottomRight() + Vector3.down*0.5f + new Vector3(-0.5f + -i, 0, -8);
-                cube.transform.parent = self;
-            }
-        }
-        for (int i = 0; i < yLength; i++)
-        {
-            if (!leftCovered[i])
-            {
-                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetTopLeft() + Vector3.left * 0.5f + new Vector3(0, -0.5f -i, -8);
-                cube.transform.parent = self;
-            }
-            if (!rightCovered[i])
-            {
-                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.transform.position = GetTopRight() + Vector3.right * 0.5f + new Vector3(0, -0.5f -i, -8);
-                cube.transform.parent = self;
-            }
-        }
-
-    }
 
 
     void GenerateMeshAndTexture()

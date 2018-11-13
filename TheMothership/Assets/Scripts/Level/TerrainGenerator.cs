@@ -242,6 +242,10 @@ public class TerrainGenerator {
     public static float BIRD_WAYPOINT_HEIGHT = 10;
 
     //Underground
+    public static int BOUNDARY_DISTANCE = 20;
+
+
+    //Underground
     //public static float UNDERGROUND_ROOF_HEIGHT = 10;
     //public static float UNDERGROUND_GROUND_HEIGHT = 10;
 
@@ -497,78 +501,357 @@ public class TerrainGenerator {
         }
     }
 
+    private void FillUndergroundPoints(ListHash<Vector3> points, List<TerrainRoom> roomlist)
+    {
+        Vector3 point = Vector3.zero;
+
+        foreach (TerrainRoom tr in roomlist)
+        {
+            for (int x = (int)tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++)
+            {
+                for (int y = (int)tr.maxY; y <= tr.maxY + BOUNDARY_DISTANCE; y++)
+                {
+                    point = new Vector3(x, y, 1);
+                    CheckOverlap(points, roomlist, tr, point);
+                }
+            }
+            for (int x = (int)tr.minX - BOUNDARY_DISTANCE; x <= tr.maxX + BOUNDARY_DISTANCE; x++)
+            {
+                for (int y = (int)tr.minY; y >= tr.minY - BOUNDARY_DISTANCE; y--)
+                {
+                    point = new Vector3(x, y, 1);
+                    CheckOverlap(points, roomlist, tr, point);
+                }
+            }
+            for (int x = (int)tr.minX; x > tr.minX - BOUNDARY_DISTANCE; x--)
+            {
+                for (int y = (int)tr.minY; y <= tr.maxY; y++)
+                {
+                    point = new Vector3(x, y, 1);
+                    CheckOverlap(points, roomlist, tr, point);
+                }
+            }
+            for (int x = (int)tr.maxX; x < tr.maxX + BOUNDARY_DISTANCE; x++)
+            {
+                for (int y = (int)tr.minY; y <= tr.maxY; y++)
+                {
+                    point = new Vector3(x, y, 1);
+                    CheckOverlap(points, roomlist, tr, point);
+                }
+            }
+        }
+    }
+    private void CheckOverlap(ListHash<Vector3> points, List<TerrainRoom> roomlist, TerrainRoom tr, Vector3 point) {
+        bool overlaps = false;
+
+        if (!points.Contains(point))
+        {
+            foreach (TerrainRoom compare in roomlist)
+            {
+                if (compare != tr)
+                {
+                    if (compare.IsIn(point))
+                    {
+                        overlaps = true;
+                        break;
+                    }
+                }
+            }
+            if (!overlaps)
+            {
+                points.Add(point);
+            }
+        }
+    }
+
+
+
 
     public void FillUndergroundTerrain() {
 
-
         List<TerrainRoom> roomlist = rooms.GetCopyOfValueList();
+        ListHash<Vector3> points = new ListHash<Vector3>();
 
-        foreach (TerrainRoom room in roomlist)
-        {
-            foreach (TerrainRoom comparison in roomlist)
-            {
-                if (room != comparison) {
+        // points.Add(1, new ListHash<Vector3>());
 
-                    bool debug = false;
-                    if (room.roomNr == 0 && comparison.roomNr == 3) {
 
-                        debug = true;
-                    }
-                    if (
-                            room.IsIn(comparison.GetTopLeft() + Vector3.left) || 
-                            room.IsIn(comparison.GetBottomLeft() + Vector3.left) ||
-                            comparison.IsIn(room.GetTopRight() + Vector3.right) ||
-                            comparison.IsIn(room.GetBottomRight() + Vector3.right)
-                            ) {
-                        room.Intersect(Vector3.left, comparison);
-                        comparison.Intersect(Vector3.right, room);
+        FillUndergroundPoints(points, roomlist);
 
-                    }
-                    /*if (
-                            comparison.IsIn(room.GetTopLeft() + Vector3.left * 2) ||
-                            comparison.IsIn(room.GetBottomLeft() + Vector3.left * 2) ||
-                            room.IsIn(comparison.GetTopRight() + Vector3.right * 2) ||
-                            room.IsIn(comparison.GetBottomRight() + Vector3.right * 2)
-                            )
+        //ListHash<Vector3> list = points[1];
+        //Add all boundaries
+
+        //Merge boundaries
+        //Vector3 right = Vector3.zero;
+        //Vector3 down = Vector3.zero;
+        //Vector3 rightDown = Vector3.zero;
+
+        ListHash<Vector3> removeLater = new ListHash<Vector3>();
+
+        //float length = 2;
+        //points.Add((int)length, new ListHash<Vector3>());
+
+        //List<Vector3> newList = list.ToList() //points[(int)length];
+
+        //float move = length/4f;
+
+        Vector3 iter = Vector3.zero;
+
+        DictionaryList<Vector2, Vector2> merged = new DictionaryList<Vector2, Vector2>();
+
+
+        foreach (Vector3 poi in points) {
+
+            if (!removeLater.Contains(poi)) {
+
+                float up = 0;
+                float down = 0;
+                float left = 0;
+                float right = 0;
+
+                bool canGoUp = true;
+                bool canGoDown = true;
+                bool canGoLeft = true;
+                bool canGoRight = true;
+
+                while (canGoUp || canGoDown || canGoLeft || canGoRight) {
+                    if (canGoUp)
                     {
-                        comparison.Intersect(Vector3.left, room);
-                        room.Intersect(Vector3.right, comparison);
+                        bool blocked = false;
+                        float y = poi.y + up + 1;
+                        for (float x = poi.x - left; x <= poi.x + right; x++)
+                        {
+                            iter = new Vector3(x, y, 1);
 
-                    }*/
-                    if (
-                       room.IsIn(comparison.GetTopLeft() + Vector3.up) ||
-                       room.IsIn(comparison.GetTopRight() + Vector3.up) ||
-                       comparison.IsIn(room.GetBottomLeft() + Vector3.down) ||
-                       comparison.IsIn(room.GetBottomRight() + Vector3.down)
-                       )
-                    {
-                        room.Intersect(Vector3.up, comparison);
-                        comparison.Intersect(Vector3.down, room);
-
+                            if (removeLater.Contains(iter) || !points.Contains(iter))
+                            {
+                                blocked = true;
+                                break;
+                            }
+                        }
+                        if (blocked)
+                        {
+                            canGoUp = false;
+                        }
+                        else
+                        {
+                            up++;
+                        }
                     }
-                    /*
-                    if (
-                      comparison.IsIn(room.GetTopLeft() + Vector3.up * 2) ||
-                      comparison.IsIn(room.GetTopRight() + Vector3.up * 2) ||
-                      room.IsIn(comparison.GetBottomLeft() + Vector3.down * 2) ||
-                      room.IsIn(comparison.GetBottomRight() + Vector3.down * 2)
-                      )
+                    if (canGoDown)
                     {
-                        comparison.Intersect(Vector3.up, room);
-                        room.Intersect(Vector3.down, comparison);
-                    }*/
+                        bool blocked = false;
+                        float y = poi.y - down - 1;
+                        for (float x = poi.x - left; x <= poi.x + right; x++)
+                        {
+                            iter = new Vector3(x, y, 1);
+
+                            if (removeLater.Contains(iter) || !points.Contains(iter))
+                            {
+                                blocked = true;
+                                break;
+                            }
+                        }
+                        if (blocked)
+                        {
+                            canGoDown = false;
+                        }
+                        else
+                        {
+                            down++;
+                        }
+                    }
+
+                    if (canGoLeft)
+                    {
+                        bool blocked = false;
+                        float x = poi.x - left - 1;
+                        for (float y = poi.y - down; y <= poi.y + up; y++)
+                        {
+                            iter = new Vector3(x, y, 1);
+
+                            if (removeLater.Contains(iter) || !points.Contains(iter))
+                            {
+                                blocked = true;
+                                break;
+                            }
+                        }
+                        if (blocked)
+                        {
+                            canGoLeft = false;
+                        }
+                        else
+                        {
+                            left++;
+                        }
+                    }
+                    if (canGoRight)
+                    {
+                        bool blocked = false;
+                        float x = poi.x + right + 1;
+                        for (float y = poi.y - down; y <= poi.y + up; y++)
+                        {
+                            iter = new Vector3(x, y, 1);
+
+                            if (removeLater.Contains(iter) || !points.Contains(iter))
+                            {
+                                blocked = true;
+                                break;
+                            }
+                        }
+                        if (blocked)
+                        {
+                            canGoRight = false;
+                        }
+                        else
+                        {
+                            right++;
+                        }
+                    }
+
                 }
+
+
+                merged.AddIfNotContains(
+                    new Vector2(poi.x, poi.y) + new Vector2((right - left) / 2f, (up - down) / 2f)
+                    , new Vector2(1 + left + right, 1 + up + down));
+
+                for (float x = poi.x - left; x <= poi.x + right; x++)
+                {
+                    for (float y = poi.y - down; y <= poi.y + up; y++)
+                    {
+                        removeLater.Add(new Vector3(x, y, 1));
+                    }
+                }
+                    //removelater stuffs
+
+
+
+
 
             }
         }
-        foreach (TerrainRoom room in roomlist)
-        {
-            room.DebugShowCoverage();
+        /*
+        foreach (Vector3 poi in list) {
+
+            if (!removeLater.Contains(poi)) {
+
+                for()
+
+                right = poi + Vector3.right;
+                down = poi + Vector3.down;
+                rightDown = poi + Vector3.right + Vector3.down;
+
+                if (!removeLater.Contains(right) && !removeLater.Contains(down) && !removeLater.Contains(rightDown) 
+                    && list.Contains(right) && list.Contains(down) && list.Contains(rightDown))
+                {
+                    removeLater.Add(poi);
+                    removeLater.Add(right);
+                    removeLater.Add(down);
+                    removeLater.Add(rightDown);
+
+                    newList.Add(new Vector3(poi.x + move, poi.y - move, length));
+                }
+            }
+
         }
 
+        foreach (Vector3 poi in removeLater) {
+            list.Remove(poi);
+        }
+        */
+
+        foreach (Vector2 pos in merged)
+        {
+            Vector2 size = merged[pos];
+
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.position = new Vector3(pos.x, pos.y, -7);
+            cube.transform.localScale = new Vector3(size.x, size.y, 1);
+        }
+
+        /*
+        List<BoundaryRectangle> rectangles = new List<BoundaryRectangle>();
+        DictionaryList<Vector3, BoundaryRectangle> points = new DictionaryList<Vector3, BoundaryRectangle>();
+        List<TerrainRoom> roomlist = rooms.GetCopyOfValueList();
+
+        float maxY = 0;
+        float maxX = 0;
+        float minY = 0;
+        float minX = 0;
+        bool first = true;
+
+        foreach (TerrainRoom room in roomlist)
+        {
+            if (room.maxX > maxX || first) {
+                maxX = room.maxX;
+            }
+            if (room.maxY > maxY || first)
+            {
+                maxY = room.maxY;
+            }
+            if (room.minX < minX || first)
+            {
+                minX = room.minX;
+            }
+            if (room.minY < minY || first)
+            {
+                minY = room.minY;
+            }
+
+            first = false;
+
+            foreach (TerrainRoom comparison in roomlist)
+            {
+                room.Collide(points,comparison);
+            }
+        }
+
+
+
+        maxX += BOUNDARY_DISTANCE;
+        maxY += BOUNDARY_DISTANCE;
+        minX -= BOUNDARY_DISTANCE;
+        minY -= BOUNDARY_DISTANCE;
+
+        foreach (TerrainRoom room in roomlist)
+        {
+            rectangles.Add(room);
+            room.AddCoverage(points);
+        }
+
+        List<BoundaryRectangle> addNextRound = new List<BoundaryRectangle>();
+        foreach (BoundaryRectangle rect in rectangles) {
+
+            BoundaryRectangle br = rect.Spread(points, maxX, maxY, minX, minY);
+
+            if (br != null) {
+
+                foreach (BoundaryRectangle co in rectangles)
+                {
+                    br.Collide(points, co);
+                }
+                foreach (BoundaryRectangle next in addNextRound)
+                {
+                    br.Collide(points, next);
+                }
+                br.AddCoverage(points, false);
+                addNextRound.Add(br);
+            }
+        }
+        foreach (BoundaryRectangle next in addNextRound) {
+            rectangles.Add(next);
+        }
+        addNextRound.Clear();
+        
+
+        foreach (Vector3 p in points)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.position = p;
+        }*/
     }
 
-        public void GenerateOverGroundTerrain(int seed)
+    public void GenerateOverGroundTerrain(int seed)
     {
 
 
