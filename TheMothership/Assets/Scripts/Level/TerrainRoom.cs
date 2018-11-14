@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 
 public class MeshSet {
 
+    public MeshFace parent;
     public Vector3 direction;
     public Vector3[] vertices;
     public Vector2[] uvs;
@@ -14,8 +15,9 @@ public class MeshSet {
     public int xResolution;
     public int yResolution;
 
-    public MeshSet(Vector3 direction, Vector3[] vertices, Vector2[] uvs, int[] triangles, int xResolution, int yResolution) {
+    public MeshSet(MeshFace parent, Vector3 direction, Vector3[] vertices, Vector2[] uvs, int[] triangles, int xResolution, int yResolution) {
 
+        this.parent = parent;
         this.direction = direction;
         this.vertices = vertices;
         this.uvs = uvs;
@@ -388,6 +390,9 @@ public class TerrainRoom
     public static float ZMARGIN = -8;
     public static float MIN_ROOM_SIZE = 10;
 
+    public static float BIG_REQUIREMENT = 120;
+
+
     DictionaryList<Vector3, List<Ground>> directionMembers;
 
     public int roomNr;
@@ -449,6 +454,8 @@ public class TerrainRoom
     public float rightX;
     public float topY;
     public float bottomY;
+
+    public bool isBig = false;
 
 
     public bool IsIn(float pointx, float pointy)//, bool debug = false, bool ignoreZ = true)
@@ -520,13 +527,14 @@ public class TerrainRoom
         float length = (maxX - minX);
         float height = (maxY - minY);
 
-        if (Mathf.Max(length, height) < 120)
+        if (Mathf.Max(length, height) < BIG_REQUIREMENT)
         {
             this.resolution = 4;
         }
         else
         {
             this.resolution = 1;
+            this.isBig = true;
         }
 
         textureSize = 10;
@@ -549,7 +557,10 @@ public class TerrainRoom
         float diffCorrection = (zLength / 2f) - ((float)zSize);
         //Debug.Log("Diffcorrection room<" + roomNr + "> " + diffCorrection);
 
-        Vector3 pos = new Vector3(minX + xLength / 2f, minY + yLength / 2f, -zShift + zLength / 2f - diffCorrection);
+        Vector3 pos = new Vector3(
+            minX + xLength / 2f, 
+            minY + yLength / 2f, 
+            -zShift + zLength / 2f - diffCorrection);
 
         this.self = self;
         // this.mat = terrainMat;
@@ -589,34 +600,14 @@ public class TerrainRoom
 
         for (int i = 0; i < directions.Length; i++)
         {
-            //if (meshFilters[i] == null)
-            // {
             GameObject meshObj = new GameObject("Submesh " + directions[i].ToString());
             meshObj.transform.parent = self;
-
             MeshRenderer renderer = meshObj.AddComponent<MeshRenderer>();
-            
-            // renderer.sharedMaterial = mat;
             meshFilters[i] = meshObj.AddComponent<MeshFilter>();
             meshFilters[i].sharedMesh = new Mesh();
-            //}
-
             terrainFaces[i] = new TerrainFace(meshObj, meshFilters[i].sharedMesh, this, directions[i], renderer);
-
-            //if (directions[i] != Vector3.forward) {
-            //    renderer.enabled = false;
-            //}
         }
     }
-
-
-
-
-
-
-
-
-
 
     void GenerateMeshAndTexture()
     {
@@ -731,6 +722,63 @@ public class TerrainRoom
         }
 
         CreateFaunaMeshes(fms);
+
+
+        //Spawn pillars within room
+        meshsets = new ConcurrentBag<MeshSet>();
+
+        foreach (TerrainFace face in terrainFaces)
+        {
+            if (face.pillars.Count > 0) {
+
+                face.MergePillars();
+
+                int pil = 0;
+                foreach (TerrainPillar pillar in face.pillars)
+                {
+                    pil++;
+                    pillar.Initialize(self, pil);
+
+                    foreach (TerrainPillarFace tpf in pillar.pillarFace) {
+                        threads.Add(ConstructMeshThread(tpf));
+                    }
+                }
+            }
+        }
+
+        ThreadWait(threads);
+        threads.Clear();
+
+        foreach (MeshSet ms in meshsets)
+        {
+            ms.normals = ApplyMeshSetToMesh(ms, ms.parent.Mesh()); //face.mesh.normals;
+        }
+
+
+        //Pillar mesh create
+        /*foreach (TerrainFace face in terrainFaces)
+        {
+            foreach (TerrainPillar pillar in face.pillars)
+            {
+                foreach (TerrainPillarFace tpf in pillar.pillarFace)
+                {
+                }
+            }
+
+            foreach (MeshSet ms in meshsets)
+            {
+                if (ms.direction == face.localUp)
+                {
+                    //ms.normals = ApplyMeshSetToMesh(ms, face.mesh); //face.mesh.normals;
+
+                    //threads.Add(ConstructTextureThread(face, ms.normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize));
+
+                    //break;
+                }
+            }
+
+        }*/
+
 
 
         foreach (Ground g in members)
@@ -914,7 +962,7 @@ public class TerrainRoom
                 i++;
             }
         }
-        return new MeshSet(Vector3.zero, vertices.ToArray(), uvs.ToArray(), triangles.ToArray(), 0, 0);
+        return new MeshSet(null, Vector3.zero, vertices.ToArray(), uvs.ToArray(), triangles.ToArray(), 0, 0);
     }
 
     public void ThreadWait(List<Thread> threads) {
@@ -942,9 +990,9 @@ public class TerrainRoom
     {
         face.GenerateTexture(normals,vertices,xResolution,yResolution, size);
     }
-    private void ConstructMeshes(TerrainFace face) {
+    private void ConstructMeshes(MeshFace face) {
 
-        meshsets.Add(face.ConstructMeshAndTexture(position, directionMembers[face.localUp]));
+        meshsets.Add(face.GenerateMesh(position, directionMembers[face.LocalUp()]));
     }
 
     public Thread ConstructTextureThread(TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
@@ -954,7 +1002,7 @@ public class TerrainRoom
         return t;
     }
 
-    public Thread ConstructMeshThread(TerrainFace face)
+    public Thread ConstructMeshThread(MeshFace face)
     {
         var t = new Thread(() => ConstructMeshes(face));
         t.Start();

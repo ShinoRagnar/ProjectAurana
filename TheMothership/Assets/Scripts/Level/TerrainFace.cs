@@ -12,20 +12,28 @@ public enum TerrainFaceSurfaceType {
 
 }
 
+public interface MeshFace
+{
+    MeshSet GenerateMesh(Vector3 position, List<Ground> members);
+    Vector3 LocalUp();
+    Mesh Mesh();
+}
 
-public class TerrainFace {
+
+public class TerrainFace : MeshFace{
 
     private struct GroundBounds
     {
         public Vector3 firstPoint;
         public Vector3 secondPoint;
 
-        public GroundBounds(Vector3 first, Vector3 last) {
+        public GroundBounds(Vector3 first, Vector3 last)
+        {
             this.firstPoint = first;
             this.secondPoint = last;
         }
-
     }
+
 
     public Mesh mesh;
     public Vector3 localUp;
@@ -46,13 +54,19 @@ public class TerrainFace {
     public static int FAUNA_CENTERPIECE_MIN_DISTANCE = 5;
     public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
 
+    public Vector3 LocalUp() {
+        return localUp;
+    }
+    public Mesh Mesh() {
+        return mesh;
+    }
 
     public class TerrainHeightMaps
     {
         public bool[,] ignoreForDoors;
         //public float[,] doormap;
         public float[,] groundRoundErrorMap;
-       // public float[,] depthMap;
+        // public float[,] depthMap;
         public float[,] onlyFacesHeightMap;
         public float[,] maxHeightMap;
         public float[,] heightMap;
@@ -68,7 +82,7 @@ public class TerrainFace {
 
         public TerrainHeightMaps(int xResolution, int yResolution) {
 
-          //  doormap = new float[xResolution, yResolution];
+            //  doormap = new float[xResolution, yResolution];
             groundRoundErrorMap = new float[xResolution, yResolution];
             maxHeightMap = new float[xResolution, yResolution];
             heightMap = new float[xResolution, yResolution];
@@ -103,12 +117,12 @@ public class TerrainFace {
     }
 
     public void GenerateHeightMap(
-        List<Ground> members, 
-        Vector3 position, 
-        int xResolution, 
-        int yResolution, 
-        int xMod, 
-        int yMod, 
+        List<Ground> members,
+        Vector3 position,
+        int xResolution,
+        int yResolution,
+        int xMod,
+        int yMod,
         int zMod) {
 
         thm = new TerrainHeightMaps(xResolution, yResolution);
@@ -132,7 +146,7 @@ public class TerrainFace {
             //Ground closestTopYGround  = member;
             //Ground closestBottomYGround = member;
             //Ground closestLeftXGround = member;
-           // Ground closestRightXGround = member;
+            // Ground closestRightXGround = member;
 
             if (localUp != Vector3.forward) {
 
@@ -150,51 +164,136 @@ public class TerrainFace {
                         if (maxY < compminY && compminY < closestTopY)
                         {
                             closestTopY = compminY;
-                           // closestTopYGround = comparisons;
+                            // closestTopYGround = comparisons;
                             // Debug.Log("found top");
                         }
                         if (minY > compmaxY && compmaxY > closestBottomY)
                         {
                             closestBottomY = compminY;
-                           // closestBottomYGround = comparisons;
+                            // closestBottomYGround = comparisons;
                         }
                         if (maxX < compminX && compminX < closestLeftX)
                         {
                             closestLeftX = compminX;
-                           // closestLeftXGround = comparisons;
+                            // closestLeftXGround = comparisons;
                         }
                         if (minX > compmaxX && compmaxX > closestRightX)
                         {
                             closestRightX = compminY;
-                           // closestRightXGround = comparisons;
+                            // closestRightXGround = comparisons;
                         }
                     }
                 }
             }
 
+            if (room.isBig && localUp == Vector3.forward)
+            {
+                AddToPillars(member, gb);
 
-           // Debug.Log("Imprinting: " + member.name + " closestTopY " + closestTopYGround.name
-            //    + " closest BottomY:" + closestBottomYGround.name);
+            }
+            else {
+                Imprint(
+                    position,
+                    member,
+                    xResolution,
+                    yResolution,
+                    xMod,
+                    yMod,
+                    zMod,
+                    closestTopY,
+                    closestBottomY,
+                    closestLeftX,
+                    closestRightX,
+                    gb.firstPoint,
+                    gb.secondPoint
+                    );
+            }
 
 
-            Imprint(
-                position, 
-                member, 
-                xResolution, 
-                yResolution, 
-                xMod, 
-                yMod, 
-                zMod,
-                closestTopY,
-                closestBottomY,
-                closestLeftX,
-                closestRightX,
-                gb.firstPoint,
-                gb.secondPoint
-                );
         }
-       // return thm;
+        // return thm;
     }
+
+    public List<TerrainPillar> pillars = new List<TerrainPillar>();
+
+    private void AddToPillars(Ground g, GroundBounds gb) {
+
+        TerrainPillar foundPillar = null;
+
+        foreach (TerrainPillar pillar in pillars) {
+            foreach (Ground pil in pillar.members) {
+                if (g.IsOnSameLevel(pil, false)) {
+                    foundPillar = pillar;
+                    break;
+                }
+            }
+            if (foundPillar != null) {
+                break;
+            }
+        }
+
+        if (foundPillar != null){
+            foundPillar.members.Add(g);
+        }else {
+            pillars.Add(new TerrainPillar(room,g));
+        }
+    }
+
+    public void MergePillars() {
+        int merges = 1;
+        while (merges > 0) {
+            merges = 0;
+            foreach (TerrainPillar pillar in pillars)
+            {
+                TerrainPillar mergeWith = null;
+
+                foreach (Ground member in pillar.members)
+                {
+                    foreach (TerrainPillar compare in pillars)
+                    {
+                        if (compare != pillar)
+                        {
+                            foreach (Ground compareMember in compare.members)
+                            {
+                                if (member.IsOnSameLevel(compareMember, false))
+                                {
+                                    mergeWith = compare;
+                                    break;
+                                }
+                            }
+                        }
+                        if (mergeWith != null)
+                        {
+                            break;
+                        }
+                    }
+                    if (mergeWith != null)
+                    {
+                        break;
+                    }
+                }
+
+                if (mergeWith != null)
+                {
+                    if (pillar.Merge(mergeWith)) {
+                        merges++;
+                    }
+                }
+            }
+        }
+        List<TerrainPillar> emptyPillars = new List<TerrainPillar>();
+        foreach (TerrainPillar tp in pillars) {
+            if (tp.members.Count == 0) {
+                emptyPillars.Add(tp);
+            }
+        }
+
+        foreach (TerrainPillar empty in emptyPillars) {
+            pillars.Remove(empty);
+        }
+
+    }
+
 
     private GroundBounds GetBoundsOf(
         Ground g,
@@ -632,7 +731,7 @@ public class TerrainFace {
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
-    public MeshSet ConstructMeshAndTexture(Vector3 position, List<Ground> members)
+    public MeshSet GenerateMesh(Vector3 position, List<Ground> members)
     {
         int xMod = 1;
         int yMod = 1;
@@ -974,7 +1073,7 @@ public class TerrainFace {
         }
 
 
-        return new MeshSet(localUp, vertices, uvs, triangles,xResolution,yResolution);
+        return new MeshSet(this, localUp, vertices, uvs, triangles,xResolution,yResolution);
 
     }
 
