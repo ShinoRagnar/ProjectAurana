@@ -34,13 +34,13 @@ public class TerrainPillarFace : MeshFace{
     }
 
 
-    public MeshSet GenerateMesh(Vector3 position, List<Ground> members)
+    public MeshSet GenerateMesh(Vector3 position)
     {
         int xMod = 1;
         int yMod = 1;
         int zMod = 1;
 
-        /*
+       
         if (localUp == Vector3.left || localUp == Vector3.right)
         {
 
@@ -62,10 +62,10 @@ public class TerrainPillarFace : MeshFace{
             yMod = pillar.zSize;
             zMod = pillar.ySize;
         }
-        */
+        
 
-        int xResolution = 20; // pillar.resolution * xMod;
-        int yResolution = 20; // pillar.resolution * yMod;
+        int xResolution = pillar.resolution * xMod;
+        int yResolution = pillar.resolution * yMod;
 
         //GenerateHeightMap(members, position, xResolution, yResolution, xMod, yMod, zMod);
 
@@ -130,6 +130,12 @@ public class TerrainPillarFace : MeshFace{
                 i++;
             }
         }
+
+       // if (localUp == Vector3.back) {
+       //     Debug.Log("!!!!!!!!!!!verts" + vertices.Length);
+       //
+       // }
+
         return new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
 
     }

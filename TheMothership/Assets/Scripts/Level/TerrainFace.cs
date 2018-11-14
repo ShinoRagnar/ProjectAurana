@@ -14,7 +14,7 @@ public enum TerrainFaceSurfaceType {
 
 public interface MeshFace
 {
-    MeshSet GenerateMesh(Vector3 position, List<Ground> members);
+    MeshSet GenerateMesh(Vector3 position);
     Vector3 LocalUp();
     Mesh Mesh();
 }
@@ -731,7 +731,7 @@ public class TerrainFace : MeshFace{
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
-    public MeshSet GenerateMesh(Vector3 position, List<Ground> members)
+    public MeshSet GenerateMesh(Vector3 position)
     {
         int xMod = 1;
         int yMod = 1;
@@ -761,7 +761,7 @@ public class TerrainFace : MeshFace{
         int xResolution = room.resolution * xMod;
         int yResolution = room.resolution * yMod;
 
-        GenerateHeightMap(members, position, xResolution, yResolution, xMod, yMod, zMod);
+        GenerateHeightMap(room.directionMembers[localUp], position, xResolution, yResolution, xMod, yMod, zMod);
 
         //Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), 1f / (float)(yResolution - 1f));
 

@@ -393,7 +393,7 @@ public class TerrainRoom
     public static float BIG_REQUIREMENT = 120;
 
 
-    DictionaryList<Vector3, List<Ground>> directionMembers;
+    public DictionaryList<Vector3, List<Ground>> directionMembers;
 
     public int roomNr;
     private ListHash<Ground> members;
@@ -992,7 +992,7 @@ public class TerrainRoom
     }
     private void ConstructMeshes(MeshFace face) {
 
-        meshsets.Add(face.GenerateMesh(position, directionMembers[face.LocalUp()]));
+        meshsets.Add(face.GenerateMesh(position));
     }
 
     public Thread ConstructTextureThread(TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
