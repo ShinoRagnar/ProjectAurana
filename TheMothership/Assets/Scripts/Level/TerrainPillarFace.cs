@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TerrainPillarFace : MeshFace{
+public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
+{
+
+    public static float TOP_BOTTOM_MULTIPLIER = 1.5f;
+    public static float NOISE_PERCENT_HEIGHT = 0.5f;
 
     Vector3 localUp;
     Vector3 axisA;
@@ -14,7 +18,7 @@ public class TerrainPillarFace : MeshFace{
     Transform self;
 
 
-    public TerrainPillarFace(Vector3 up, TerrainPillar pillar, MeshRenderer renderer, Mesh mesh, Transform self) {
+    public TerrainPillarFace(Vector3 up, TerrainPillar pillar, MeshRenderer renderer, Mesh mesh, Transform self) : base(pillar.room) {
 
         this.mesh = mesh;
         this.self = self;
@@ -81,6 +85,8 @@ public class TerrainPillarFace : MeshFace{
         float persistance = 0.5f;
         int layers = 5;
 
+        float radius = pillar.xSize;
+
         //float yTextureProgress = 0;
 
         for (int y = 0; y < yResolution; y++)
@@ -93,6 +99,36 @@ public class TerrainPillarFace : MeshFace{
                 Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+
+                Vector3 pointOnCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * radius
+                                            + new Vector3(0, pointOnUnitCube.y);
+
+                Vector3 biggerCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * radius * TOP_BOTTOM_MULTIPLIER
+                                            + new Vector3(0, pointOnUnitCube.y);
+
+                Vector3 pointOnNoiseCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * (radius*(1f+ NOISE_PERCENT_HEIGHT))
+                            + new Vector3(0, pointOnUnitCube.y);
+
+
+                Vector3 pointOnBiggerNoiseCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * 
+                            (radius * (1f + NOISE_PERCENT_HEIGHT)) * TOP_BOTTOM_MULTIPLIER
+                            + new Vector3(0, pointOnUnitCube.y);
+
+
+                float yp = Mathf.Sin(Mathf.Clamp01(
+                        (pointOnUnitCube.y + (pillar.yLength / 2f))/ pillar.yLength
+                    )*Mathf.PI);
+
+                float yProgress = yp * yp * yp * (yp * (6f * yp - 15f) + 10f);
+
+                Vector3 mergeTop = Vector3.Lerp(biggerCylinder, pointOnCylinder, yProgress);
+                Vector3 mergeNoise = Vector3.Lerp(pointOnBiggerNoiseCylinder, pointOnNoiseCylinder, yProgress);
+
+
+                float noise = EvaluateNoise(mergeTop, baseRoughness, roughness, persistance, strength, layers, true);
+
+                Vector3 noiseMerge = Vector3.Lerp(mergeTop, mergeNoise, noise);
+
                 //Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
 
@@ -104,7 +140,7 @@ public class TerrainPillarFace : MeshFace{
 
                 //float height = 1;
 
-                vertices[i] = pointOnUnitCube;
+                vertices[i] = noiseMerge;
                                 //height > 0 ?
                                //         Vector3.Lerp(
                                //         Vector3.Lerp(pointOnHeightMap, mergeTo, noiseForGrounds)
@@ -139,5 +175,7 @@ public class TerrainPillarFace : MeshFace{
         return new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
 
     }
+
+
 
 }

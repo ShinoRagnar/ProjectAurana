@@ -243,6 +243,7 @@ public class TerrainGenerator {
 
     //Underground
     public static int BOUNDARY_DISTANCE = 20;
+    public static int BOUNDARY_DEPTH = 100;
 
 
     //Underground
@@ -769,7 +770,7 @@ public class TerrainGenerator {
             }
         }
         int count = 0;
-        float width = 100;
+        float width = BOUNDARY_DEPTH;
 
         foreach (Vector2 pos in merged)
         {
@@ -787,7 +788,7 @@ public class TerrainGenerator {
             cube.transform.position = new Vector3(pos.x, pos.y, width/2f - 8+ 0.01f);
             cube.transform.localScale = new Vector3(size.x, size.y, width);
             cube.transform.parent = boundries.transform;
-
+            cube.isStatic = true;
         }
 
         //foreach (Vector3 p in points)

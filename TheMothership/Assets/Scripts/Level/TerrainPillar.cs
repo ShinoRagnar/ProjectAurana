@@ -27,7 +27,7 @@ public class TerrainPillar{
 
     public int resolution = 1;
 
-    public static Vector3[] directions = {Vector3.left, Vector3.right, Vector3.forward, Vector3.back, Vector3.up, Vector3.down };
+    public static Vector3[] directions = {Vector3.left, Vector3.right, Vector3.forward, Vector3.back};
 
 
 
@@ -88,7 +88,7 @@ public class TerrainPillar{
         //this.position = new Vector3(minX+ xLength / 2f, room.minY + yLength / 2f, TerrainGenerator.TERRAIN_Z_WIDTH + zLength / 2f);
 
         self.localPosition = Vector3.zero;
-        self.position = new Vector3(minX - room.position.x+xLength/2f, self.localPosition.y, self.localPosition.z);
+        self.position = new Vector3(minX - room.position.x + xLength / 2f, self.localPosition.y, zLength / 2f-room.position.z);
 
         this.position = self.position;
 

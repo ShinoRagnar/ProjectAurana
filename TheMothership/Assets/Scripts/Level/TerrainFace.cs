@@ -19,8 +19,65 @@ public interface MeshFace
     Mesh Mesh();
 }
 
+public class RoomNoiseEvaluator {
 
-public class TerrainFace : MeshFace{
+    public TerrainRoom room;
+
+    public RoomNoiseEvaluator(TerrainRoom room) {
+        this.room = room;
+    }
+
+    public float EvaluateNoise(
+        Vector3 point,
+        float baseRoughness,
+        float roughness,
+        float persistance,
+        float strength,
+        int layers,
+        bool isRigid
+
+        )
+    {
+
+        float noiseValue = 0;
+        float frequency = baseRoughness;
+        float amplitude = 1;
+        float maximum = 0;
+        float weight = 1;
+
+
+        for (int i = 0; i < layers; i++)
+        {
+            if (isRigid)
+            {
+                float v = 1 - Mathf.Abs(room.noise.Evaluate(point * frequency + room.position));
+                v *= v;
+                v *= weight;
+                weight = v;
+
+                noiseValue += (v) * amplitude;
+                maximum += (1) * amplitude;
+            }
+            else
+            {
+                float v = (room.noise.Evaluate(point * frequency + room.position));
+                noiseValue += (v + 1) * 0.5f * amplitude;
+                maximum += (1 + 1) * 0.5f * amplitude;
+            }
+
+            frequency *= roughness;
+            amplitude *= persistance;
+        }
+
+        return (noiseValue * strength) / maximum;
+
+
+    }
+}
+
+
+public class TerrainFace : RoomNoiseEvaluator,  MeshFace
+{
 
     private struct GroundBounds
     {
@@ -39,7 +96,7 @@ public class TerrainFace : MeshFace{
     public Vector3 localUp;
     Vector3 axisA;
     Vector3 axisB;
-    TerrainRoom room;
+  //  TerrainRoom room;
     public MeshRenderer renderer;
     GameObject self;
     public TerrainHeightMaps thm;
@@ -104,11 +161,12 @@ public class TerrainFace : MeshFace{
 
     }
 
-    public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr)
+    public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr): base(tr)
     {
+        
         this.self = meshobj;
         this.mesh = mesh;
-        this.room = tr;
+       // this.room = tr;
         this.localUp = localUp;
         this.renderer = mr;
 
@@ -1610,49 +1668,7 @@ public class TerrainFace : MeshFace{
         to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
     }*/
 
-    public float EvaluateNoise(
-        Vector3 point, 
-        float baseRoughness, 
-        float roughness, 
-        float persistance, 
-        float strength, 
-        int layers,
-        bool isRigid
-        
-        ) {
 
-        float noiseValue = 0;
-        float frequency = baseRoughness;
-        float amplitude = 1;
-        float maximum = 0;
-        float weight = 1;
-
-
-        for (int i = 0; i < layers; i++) {
-            if (isRigid)
-            {
-                float v = 1-Mathf.Abs(room.noise.Evaluate(point * frequency + room.position));
-                v *= v;
-                v *= weight;
-                weight = v;
-
-                noiseValue += (v) * amplitude;
-                maximum += (1) * amplitude;
-            }
-            else {
-                float v = (room.noise.Evaluate(point * frequency + room.position));
-                noiseValue += (v + 1) * 0.5f * amplitude;
-                maximum += (1 + 1) * 0.5f * amplitude;
-            }
-            
-            frequency *= roughness;
-            amplitude *= persistance;
-        }
-
-        return (noiseValue * strength)/ maximum;
-
-
-    }
 
 
     public static int GetPreferredTextureSize(int xResolution, int yResolution) {
