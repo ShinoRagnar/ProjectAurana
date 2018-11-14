@@ -6,7 +6,12 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
 {
 
     public static float TOP_BOTTOM_MULTIPLIER = 1.5f;
-    public static float NOISE_PERCENT_HEIGHT = 0.5f;
+    public static float HILL_NOISE_RADIUS_ADDED = 0.5f;
+    public static float HILL_NOISE_FACTOR = 0.5f;
+    public static float INVERSE_NOISE_RADIUS = 0.7f;
+    public static float INVERSE_NOISE_FACTOR = 0.5f;
+    public static float GRAVITY_FACTOR = 0.03f;
+
 
     Vector3 localUp;
     Vector3 axisA;
@@ -79,13 +84,14 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
         int triIndex = 0;
         int i = 0;
 
-        float baseRoughness = 2;
-        float roughness = 2;
+        float baseRoughness = 0.1f;
+        float roughness = 0.1f;
         float strength = 1f;
         float persistance = 0.5f;
-        int layers = 5;
+        int layers = 1;
 
         float radius = pillar.xSize;
+        float height = pillar.yLength;
 
         //float yTextureProgress = 0;
 
@@ -100,18 +106,30 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
+                //Up and down broader
                 Vector3 pointOnCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * radius
                                             + new Vector3(0, pointOnUnitCube.y);
 
                 Vector3 biggerCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * radius * TOP_BOTTOM_MULTIPLIER
                                             + new Vector3(0, pointOnUnitCube.y);
 
-                Vector3 pointOnNoiseCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * (radius*(1f+ NOISE_PERCENT_HEIGHT))
-                            + new Vector3(0, pointOnUnitCube.y);
+                //Draw out
+                Vector3 pointOnNoiseCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * (radius*(1f+ HILL_NOISE_RADIUS_ADDED))
+                            + new Vector3(0, pointOnUnitCube.y- height* GRAVITY_FACTOR);
 
 
                 Vector3 pointOnBiggerNoiseCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * 
-                            (radius * (1f + NOISE_PERCENT_HEIGHT)) * TOP_BOTTOM_MULTIPLIER
+                            (radius * (1f + HILL_NOISE_RADIUS_ADDED)) * TOP_BOTTOM_MULTIPLIER
+                            + new Vector3(0, pointOnUnitCube.y - height * GRAVITY_FACTOR);
+
+
+                //Drawn towards middle
+                Vector3 pointOnInverseNoiseCylinder = 
+                    (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) * (radius * INVERSE_NOISE_RADIUS)
+                        + new Vector3(0, pointOnUnitCube.y);
+
+                Vector3 pointOnInverseBiggerCylinder = (new Vector3(pointOnUnitCube.x, 0, pointOnUnitCube.z).normalized) *
+                            (radius * INVERSE_NOISE_RADIUS) * TOP_BOTTOM_MULTIPLIER
                             + new Vector3(0, pointOnUnitCube.y);
 
 
@@ -123,11 +141,17 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
 
                 Vector3 mergeTop = Vector3.Lerp(biggerCylinder, pointOnCylinder, yProgress);
                 Vector3 mergeNoise = Vector3.Lerp(pointOnBiggerNoiseCylinder, pointOnNoiseCylinder, yProgress);
+                Vector3 mergeInverseNoise = Vector3.Lerp(pointOnInverseBiggerCylinder, pointOnInverseNoiseCylinder, yProgress);
 
 
-                float noise = EvaluateNoise(mergeTop, baseRoughness, roughness, persistance, strength, layers, true);
+                float noise = EvaluateNoise(pillar.position+mergeTop, baseRoughness, roughness, persistance, strength, layers, true);
 
-                Vector3 noiseMerge = Vector3.Lerp(mergeTop, mergeNoise, noise);
+                Vector3 noiseMerge = Vector3.Lerp(mergeTop, mergeNoise, noise* HILL_NOISE_FACTOR);
+
+                float inverseNoise = EvaluateNoise(-pillar.position + noiseMerge, 0.4f, 0.4f, persistance, strength, 5, false);
+
+                Vector3 noiseInverse = Vector3.Lerp(noiseMerge, mergeInverseNoise, inverseNoise* INVERSE_NOISE_FACTOR);
+
 
                 //Vector3 reversePos = -localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
@@ -140,7 +164,7 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
 
                 //float height = 1;
 
-                vertices[i] = noiseMerge;
+                vertices[i] = noiseInverse;
                                 //height > 0 ?
                                //         Vector3.Lerp(
                                //         Vector3.Lerp(pointOnHeightMap, mergeTo, noiseForGrounds)

@@ -83,7 +83,7 @@ public class TerrainPillar{
         ySize = (int)(yLength / 2f);
         zSize = (int)(zLength / 2f);
 
-        this.resolution = 1;
+        this.resolution = 4;
 
         //this.position = new Vector3(minX+ xLength / 2f, room.minY + yLength / 2f, TerrainGenerator.TERRAIN_Z_WIDTH + zLength / 2f);
 
