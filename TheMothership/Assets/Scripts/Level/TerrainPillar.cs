@@ -57,6 +57,7 @@ public class TerrainPillar{
         self = pillar.transform;
 
         bool first = true;
+        float depth = 0;
 
         foreach (Ground member in members) {
 
@@ -69,6 +70,7 @@ public class TerrainPillar{
             {
                 maxX = member.GetRightSide().x;
             }
+            depth = member.GetDepth();
             first = false;
         }
 
@@ -88,7 +90,11 @@ public class TerrainPillar{
         //this.position = new Vector3(minX+ xLength / 2f, room.minY + yLength / 2f, TerrainGenerator.TERRAIN_Z_WIDTH + zLength / 2f);
 
         self.localPosition = Vector3.zero;
-        self.position = new Vector3(minX - room.position.x + xLength / 2f, self.localPosition.y, zLength / 2f-room.position.z);
+        self.position = new Vector3(
+            minX - room.position.x + xLength / 2f, 
+            self.localPosition.y, 
+            (zLength / 2f)*((1f + TerrainPillarFace.HILL_NOISE_RADIUS_ADDED) * TerrainPillarFace.TOP_BOTTOM_MULTIPLIER) - room.position.z // + depth/2f
+            );
 
         this.position = self.position;
 

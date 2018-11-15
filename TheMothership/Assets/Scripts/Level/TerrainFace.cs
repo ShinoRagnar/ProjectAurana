@@ -247,7 +247,6 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
             if (room.isBig && localUp == Vector3.forward)
             {
                 AddToPillars(member, gb);
-
             }
             else {
                 Imprint(

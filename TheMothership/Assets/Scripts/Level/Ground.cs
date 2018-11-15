@@ -69,6 +69,36 @@ public class Ground {
     }
 
 
+    public bool IsInExcludeZ(Vector3 point)
+    {
+        return
+        point.x >= positionX - halfScaleX && point.x <= positionX + halfScaleX
+        &&
+        point.y >= positionY - halfScaleY && point.y <= positionY + halfScaleY;
+    }
+
+    public float ySinDistance(Vector3 point, float topYDistance, float bottomYDistance)
+    {
+        float minPos = positionY + halfScaleY + topYDistance;
+        float maxPos = positionY - halfScaleY - bottomYDistance;
+        float len = maxPos - minPos;
+
+        return Mathf.Sin(Mathf.Clamp01((point.y - minPos) / len) * Mathf.PI);
+
+    }
+
+    public float xSinDistance(Vector3 point, float leftXDistance, float rightXDistance)
+    {
+        float minPos = positionX - halfScaleX - leftXDistance;
+        float maxPos = positionX + halfScaleX + rightXDistance;
+        float len = maxPos - minPos;
+
+        return Mathf.Sin(Mathf.Clamp01((point.x - minPos) / len) * Mathf.PI);
+    }
+
+
+
+
     public Vector3 GetMidPoint()
     {
         return new Vector3(positionX, positionY + halfScaleY);
