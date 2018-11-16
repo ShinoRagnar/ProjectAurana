@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Ground {
+public class Ground : RoomNoiseEvaluator{
 
     public static Vector3[] directions = { Vector3.left, Vector3.right, Vector3.forward, Vector3.back, Vector3.up, Vector3.down };
 
@@ -42,7 +42,8 @@ public class Ground {
 
     public GroundFace[] faces;
 
-    public Ground(Transform groundObject)
+
+    public Ground(Transform groundObject) : base(null)
     {
         this.obj = groundObject;
         this.name = obj.name;
@@ -69,6 +70,7 @@ public class Ground {
     }
 
     public void Initialize(
+        TerrainRoom room,
         Transform parent, 
         float zAxisAdded, 
         bool roundEdges, 
@@ -76,6 +78,7 @@ public class Ground {
         int resolution
         )
     {
+        this.room = room;
         this.resolution = resolution;
         this.zAxisAdded = zAxisAdded;
         this.roundEdges = roundEdges;

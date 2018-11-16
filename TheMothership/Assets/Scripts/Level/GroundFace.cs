@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class GroundFace : MeshFace {
 
+    public static float NOISE_BASE_ROUGHNESS = 0.25f;
+    public static float NOISE_ROUGHNESS = 0.25f;
+    public static float NOISE_STRENGTH = 1f;
+    public static float NOISE_PERSISTANCE = 0.5f;
+    public static int NOISE_LAYERS = 3;
+
     Vector3 localUp;
     Vector3 axisA;
     Vector3 axisB;
@@ -15,6 +21,8 @@ public class GroundFace : MeshFace {
     Transform self;
     Ground ground;
     int resolution;
+
+    Vector3 random;
 
     public GroundFace(Vector3 up, Vector3 offset, Ground ground, GameObject gob, int resolution)
     {
@@ -32,6 +40,8 @@ public class GroundFace : MeshFace {
 
         axisA = new Vector3(localUp.y, localUp.z, localUp.x);
         axisB = Vector3.Cross(localUp, axisA);
+
+        random = new Vector3(Random.Range(1, 1000), Random.Range(1, 1000), Random.Range(1, 1000));
     }
 
     public Vector3 LocalUp()
@@ -50,28 +60,34 @@ public class GroundFace : MeshFace {
         int yMod = 1;
         int zMod = 1;
 
+        float zSize = ((ground.halfScaleZ + ground.zAxisAdded) * ground.randomZLength);
+        float xSize = ground.halfScaleX;
+        float ySize = ground.halfScaleY;
+
 
         if (localUp == Vector3.left || localUp == Vector3.right)
         {
 
-            xMod = (int)((ground.halfScaleZ + ground.zAxisAdded) * ground.randomZLength);
-            yMod = (int)ground.halfScaleY;
-            zMod = (int)ground.halfScaleX;
+            xMod = (int)zSize;
+            yMod = (int)ySize;
+            zMod = (int)xSize;
         }
         else if (localUp == Vector3.back || localUp == Vector3.forward)
         {
 
-            xMod = (int)ground.halfScaleY;
-            yMod = (int)ground.halfScaleX;
-            zMod = (int)((ground.halfScaleZ + ground.zAxisAdded) * ground.randomZLength);
+            xMod = (int)ySize;
+            yMod = (int)xSize;
+            zMod = (int)zSize;
 
         }
         else if (localUp == Vector3.up || localUp == Vector3.down)
         {
-            xMod = (int)ground.halfScaleX;
-            yMod = (int)((ground.halfScaleZ + ground.zAxisAdded) * ground.randomZLength);
-            zMod = (int)ground.halfScaleY;
+            xMod = (int)xSize;
+            yMod = (int)zSize;
+            zMod = (int)ySize;
         }
+
+        int maxLength = Mathf.Max(Mathf.Max(xMod, yMod), zMod);
 
 
         int xResolution = resolution * xMod;
@@ -85,8 +101,22 @@ public class GroundFace : MeshFace {
         int triIndex = 0;
         int i = 0;
 
+        float yHeight = ySize / maxLength;
+        float xHeight = xSize / maxLength;
+        float zHeight = zSize / maxLength;
+
+        float zRoundExtent = 2f;
+        float xRoundExtent = 0.5f;
+        float yRoundExtent = 0.5f;
+
+        float extent = localUp == Vector3.back ? zRoundExtent :
+             (localUp == Vector3.left || localUp == Vector3.right) ? xRoundExtent : yRoundExtent;
+
         //float yTextureProgress = 0;
         Vector3 groundpos = Vector3.zero;
+
+
+
 
         for (int y = 0; y < yResolution; y++)
         {
@@ -98,8 +128,53 @@ public class GroundFace : MeshFace {
 
                 Vector3 pointOnUnitCube = localUp * zMod + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
+                Vector3 final = pointOnUnitCube;
 
-                vertices[i] = pointOnUnitCube;
+
+                if (ground.roundEdges) {
+
+                    /*
+                    Vector3 pointOnSphere = pointOnUnitCube.normalized * maxLength;
+
+                    pointOnSphere = new Vector3(
+                        pointOnSphere.x * xHeight,
+                        pointOnSphere.y * yHeight,
+                        pointOnSphere.z * zHeight
+                        );
+                        */
+
+                    float yProg = Mathf.Sin(percent.y * Mathf.PI);
+                    float xProg = localUp == Vector3.back ? 
+                        (percent.x == 1f || percent.x == 0f) ?  0 : 1
+                        : Mathf.Sin(percent.x * Mathf.PI);
+                    //float zProg = Mathf.Clamp01(-pointOnUnitCube.z / zSize);
+
+                    Vector3 zRoundness = localUp * (zMod + extent) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+
+                    float n = yProg * xProg;
+
+                    n = n + (n - (n * n * (3.0f - 2.0f * n)));
+
+                    float noise = ground.EvaluateNoise(
+                        pointOnUnitCube + random, NOISE_BASE_ROUGHNESS, NOISE_ROUGHNESS, NOISE_PERSISTANCE, NOISE_STRENGTH, NOISE_LAYERS, true);
+
+
+                    final = Vector3.Lerp(final, zRoundness, Mathf.Clamp01(n*10f) * noise);
+
+                   
+
+
+
+                    // final = Vector3.Lerp(final, pointOnSphere, Mathf.Clamp01(zProg * 2));
+
+                    // final = Vector3.Lerp(final, pointOnUnitCube, 0.5f);
+                    // final = Vector3.Lerp(final, zRoundness, 0.5f);
+
+
+                }
+
+
+                vertices[i] = final;
 
                 uvs[i] = percent;
 
