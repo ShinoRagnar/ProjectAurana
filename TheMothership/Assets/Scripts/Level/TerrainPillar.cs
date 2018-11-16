@@ -21,6 +21,7 @@ public class TerrainPillar{
     public int ySize = 2;
     public int zSize = 1;
 
+    public float pillarMaxRadius = 0;
 
     float maxX = 1;
     float minX = 0;
@@ -89,11 +90,14 @@ public class TerrainPillar{
 
         //this.position = new Vector3(minX+ xLength / 2f, room.minY + yLength / 2f, TerrainGenerator.TERRAIN_Z_WIDTH + zLength / 2f);
 
+        this.pillarMaxRadius = (zLength / 2f) * ((1f + TerrainPillarFace.HILL_NOISE_RADIUS_ADDED) * TerrainPillarFace.TOP_BOTTOM_MULTIPLIER);
+
+
         self.localPosition = Vector3.zero;
         self.position = new Vector3(
             minX - room.position.x + xLength / 2f, 
-            self.localPosition.y, 
-            (zLength / 2f)*((1f + TerrainPillarFace.HILL_NOISE_RADIUS_ADDED) * TerrainPillarFace.TOP_BOTTOM_MULTIPLIER) - room.position.z // + depth/2f
+            self.localPosition.y,
+            pillarMaxRadius - room.position.z // + depth/2f
             );
 
         this.position = self.position;

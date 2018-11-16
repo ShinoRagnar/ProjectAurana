@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class Ground {
 
+    public static Vector3[] directions = { Vector3.left, Vector3.right, Vector3.forward, Vector3.back, Vector3.up, Vector3.down };
+
+    public GameObject ground;
     public GroundHints hints;
     public Transform obj;
     public DictionaryList<Vector3, Ground> links;
@@ -32,6 +35,13 @@ public class Ground {
     public float positionY;
     public float positionZ;
 
+    public float zAxisAdded = 0;
+    public bool roundEdges = false;
+    public float randomZLength = 0;
+    public int resolution = 1;
+
+    public GroundFace[] faces;
+
     public Ground(Transform groundObject)
     {
         this.obj = groundObject;
@@ -56,6 +66,49 @@ public class Ground {
         positionY = obj.transform.position.y;
         positionZ = obj.transform.position.z;
 
+    }
+
+    public void Initialize(
+        Transform parent, 
+        float zAxisAdded, 
+        bool roundEdges, 
+        float randomZLength,  
+        int resolution
+        )
+    {
+        this.resolution = resolution;
+        this.zAxisAdded = zAxisAdded;
+        this.roundEdges = roundEdges;
+        this.randomZLength = Random.Range(1,randomZLength);
+
+        faces = new GroundFace[directions.Length];
+
+        ground = new GameObject("Ground <" + obj.name + ">");
+        ground.transform.SetParent(obj.transform, false);
+        ground.transform.localPosition = Vector3.zero;
+
+        ground.transform.SetParent(parent, true);
+        ground.transform.localScale = new Vector3(1, 1, 1);
+
+        ground.transform.SetParent(obj.transform, true);
+        ground.transform.position = new Vector3(
+            ground.transform.position.x, 
+            ground.transform.position.y, 
+            ground.transform.position.z+ zAxisAdded
+            );
+
+
+        //ground.transform.parent = obj;
+        //ground.transform.position = obj.position - offset;
+
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            GameObject meshObj = new GameObject("GroundFace " + directions[i].ToString());
+            meshObj.transform.SetParent(ground.transform, false);
+            faces[i] = new GroundFace(directions[i], obj.position,this, meshObj, resolution);
+            meshObj.transform.localPosition = Vector3.zero;
+        }
     }
 
     public bool IsIn(Vector3 point) {

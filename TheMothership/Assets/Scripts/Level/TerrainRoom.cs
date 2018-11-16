@@ -754,6 +754,34 @@ public class TerrainRoom
             ms.normals = ApplyMeshSetToMesh(ms, ms.parent.Mesh()); //face.mesh.normals;
         }
 
+        //Add threads for each ground connected to pillars
+        meshsets = new ConcurrentBag<MeshSet>();
+        int groundResolution = 4;
+        bool roundEdges = true;
+        float randomZLength = 1.2f;
+
+        foreach (TerrainFace face in terrainFaces)
+        {
+            foreach (TerrainPillar pillar in face.pillars)
+            {
+                foreach (Ground member in pillar.members)
+                {
+                    member.Initialize(self, pillar.pillarMaxRadius/4f,roundEdges,randomZLength, groundResolution);
+                    
+                    foreach (GroundFace gf in member.faces) {
+                        threads.Add(ConstructMeshThread(gf));
+                    }
+                }
+            }
+        }
+
+        ThreadWait(threads);
+        threads.Clear();
+
+        foreach (MeshSet ms in meshsets)
+        {
+            ms.normals = ApplyMeshSetToMesh(ms, ms.parent.Mesh()); //face.mesh.normals;
+        }
 
         //Pillar mesh create
         /*foreach (TerrainFace face in terrainFaces)
