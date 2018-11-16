@@ -10,6 +10,8 @@ public class GroundFace : MeshFace {
     public static float NOISE_PERSISTANCE = 0.5f;
     public static int NOISE_LAYERS = 3;
 
+    public float[] noiseMap;
+
     Vector3 localUp;
     Vector3 axisA;
     Vector3 axisB;
@@ -51,6 +53,11 @@ public class GroundFace : MeshFace {
     public Mesh Mesh()
     {
         return mesh;
+    }
+
+    public MeshFaceType GetMeshFaceType()
+    {
+        return MeshFaceType.Ground;
     }
 
 
@@ -97,6 +104,8 @@ public class GroundFace : MeshFace {
 
         Vector3[] vertices = new Vector3[xResolution * yResolution];
         Vector2[] uvs = new Vector2[xResolution * yResolution];
+        float[] noiseMap = new float[xResolution * yResolution];
+
         int[] triangles = new int[(xResolution - 1) * (yResolution - 1) * 6];
         int triIndex = 0;
         int i = 0;
@@ -157,6 +166,8 @@ public class GroundFace : MeshFace {
 
                     float noise = ground.EvaluateNoise(
                         pointOnUnitCube + random, NOISE_BASE_ROUGHNESS, NOISE_ROUGHNESS, NOISE_PERSISTANCE, NOISE_STRENGTH, NOISE_LAYERS, true);
+
+                    noiseMap[i] = noise;
 
 
                     final = Vector3.Lerp(final, zRoundness, Mathf.Clamp01(n*10f) * noise);

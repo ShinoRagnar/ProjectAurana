@@ -11,12 +11,18 @@ public enum TerrainFaceSurfaceType {
     CliffUnderhang = 4,
 
 }
-
+public enum MeshFaceType
+{
+    Room = 0,
+    Pillar = 1,
+    Ground = 2
+}
 public interface MeshFace
 {
     MeshSet GenerateMesh(Vector3 position);
     Vector3 LocalUp();
     Mesh Mesh();
+    MeshFaceType GetMeshFaceType();
 }
 
 public class RoomNoiseEvaluator {
@@ -75,6 +81,49 @@ public class RoomNoiseEvaluator {
     }
 }
 
+public class TerrainHeightMaps
+{
+    public bool[,] ignoreForDoors;
+    //public float[,] doormap;
+    public float[,] groundRoundErrorMap;
+    // public float[,] depthMap;
+    public float[,] onlyFacesHeightMap;
+    public float[,] maxHeightMap;
+    public float[,] heightMap;
+    public bool[,] withinAnyYBoundsMap;
+    public bool[,] grassDisabled;
+    //public float[,] faunaDensityMap;
+    //public Vector3 faunaMeshPos;
+   // public Vector3 faunaPreferredPos;
+    //public Vector3 faunaPreferredNormal;
+   // public float maxDensity;
+   // public Color[,] colormap;
+   // public TerrainFaceSurfaceType[] types;
+
+    public TerrainHeightMaps(int xResolution, int yResolution)
+    {
+
+        //  doormap = new float[xResolution, yResolution];
+        groundRoundErrorMap = new float[xResolution, yResolution];
+        maxHeightMap = new float[xResolution, yResolution];
+        heightMap = new float[xResolution, yResolution];
+        onlyFacesHeightMap = new float[xResolution, yResolution];
+        withinAnyYBoundsMap = new bool[xResolution, yResolution];
+        grassDisabled = new bool[xResolution, yResolution];
+        //faunaDensityMap = new float[xResolution, yResolution];
+        ignoreForDoors = new bool[xResolution, yResolution];
+
+        // depthMap = new float[xResolution, yResolution];
+
+       // faunaPreferredPos = Vector3.zero;
+        //faunaPreferredNormal = Vector3.up;
+       // faunaMeshPos = Vector3.zero;
+       // maxDensity = 0;
+      //  colormap = null;
+       // types = null;
+    }
+
+}
 
 public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 {
@@ -101,15 +150,10 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
     GameObject self;
     public TerrainHeightMaps thm;
 
-    public static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
-    public static int FAUNA_DENSITY_INFLUENCE = 10;
 
-    public static int WALL_WIDTH = 2;
     public static int STALAGMITE_LENGTH = 50;
-    public static int FAUNA_CENTERPIECE_MAX_AMOUNT = 3;
-    public static int FAUNA_CENTERPIECE_MIN_DISTANCE = 5;
-    public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
+
 
     public Vector3 LocalUp() {
         return localUp;
@@ -118,47 +162,10 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
         return mesh;
     }
 
-    public class TerrainHeightMaps
-    {
-        public bool[,] ignoreForDoors;
-        //public float[,] doormap;
-        public float[,] groundRoundErrorMap;
-        // public float[,] depthMap;
-        public float[,] onlyFacesHeightMap;
-        public float[,] maxHeightMap;
-        public float[,] heightMap;
-        public bool[,] withinAnyYBoundsMap;
-        public bool[,] grassDisabled;
-        public float[,] faunaDensityMap;
-        public Vector3 faunaMeshPos;
-        public Vector3 faunaPreferredPos;
-        public Vector3 faunaPreferredNormal;
-        public float maxDensity;
-        public Color[,] colormap;
-        public TerrainFaceSurfaceType[] types;
 
-        public TerrainHeightMaps(int xResolution, int yResolution) {
 
-            //  doormap = new float[xResolution, yResolution];
-            groundRoundErrorMap = new float[xResolution, yResolution];
-            maxHeightMap = new float[xResolution, yResolution];
-            heightMap = new float[xResolution, yResolution];
-            onlyFacesHeightMap = new float[xResolution, yResolution];
-            withinAnyYBoundsMap = new bool[xResolution, yResolution];
-            grassDisabled = new bool[xResolution, yResolution];
-            faunaDensityMap = new float[xResolution, yResolution];
-            ignoreForDoors = new bool[xResolution, yResolution];
-
-            // depthMap = new float[xResolution, yResolution];
-
-            faunaPreferredPos = Vector3.zero;
-            faunaPreferredNormal = Vector3.up;
-            faunaMeshPos = Vector3.zero;
-            maxDensity = 0;
-            colormap = null;
-            types = null;
-        }
-
+    public MeshFaceType GetMeshFaceType() {
+        return MeshFaceType.Room;
     }
 
     public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr): base(tr)
@@ -626,7 +633,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
                         // Fix heightmap not matching up with forward wallss noise
                         if ((localUp == Vector3.left || localUp == Vector3.right) && persistedHeight != 0) {
-                            persistedHeight = Mathf.Max(persistedHeight, (WALL_WIDTH / room.xLength));
+                            persistedHeight = Mathf.Max(persistedHeight, (TerrainRoom.WALL_WIDTH / room.xLength));
                         }
 
                         if (xWithinBounds && yWithinBounds)
@@ -872,8 +879,8 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
                 }
                 else {
 
-                    Vector3 pointOnWall = localUp * (zMod - WALL_WIDTH) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
-                    Vector3 wallNoise = localUp * (zMod - WALL_WIDTH/2f) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+                    Vector3 pointOnWall = localUp * (zMod - TerrainRoom.WALL_WIDTH) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
+                    Vector3 wallNoise = localUp * (zMod - TerrainRoom.WALL_WIDTH /2f) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
 
                     float xProgCos = Mathf.Cos(((pointOnUnitCube.x) / (room.xLength / 2f)) * (Mathf.PI / 2f));
@@ -1134,6 +1141,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
     }
 
+    /*
     public void GenerateFauna(
         GameObject props,
         FaunaMeshSet meshSet,
@@ -1348,37 +1356,9 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
         }
 
 
-        /*for (int a = 0; a < room.hangWeed.Length; a++)
-        {
-            hangWeedMeshes[a].Clear();
-            hangWeedMeshes[a].vertices = vertices;
-            hangWeedMeshes[a].triangles = hangWeedTriangles[a].ToArray();
-            hangWeedMeshes[a].RecalculateNormals();
-            hangWeedRenderers[a].material = Global.Resources[room.hangWeed[a]];
-            hangWeedRenderers[a].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            hangWeedFaunas[a].isStatic = true;
-        }
+    }*/
 
-        for (int a = 0; a < room.grass.Length; a++)
-        {
-            faunaMeshes[a].Clear();
-            faunaMeshes[a].vertices = faunaVertices[a].ToArray();
-            faunaMeshes[a].triangles = faunaTriangles[a].ToArray();
-            faunaMeshes[a].RecalculateNormals();
-            faunaRenderers[a].material = Global.Resources[room.grass[a]];
-            faunaRenderers[a].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            faunas[a].isStatic = true;
-        }*/
-
-        /*faunaMesh.Clear();
-        faunaMesh.vertices = vertices;
-        faunaMesh.triangles = faunaTriangle.ToArray();
-        faunaMesh.RecalculateNormals();
-
-        faunaRenderer.material = Global.Resources[MaterialNames.CaveGrass];
-        */
-
-    }
+/*
     public bool PlaceCenterpiece(
         GameObject props,
         PrefabNames centralPiece,
@@ -1439,8 +1419,9 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
         }
         return placedProp;
 
-    }
+    }*/
 
+    /*
     public void GenerateTexture(
         Vector3[] normals,
         Vector3[] vertices, 
@@ -1608,6 +1589,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
        // return types;
     }
+    */
 
     /*public void SetTextureFromMaps(int size)
     {
@@ -1637,6 +1619,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
     }*/
 
+        /*
     public bool IsDark(TerrainHeightMaps thm, int xPosMeshMaps, int yPosMeshMaps, float nonHillyness)
     {
 
@@ -1658,6 +1641,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
                     && !thm.grassDisabled[xPosMeshMaps + 0, yPosMeshMaps - 1]
                     && !thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps - 1];
     }
+    */
 
    /* public void SetTexture(int num, Material from, Material to) {
 
@@ -1670,19 +1654,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
 
 
-    public static int GetPreferredTextureSize(int xResolution, int yResolution) {
 
-        int max = Mathf.Max(xResolution, yResolution);
-
-        for (int i = 0; i < TEXTURE_SIZES.Length; i++) {
-
-            if(max < TEXTURE_SIZES[i])
-            {
-                return TEXTURE_SIZES[i];
-            }
-        }
-        return TEXTURE_SIZES[TEXTURE_SIZES.Length - 1];
-    }
 
     /*
     public Vector3 GetHeight(int zMod, int xMod, int yMod, Vector3 percent)

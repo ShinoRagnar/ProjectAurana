@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using System.Collections.Concurrent;
+using System;
 
 public class MeshSet {
 
+    //Mesh
     public MeshFace parent;
     public Vector3 direction;
     public Vector3[] vertices;
@@ -14,6 +16,21 @@ public class MeshSet {
     public int[] triangles;
     public int xResolution;
     public int yResolution;
+
+    //Colors and texture
+    public TerrainFaceSurfaceType[] surfaceTypes;
+    public Color[,] colormap;
+
+    //Fauna
+    public float[,] faunaDensityMap;
+    public Vector3 faunaMeshPos;
+    public Vector3 faunaPreferredPos;
+    public Vector3 faunaPreferredNormal;
+    public float maxDensity;
+
+    //Additional information
+    public TerrainHeightMaps thm;
+
 
     public MeshSet(MeshFace parent, Vector3 direction, Vector3[] vertices, Vector2[] uvs, int[] triangles, int xResolution, int yResolution) {
 
@@ -383,6 +400,14 @@ public class BoundaryRectangle {
 
 public class TerrainRoom
 {
+
+    public static int FAUNA_DENSITY_INFLUENCE = 10;
+    public static int FAUNA_CENTERPIECE_MAX_AMOUNT = 3;
+    public static int FAUNA_CENTERPIECE_MIN_DISTANCE = 5;
+    public static float FAUNA_CENTERPIECE_REQUIREMENT = 0.5f;
+
+    public static int WALL_WIDTH = 2;
+
     public static float SIDE_ATTACH_DISTANCE = 3f;
     public static float ROOF_FLOOR_ATTACH_DISTANCE = 3f;
     public static float GROUP_ATTACH_DISTANCE = 1;
@@ -629,7 +654,8 @@ public class TerrainRoom
             {
                 if (ms.direction == face.localUp)
                 {
-                    int size = TerrainFace.GetPreferredTextureSize(ms.xResolution, ms.yResolution);
+                    
+                    int size = TerrainGenerator.GetPreferredTextureSize(ms.xResolution, ms.yResolution);
                     if (size > maxSize) {
                         maxSize = size;
                     }
@@ -644,9 +670,11 @@ public class TerrainRoom
             {
                 if (ms.direction == face.localUp)
                 {
+                    ms.thm = face.thm;
+
                     ms.normals = ApplyMeshSetToMesh(ms, face.mesh); //face.mesh.normals;
 
-                    threads.Add(ConstructTextureThread(face, ms.normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize));
+                    threads.Add(ConstructTextureThread(ms, maxSize)); //face, ms.normals, ms.vertices, ms.xResolution, ms.yResolution, maxSize));
 
                     break;
                 }
@@ -670,7 +698,7 @@ public class TerrainRoom
                 foreach (TerrainFace face in terrainFaces)
                 {
                     if (ms.direction == face.localUp) {
-                        colormapsToCombine.Add(face.thm.colormap);
+                        colormapsToCombine.Add(ms.colormap); //face.thm.colormap);
                         break;
                     }
                 }
@@ -700,7 +728,15 @@ public class TerrainRoom
             }
             else
             {
-                terrainFaces[i].renderer.material = ApplyTextureFromColormapToMaterial(terrainFaces[i].thm.colormap, maxSize);
+                foreach (MeshSet ms in meshsets)
+                {
+                    if (ms.direction == directions[i])//face.localUp)
+                    {
+                        terrainFaces[i].renderer.material = ApplyTextureFromColormapToMaterial(ms.colormap, maxSize); //terrainFaces[i].thm.colormap, maxSize);
+                        break;
+                    }
+                }
+
             }
 
         }
@@ -715,7 +751,9 @@ public class TerrainRoom
             {
                 if (ms.direction == face.localUp)
                 {
-                    face.GenerateFauna(props, fms, ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    //face.GenerateFauna(props, fms, ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
+                    GenerateFauna(props, ms, fms);
+                    PlaceProps(props, ms, fms);
                     break;
                 }
             }
@@ -867,6 +905,444 @@ public class TerrainRoom
 
     }
 
+    public void GenerateTexture(
+        MeshSet ms,
+        int size
+    )
+    {
+        try
+        {
+            ms.faunaDensityMap = new float[ms.xResolution, ms.yResolution];
+            ms.surfaceTypes = new TerrainFaceSurfaceType[ms.normals.Length];
+            ms.colormap = new Color[size, size];
+            MeshFaceType type = ms.parent.GetMeshFaceType();
+            Vector3 localUp = ms.parent.LocalUp();
+
+            int xy = 0;
+            for (float y = 0; y < size; y++)
+            {
+                for (float x = 0; x < size; x++)
+                {
+                    float xPercent = x / size;
+                    float yPercent = y / size;
+
+                    int xPosMeshMaps = (int)(xPercent * ms.xResolution);
+                    int yPosMeshMaps = (int)(yPercent * ms.yResolution);
+
+                    int iPosMeshMaps = yPosMeshMaps * ms.xResolution + xPosMeshMaps;
+
+                    float nonHillyNess = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, ms.normals[iPosMeshMaps])) / 90f);
+
+                    //bool leftOrRight = localUp == Vector3.left || localUp == Vector3.right; //thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f;
+
+                    bool dirtIsDark = IsDark(ms, type, localUp, xPosMeshMaps, yPosMeshMaps, nonHillyNess);
+
+
+                    bool isGrass = IsGrass(ms, type, xPosMeshMaps, yPosMeshMaps, ms.xResolution, ms.yResolution, nonHillyNess);
+
+                    //Removes grass at edges
+                    if (type == MeshFaceType.Room)
+                    {
+                        if (!(ms.vertices[iPosMeshMaps].x + position.x > minX + WALL_WIDTH
+                              && ms.vertices[iPosMeshMaps].x + position.x < maxX - WALL_WIDTH
+                              && ms.vertices[iPosMeshMaps].y + position.y > minY + WALL_WIDTH
+                              && ms.vertices[iPosMeshMaps].y + position.y < maxY - WALL_WIDTH))
+                        {
+                            isGrass = false;
+                        }
+                    }
+
+
+
+                    float dirt = dirtIsDark ? 0 : nonHillyNess;
+                    float stone = (1f - nonHillyNess);
+                    float darkDirt = dirtIsDark ? isGrass ? 0 : nonHillyNess : 0;
+                    float grass = dirtIsDark && isGrass ? nonHillyNess : 0;
+
+                    if (type == MeshFaceType.Room && localUp == Vector3.down)
+                    {
+                        darkDirt = nonHillyNess; // thm.heightMap[(int)x, (int)y] > 0 ? 0f : 1f;
+                        stone = (1f - nonHillyNess); // - darkDirt;
+                        grass = 0;
+                        dirt = 0;
+                        if (stone > 0.5f)
+                        {
+                            ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+
+                        }
+                        else
+                        {
+
+                            ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                        }
+                    }
+                    else
+                    {
+                        if (stone > 0.5f)
+                        {
+                            float upsideDownedness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.down, ms.normals[iPosMeshMaps])) / 90f);
+
+                            if (upsideDownedness > 0.5f
+                                && localUp == Vector3.up
+                                && noise.Evaluate(position + ms.vertices[iPosMeshMaps]) > 0.5f)
+                            {
+
+                                ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.CliffUnderhang;
+                            }
+                            else
+                            {
+                                ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.Cliff;
+                            }
+                        }
+                        else if (dirtIsDark)
+                        {
+                            if (isGrass)
+                            {
+                                ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.Grass;
+
+                                //Angle against camera preferred
+                                //float forwardness = Mathf.Clamp01((90f - Vector3.Angle(Vector3.up, normals[iPosMeshMaps])) / 90f); //Mathf.Clamp01((90f - Vector3.Angle(Vector3.back, normals[iPosMeshMaps])) / 90f);
+                                int faunaMinX = Mathf.Clamp(xPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, ms.xResolution);
+                                int faunaMaxX = Mathf.Clamp(xPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, ms.xResolution);
+                                int faunaMinY = Mathf.Clamp(yPosMeshMaps - FAUNA_DENSITY_INFLUENCE / 2, 0, ms.yResolution);
+                                int faunaMaxY = Mathf.Clamp(yPosMeshMaps + FAUNA_DENSITY_INFLUENCE / 2, 0, ms.yResolution);
+
+                                if (faunaMaxX != faunaMinX && faunaMinY != faunaMaxY)
+                                {
+                                    for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
+                                    {
+                                        for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
+                                        {
+
+                                            if (IsDark(ms, type, localUp, faunaX, faunaY, 0) && IsGrass(ms, type, faunaX, faunaY, ms.xResolution, ms.yResolution, 0))
+                                            {
+                                                int iPosFaunaMaps = faunaY * ms.xResolution + faunaX;
+
+                                                float percentX = Mathf.Abs((float)(xPosMeshMaps - faunaX)) / ((float)(faunaMaxX - faunaMinX) / 2f);
+                                                float percentY = Mathf.Abs((float)(yPosMeshMaps - faunaY)) / ((float)(faunaMaxY - faunaMinY) / 2f);
+
+                                                float percent = (1f - percentX) * (1f - percentY);
+
+                                                ms.faunaDensityMap[faunaX, faunaY] += nonHillyNess * percent; //forwardness;
+
+                                                if (ms.faunaDensityMap[faunaX, faunaY] > ms.maxDensity)
+                                                {
+                                                    ms.maxDensity = ms.faunaDensityMap[faunaX, faunaY];
+                                                    ms.faunaPreferredPos = ms.vertices[iPosFaunaMaps];
+                                                    ms.faunaPreferredNormal = ms.normals[iPosFaunaMaps];
+                                                    ms.faunaMeshPos = new Vector3(faunaX, faunaY);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.DarkDirt;
+                            }
+                        }
+                        else
+                        {
+                            ms.surfaceTypes[iPosMeshMaps] = TerrainFaceSurfaceType.Dirt;
+                        }
+
+                    }
+
+                    Color32 splat = new Color32(
+                        (byte)(255f * dirt),
+                        (byte)(255f * stone),
+                        (byte)(255f * darkDirt),
+                        (byte)(255f * grass));
+
+                    //colors[x, y] = x < size / 2f ? new Color32(1,0,0,0.5f) : new Color32(0, 1, 0, 0);
+                    ms.colormap[(int)x, (int)y] = splat;
+
+                    xy++;
+                }
+            }
+
+        }
+        catch (Exception e) {
+            Debug.Log(e.Message);
+            Debug.Log(e.StackTrace);
+        }
+        // return types;
+    }
+
+
+    public bool IsDark(MeshSet ms, MeshFaceType type, Vector3 localUp, int xPosMeshMaps, int yPosMeshMaps, float nonHillyness)
+    {
+        if (type == MeshFaceType.Room)
+        {
+            return (localUp == Vector3.left || localUp == Vector3.right)
+                || (localUp == Vector3.forward && ms.thm.heightMap[xPosMeshMaps, yPosMeshMaps] > 0f)
+                || (localUp == Vector3.down && nonHillyness == 1);
+        }
+        else {
+            return true;
+        }
+
+    }
+    public bool IsGrass(MeshSet ms, MeshFaceType type, int xPosMeshMaps, int yPosMeshMaps, int xResolution, int yResolution, float nonHillyness)
+    {
+        if (type == MeshFaceType.Room)
+        {
+            return xPosMeshMaps - 1 > 0
+                    && yPosMeshMaps - 1 > 0
+                    && xPosMeshMaps + 1 < xResolution
+                    && yPosMeshMaps + 1 < yResolution
+                    && !ms.thm.grassDisabled[xPosMeshMaps, yPosMeshMaps]
+                    && !ms.thm.grassDisabled[xPosMeshMaps + 1, yPosMeshMaps + 0]
+                    && !ms.thm.grassDisabled[xPosMeshMaps + 0, yPosMeshMaps + 1]
+                    && !ms.thm.grassDisabled[xPosMeshMaps + 1, yPosMeshMaps + 1]
+                    && !ms.thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps + 0]
+                    && !ms.thm.grassDisabled[xPosMeshMaps + 0, yPosMeshMaps - 1]
+                    && !ms.thm.grassDisabled[xPosMeshMaps - 1, yPosMeshMaps - 1];
+        }
+        else {
+            return true;
+        }
+    }
+
+
+    public void GenerateFauna(
+      GameObject props,
+      MeshSet ms,
+      FaunaMeshSet faunaMS
+      )
+    {
+
+        TerrainFaceSurfaceType[] types = ms.surfaceTypes; //thm.types;
+        DictionaryList<int, DictionaryList<int, int>> faunaVertIndex = new DictionaryList<int, DictionaryList<int, int>>();
+        DictionaryList<int, DictionaryList<int, int>> hangWeedVertIndex = new DictionaryList<int, DictionaryList<int, int>>();
+        int yResolution = ms.yResolution;
+        int xResolution = ms.xResolution;
+
+        for (int a = 0; a < grass.Length; a++)
+        {
+            faunaVertIndex.AddIfNotContains(a, new DictionaryList<int, int>());
+        }
+        for (int a = 0; a < hangWeed.Length; a++)
+        {
+            hangWeedVertIndex.AddIfNotContains(a, new DictionaryList<int, int>());
+        }
+
+        Vector3 grassPos = new Vector3(0, 0, seed) + position;
+
+        int triIndex = 0;
+        int i = 0;
+        for (int y = 0; y < yResolution; y++)
+        {
+            for (int x = 0; x < xResolution; x++)
+            {
+
+                if (x != xResolution - 1 && y != yResolution - 1)
+                {
+                    if (types[i] == TerrainFaceSurfaceType.Grass)
+                    {
+                        int grass = (int)(((noise.Evaluate(grassPos + ms.vertices[i]) + 1f) / 2f) * ((float)this.grass.Length));
+
+                        if (!faunaVertIndex[grass].Contains(i))
+                        {
+                            faunaMS.faunaVertices[grass].Add(ms.vertices[i]);
+                            faunaVertIndex[grass].Add(i, faunaMS.faunaVertCount[grass]);
+                            faunaMS.faunaVertCount[grass]++;
+                        }
+                        if (!faunaVertIndex[grass].Contains(i + xResolution))
+                        {
+                            faunaMS.faunaVertices[grass].Add(ms.vertices[i + xResolution]);
+                            faunaVertIndex[grass].Add(i + xResolution, faunaMS.faunaVertCount[grass]);
+                            faunaMS.faunaVertCount[grass]++;
+                        }
+                        if (!faunaVertIndex[grass].Contains(i + xResolution + 1))
+                        {
+                            faunaMS.faunaVertices[grass].Add(ms.vertices[(i + xResolution + 1)]);
+                            faunaVertIndex[grass].Add(i + xResolution + 1, faunaMS.faunaVertCount[grass]);
+                            faunaMS.faunaVertCount[grass]++;
+                        }
+                        if (!faunaVertIndex[grass].Contains(i + 1))
+                        {
+                            faunaMS.faunaVertices[grass].Add(ms.vertices[(i + 1)]);
+                            faunaVertIndex[grass].Add(i + 1, faunaMS.faunaVertCount[grass]);
+                            faunaMS.faunaVertCount[grass]++;
+                        }
+
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex]]);
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex + 1]]);
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex + 2]]);
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex + 3]]);
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex + 4]]);
+                        faunaMS.faunaTriangles[grass].Add(faunaVertIndex[grass][ms.triangles[triIndex + 5]]);
+
+                    }
+                    else if (types[i] == TerrainFaceSurfaceType.CliffUnderhang)
+                    {
+
+                        int weed = (int)(((noise.Evaluate(grassPos + ms.vertices[i]) + 1f) / 2f) * ((float)this.hangWeed.Length));
+
+                        if (!hangWeedVertIndex[weed].Contains(i))
+                        {
+                            faunaMS.hangWeedVertices[weed].Add(ms.vertices[i]);
+                            hangWeedVertIndex[weed].Add(i, faunaMS.hangWeedVertCount[weed]);
+                            faunaMS.hangWeedVertCount[weed]++;
+                        }
+                        if (!hangWeedVertIndex[weed].Contains(i + xResolution))
+                        {
+                            faunaMS.hangWeedVertices[weed].Add(ms.vertices[i + xResolution]);
+                            hangWeedVertIndex[weed].Add(i + xResolution, faunaMS.hangWeedVertCount[weed]);
+                            faunaMS.hangWeedVertCount[weed]++;
+                        }
+                        if (!hangWeedVertIndex[weed].Contains(i + xResolution + 1))
+                        {
+                            faunaMS.hangWeedVertices[weed].Add(ms.vertices[(i + xResolution + 1)]);
+                            hangWeedVertIndex[weed].Add(i + xResolution + 1, faunaMS.hangWeedVertCount[weed]);
+                            faunaMS.hangWeedVertCount[weed]++;
+                        }
+                        if (!hangWeedVertIndex[weed].Contains(i + 1))
+                        {
+                            faunaMS.hangWeedVertices[weed].Add(ms.vertices[(i + 1)]);
+                            hangWeedVertIndex[weed].Add(i + 1, faunaMS.hangWeedVertCount[weed]);
+                            faunaMS.hangWeedVertCount[weed]++;
+                        }
+
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex]]);
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex + 1]]);
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex + 2]]);
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex + 3]]);
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex + 4]]);
+                        faunaMS.hangWeedTriangles[weed].Add(hangWeedVertIndex[weed][ms.triangles[triIndex + 5]]);
+                    }
+                    triIndex += 6;
+                }
+
+                i++;
+            }
+        }
+
+
+
+    }
+
+
+    public void PlaceProps(GameObject props,
+      MeshSet ms,
+      FaunaMeshSet faunaMS) {
+
+        int yResolution = ms.yResolution;
+        int xResolution = ms.xResolution;
+
+
+        // Place centerpiece light
+        if (ms.maxDensity > 0)
+        {
+            bool placedProp = PlaceCenterpiece(props,ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+            ms.faunaPreferredPos, ms.faunaPreferredNormal, (int)ms.faunaMeshPos.x, (int)ms.faunaMeshPos.y, xResolution, yResolution);
+
+            int placedAmount = placedProp ? 1 : 0;
+            float maxDensity = 1;
+
+            while (maxDensity > 0 && placedAmount < FAUNA_CENTERPIECE_MAX_AMOUNT)
+            {
+
+                maxDensity = 0;
+                Vector2 foundPos = Vector2.zero;
+
+                for (int faunaX = 0; faunaX < xResolution; faunaX++)
+                {
+                    for (int faunaY = 0; faunaY < yResolution; faunaY++)
+                    {
+                        float density = ms.faunaDensityMap[faunaX, faunaY];
+
+                        if (density > maxDensity && density > ms.maxDensity * FAUNA_CENTERPIECE_REQUIREMENT)
+                        {
+                            maxDensity = ms.faunaDensityMap[faunaX, faunaY];
+                            foundPos = new Vector2(faunaX, faunaY);
+                        }
+                    }
+                }
+
+                if (maxDensity > 0)
+                {
+
+                    int iPosFaunaMaps = (int)(foundPos.y * xResolution + foundPos.x);
+
+                    placedProp = PlaceCenterpiece(props,ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+                        ms.vertices[iPosFaunaMaps], ms.normals[iPosFaunaMaps], (int)foundPos.x, (int)foundPos.y, xResolution, yResolution);
+
+                    placedAmount += placedProp ? 1 : 0;
+
+                }
+
+            }
+        }
+    }
+
+    public bool PlaceCenterpiece(
+    GameObject props,
+    MeshSet ms,
+    PrefabNames centralPiece,
+    Vector3 pos,
+    Vector3 normal,
+    int xMeshPos,
+    int yMeshPos,
+    int xResolution,
+    int yResolution)
+    {
+
+        bool placedProp = false;
+        bool tooClose = false;
+
+        if (pos.x + position.x > minX + WALL_WIDTH * 2
+            && pos.x + position.x < maxX - WALL_WIDTH * 2
+            && pos.y + position.y > minY + WALL_WIDTH * 2
+            && pos.y + position.y < maxY - WALL_WIDTH * 2
+            )
+        {
+
+            foreach (Transform prop in this.props)
+            {
+                if (Vector3.Distance(prop.localPosition, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            if (!tooClose)
+            {
+
+                placedProp = true;
+
+                //GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
+                //faunaCenterPieces.transform.parent = self.transform;
+
+                Transform centerpiece = Global.Create(Global.Resources[centralPiece], props.transform); //faunaCenterPieces.transform);
+                centerpiece.localPosition = pos;
+                centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
+                this.props.Add(centerpiece);
+
+                //centerpiece.gameObject.isStatic = true;
+            }
+
+        }
+
+        int faunaMinX = Mathf.Clamp(xMeshPos - FAUNA_DENSITY_INFLUENCE * 2, 0, xResolution);
+        int faunaMaxX = Mathf.Clamp(xMeshPos + FAUNA_DENSITY_INFLUENCE * 2, 0, xResolution);
+        int faunaMinY = Mathf.Clamp(yMeshPos - FAUNA_DENSITY_INFLUENCE * 2, 0, yResolution);
+        int faunaMaxY = Mathf.Clamp(yMeshPos + FAUNA_DENSITY_INFLUENCE * 2, 0, yResolution);
+
+        for (int faunaX = faunaMinX; faunaX < faunaMaxX; faunaX++)
+        {
+            for (int faunaY = faunaMinY; faunaY < faunaMaxY; faunaY++)
+            {
+                ms.faunaDensityMap[faunaX, faunaY] = 0;
+            }
+        }
+        return placedProp;
+
+    }
+
     public Material ApplyTextureFromColormapToMaterial(Color[,] colors, int size) {
 
         Texture2D splatmap = new Texture2D(size, size, TextureFormat.ARGB32, false);
@@ -1010,22 +1486,22 @@ public class TerrainRoom
             }
             if (threadsWait)
             {
-                Thread.Sleep(10);
+                Thread.Sleep(2);
             }
         }
     }
-    private void ConstructTexture(TerrainFace face, Vector3[] normals,Vector3[] vertices,int xResolution, int yResolution, int size)
+    private void ConstructTexture(MeshSet ms, int size) //TerrainFace face, Vector3[] normals,Vector3[] vertices,int xResolution, int yResolution, int size)
     {
-        face.GenerateTexture(normals,vertices,xResolution,yResolution, size);
+        GenerateTexture(ms, size); //normals,vertices,xResolution,yResolution, size);
     }
     private void ConstructMeshes(MeshFace face) {
 
         meshsets.Add(face.GenerateMesh(position));
     }
 
-    public Thread ConstructTextureThread(TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
+    public Thread ConstructTextureThread(MeshSet ms, int size) //TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
     {
-        var t = new Thread(() => ConstructTexture(face, normals, vertices, xResolution, yResolution, size));
+        var t = new Thread(() => ConstructTexture(ms, size)); //face, normals, vertices, xResolution, yResolution, size));
         t.Start();
         return t;
     }

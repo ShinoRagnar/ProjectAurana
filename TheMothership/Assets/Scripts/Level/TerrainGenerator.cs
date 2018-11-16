@@ -245,6 +245,8 @@ public class TerrainGenerator {
     public static int BOUNDARY_DISTANCE = 20;
     public static int BOUNDARY_DEPTH = 100;
 
+    public static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
+
 
     //Underground
     //public static float UNDERGROUND_ROOF_HEIGHT = 10;
@@ -254,9 +256,9 @@ public class TerrainGenerator {
 
 
     //Above ground
-   // private DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
-   // private DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
-   // private DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
+    // private DictionaryList<Vector3, Transform> placedTrees = new DictionaryList<Vector3, Transform>();
+    // private DictionaryList<Transform, PlacedProp> placedProps = new DictionaryList<Transform, PlacedProp>();
+    // private DictionaryList<Vector3, Transform> placedLitter = new DictionaryList<Vector3, Transform>();
 
     private DictionaryList<int, XTerrainDetail> xDetails = new DictionaryList<int, XTerrainDetail>();
     public List<Vector3> zSeam = new List<Vector3>();
@@ -2531,4 +2533,20 @@ public class TerrainGenerator {
         }
     }
 
+
+    public static int GetPreferredTextureSize(int xResolution, int yResolution)
+    {
+
+        int max = Mathf.Max(xResolution, yResolution);
+
+        for (int i = 0; i < TEXTURE_SIZES.Length; i++)
+        {
+
+            if (max < TEXTURE_SIZES[i])
+            {
+                return TEXTURE_SIZES[i];
+            }
+        }
+        return TEXTURE_SIZES[TEXTURE_SIZES.Length - 1];
+    }
 }

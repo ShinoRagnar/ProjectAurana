@@ -51,6 +51,10 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
     public Mesh Mesh() {
         return mesh;
     }
+    public MeshFaceType GetMeshFaceType() {
+        return MeshFaceType.Pillar;
+    }
+
 
 
     public MeshSet GenerateMesh(Vector3 position)
