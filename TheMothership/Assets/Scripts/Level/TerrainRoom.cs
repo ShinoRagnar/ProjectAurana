@@ -1,9 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System.Threading;
+﻿using System;
 using System.Collections.Concurrent;
-using System;
+using System.Collections.Generic;
+using System.Threading;
+using UnityEngine;
+
+public enum MeshGenerationPhase {
+    Mesh,
+    Texture,
+    Fauna,
+    Props,
+    Finalizing,
+    Finished
+}
 
 public class MeshSet {
 
@@ -27,10 +35,14 @@ public class MeshSet {
     public Vector3 faunaPreferredPos;
     public Vector3 faunaPreferredNormal;
     public float maxDensity;
+    public FaunaMeshSet faunaMeshSet = null;
+
+    //Texture size
+    public int textureSize = -1;
+
 
     //Additional information
     public TerrainHeightMaps thm;
-
 
     public MeshSet(MeshFace parent, Vector3 direction, Vector3[] vertices, Vector2[] uvs, int[] triangles, int xResolution, int yResolution) {
 
@@ -73,6 +85,19 @@ public class FaunaMeshSet{
         }
     }
 }
+
+public class MeshWorkerThread {
+
+    public Thread thread;
+
+    public MeshGenerationPhase currentPhase;
+    public List<MeshWorkerThread> dependsOn = null;
+    public List<MeshWorkerThread> combineFaunaWith = null;
+    public TerrainRoom room;
+
+    public MeshSet workingOn;
+}
+
 /*
 public class BoundaryRectangle {
 
@@ -400,6 +425,17 @@ public class BoundaryRectangle {
 
 public class TerrainRoom
 {
+    public struct PlacedTerrainProp {
+        public PrefabNames prop;
+        public Vector3 position;
+        public Vector3 normal;
+
+        public PlacedTerrainProp(PrefabNames prop, Vector3 position, Vector3 normal){
+            this.prop = prop;
+            this.position = position;
+            this.normal = normal;
+        }
+    }
 
     public static int FAUNA_DENSITY_INFLUENCE = 10;
     public static int FAUNA_CENTERPIECE_MAX_AMOUNT = 3;
@@ -416,6 +452,11 @@ public class TerrainRoom
     public static float MIN_ROOM_SIZE = 10;
 
     public static float BIG_REQUIREMENT = 120;
+
+    public static int GROUND_RESOLUTION = 8;
+    public static bool ROUND_EDGES = true;
+    public static float RANDOM_GROUND_Z_LENGTH = 1.2f;
+    public static int VERTEX_LIMIT = 65535;
 
 
     public DictionaryList<Vector3, List<Ground>> directionMembers;
@@ -464,7 +505,7 @@ public class TerrainRoom
     public PrefabNames[] faunaCentralPieces;
     public int seed;
 
-    public List<Transform> props = new List<Transform>();
+    public ConcurrentBag<PlacedTerrainProp> props = new ConcurrentBag<PlacedTerrainProp>();
     public List<Ground> doors = new List<Ground>();
 
     public static Vector3[] directions = { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward/*, Vector3.back*/ };
@@ -634,13 +675,264 @@ public class TerrainRoom
         }
     }
 
+    public List<MeshWorkerThread> GetMeshWorkerThreads() {
+
+        List<MeshWorkerThread> threads = new List<MeshWorkerThread>();
+        List<MeshWorkerThread> combine = new List<MeshWorkerThread>();
+        List<MeshWorkerThread> combineFaunaWith = new List<MeshWorkerThread>();
+
+        foreach (TerrainFace face in terrainFaces)
+        {
+            //Add worker threads for each wall, roof etc
+            MeshWorkerThread mwt = ConstructMeshWorkerThread(face);
+
+            if (    face.LocalUp() == Vector3.left || face.LocalUp() == Vector3.right 
+                    || face.LocalUp() == Vector3.up || face.LocalUp() == Vector3.down) {
+                mwt.dependsOn = combine;
+                combine.Add(mwt);
+            }
+            mwt.combineFaunaWith = combineFaunaWith;
+            combineFaunaWith.Add(mwt);
+            threads.Add(mwt);
+
+            //Add worker threads for each pillar
+            if (face.pillars.Count > 0)
+            {
+
+                face.MergePillars();
+
+                int pil = 0;
+                foreach (TerrainPillar pillar in face.pillars)
+                {
+                    pil++;
+                    pillar.Initialize(self, pil);
+
+                    List<MeshWorkerThread> pillarCombine = new List<MeshWorkerThread>();
+                    List<MeshWorkerThread> combineFaunaPillar = new List<MeshWorkerThread>();
+
+                    //Add a worker thread for each facing of the pillar
+                    foreach (TerrainPillarFace tpf in pillar.pillarFace)
+                    {
+                        MeshWorkerThread pillarWorker = ConstructMeshWorkerThread(tpf);
+
+                        if (tpf.LocalUp() == Vector3.left || tpf.LocalUp() == Vector3.right || tpf.LocalUp() == Vector3.back || tpf.LocalUp() == Vector3.forward)
+                        {
+                            pillarWorker.dependsOn = pillarCombine;
+                            pillarCombine.Add(pillarWorker);
+                        }
+                        pillarWorker.combineFaunaWith = combineFaunaPillar;
+                        combineFaunaPillar.Add(pillarWorker);
+
+                        threads.Add(pillarWorker);
+                    }
+
+                    //Add one thread for each ground
+                    foreach (Ground member in pillar.members)
+                    {
+                        member.Initialize(this, self, pillar.pillarMaxRadius / 4f, ROUND_EDGES, RANDOM_GROUND_Z_LENGTH, GROUND_RESOLUTION);
+
+                        List<MeshWorkerThread> groundCombine = new List<MeshWorkerThread>();
+                        List<MeshWorkerThread> combineFaunaGround = new List<MeshWorkerThread>();
+
+                        //And each facing of the ground
+                        foreach (GroundFace gf in member.faces)
+                        {
+                            MeshWorkerThread groundWorker = ConstructMeshWorkerThread(gf);
+
+                            if (gf.LocalUp() == Vector3.left || gf.LocalUp() == Vector3.right || gf.LocalUp() == Vector3.up || gf.LocalUp() == Vector3.down)
+                            {
+                                groundWorker.dependsOn = groundCombine;
+                                groundCombine.Add(groundWorker);
+                            }
+                            groundWorker.combineFaunaWith = combineFaunaGround;
+                            combineFaunaGround.Add(groundWorker);
+
+                            threads.Add(groundWorker); 
+                        }
+                    }
+                }
+            }
+        }
+
+        return threads;
+    }
+
+    public bool CanGoToNextTask(MeshWorkerThread mwt) {
+
+        if (mwt.thread.IsAlive)
+        {
+            return false;
+        }
+        else {
+            if (mwt.dependsOn != null && mwt.dependsOn.Count > 0) {
+                bool threadsWorking = false;
+                foreach (MeshWorkerThread depends in mwt.dependsOn) {
+                    if (depends.thread.IsAlive) {
+                        threadsWorking = true;
+                        break;
+                    }
+                }
+                bool faunathreadsWorking = false;
+                foreach (MeshWorkerThread depends in mwt.combineFaunaWith)
+                {
+                    if (depends.thread.IsAlive)
+                    {
+                        faunathreadsWorking = true;
+                        break;
+                    }
+                }
+                if (mwt.currentPhase == MeshGenerationPhase.Mesh && mwt.workingOn.textureSize == -1)
+                {
+                    return !threadsWorking;
+                }
+                else if(mwt.currentPhase == MeshGenerationPhase.Texture) {
+
+                    return !threadsWorking;
+                }
+                else if (mwt.currentPhase == MeshGenerationPhase.Fauna)
+                {
+                    return !faunathreadsWorking;
+                }
+                else if (mwt.currentPhase == MeshGenerationPhase.Props)
+                {
+                    return !faunathreadsWorking;
+                }
+                else {
+                    return true;
+                }
+
+            }
+            return true;
+
+        }
+
+    }
+
+    public void GoToNextTask(MeshWorkerThread mwt)
+    {
+        if (mwt.currentPhase == MeshGenerationPhase.Mesh)
+        {
+            if (mwt.dependsOn != null && mwt.dependsOn.Count > 0)
+            {
+                int maxSize = 0;
+                //Find correct texture size
+                foreach (MeshWorkerThread depends in mwt.dependsOn)
+                {
+                    int size = TerrainGenerator.GetPreferredTextureSize(depends.workingOn.xResolution, depends.workingOn.yResolution);
+                    if (size > maxSize)
+                    {
+                        maxSize = size;
+                    }
+                }
+                foreach (MeshWorkerThread depends in mwt.dependsOn)
+                {
+                    if (depends.workingOn.textureSize == -1)
+                    {
+                        depends.workingOn.textureSize = maxSize;
+                    }
+                }
+            }
+            else
+            {
+                mwt.workingOn.textureSize = TerrainGenerator.GetPreferredTextureSize(mwt.workingOn.xResolution, mwt.workingOn.yResolution);
+            }
+            mwt.workingOn.thm = mwt.workingOn.parent.GetHeightMaps();
+            mwt.workingOn.normals = ApplyMeshSetToMesh(mwt.workingOn, mwt.workingOn.parent.Mesh()); //face.mesh.normals;
+            mwt.thread = ConstructTextureThread(mwt.workingOn, mwt.workingOn.textureSize);
+            mwt.currentPhase = MeshGenerationPhase.Texture;
+        }
+        else if (mwt.currentPhase == MeshGenerationPhase.Texture)
+        {
+            if (mwt.dependsOn != null && mwt.dependsOn.Count > 0)
+            {
+                int vertexCount = 0;
+                foreach (MeshWorkerThread depends in mwt.dependsOn)
+                {
+                    vertexCount += depends.workingOn.vertices.Length;
+                }
+                if (vertexCount < VERTEX_LIMIT)
+                {
+                    if (mwt == mwt.dependsOn[0])
+                    {
+                        List<MeshSet> setsToCombine = new List<MeshSet>();
+                        List<Color[,]> colormapsToCombine = new List<Color[,]>();
+
+                        foreach (MeshWorkerThread depends in mwt.dependsOn)
+                        {
+                            setsToCombine.Add(depends.workingOn);
+                            colormapsToCombine.Add(depends.workingOn.colormap);
+                            depends.workingOn.parent.GetRenderer().gameObject.SetActive(false);
+                        }
+
+                        Transform parent = mwt.workingOn.parent.GetParentTransform();
+
+                        MeshSet mCombine = CombineMeshes(setsToCombine);
+                        MeshRenderer renderer = parent.gameObject.AddComponent<MeshRenderer>();
+                        MeshFilter mfilter = parent.gameObject.AddComponent<MeshFilter>();
+                        mfilter.sharedMesh = new Mesh();
+                        ApplyMeshSetToMesh(mCombine, mfilter.sharedMesh);
+                        renderer.material =
+                            ApplyTextureFromColormapToMaterial(
+                                CombineColorMaps(colormapsToCombine, mwt.workingOn.textureSize)
+                                , ((int)Mathf.Sqrt(colormapsToCombine.Count) * mwt.workingOn.textureSize
+                                ));
+
+
+                    }
+                }
+                else
+                {
+                    mwt.workingOn.parent.GetRenderer().material = ApplyTextureFromColormapToMaterial(mwt.workingOn.colormap, mwt.workingOn.textureSize);
+                }
+            }
+            else
+            {
+                mwt.workingOn.parent.GetRenderer().material = ApplyTextureFromColormapToMaterial(mwt.workingOn.colormap, mwt.workingOn.textureSize);
+
+            }
+
+            mwt.currentPhase = MeshGenerationPhase.Fauna;
+        }
+        else if (mwt.currentPhase == MeshGenerationPhase.Fauna)
+        {
+            if (mwt.workingOn.faunaMeshSet == null)
+            {
+                FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
+
+                foreach (MeshWorkerThread fauna in mwt.combineFaunaWith)
+                {
+                    fauna.workingOn.faunaMeshSet = fms;
+                }
+
+            }
+            mwt.thread = GenerateFaunaWorkerThread(mwt);
+            mwt.currentPhase = MeshGenerationPhase.Props;
+        }
+        else if (mwt.currentPhase == MeshGenerationPhase.Props)
+        {
+
+            if (mwt == mwt.combineFaunaWith[0])
+            {
+                CreateFaunaMeshes(mwt.workingOn.faunaMeshSet);
+            }
+            mwt.thread = CreatePropsPlacingThread(mwt);
+            mwt.currentPhase = MeshGenerationPhase.Finalizing;
+        }
+        else if (mwt.currentPhase == MeshGenerationPhase.Finalizing) {
+            mwt.currentPhase = MeshGenerationPhase.Finished;
+        }
+    }
+
     void GenerateMeshAndTexture()
     {
         List<Thread> threads = new List<Thread>();
 
         foreach (TerrainFace face in terrainFaces)
         {
-            threads.Add(ConstructMeshThread(face));
+            MeshWorkerThread mwt = new MeshWorkerThread();
+            Thread t = ConstructMeshThread(mwt, face);
+            mwt.thread = t;
+            threads.Add(t);
         }
 
         ThreadWait(threads);
@@ -752,8 +1044,8 @@ public class TerrainRoom
                 if (ms.direction == face.localUp)
                 {
                     //face.GenerateFauna(props, fms, ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
-                    GenerateFauna(props, ms, fms);
-                    PlaceProps(props, ms, fms);
+                    GenerateFauna(ms, fms);
+                    PlaceProps(ms, fms);
                     break;
                 }
             }
@@ -778,7 +1070,11 @@ public class TerrainRoom
                     pillar.Initialize(self, pil);
 
                     foreach (TerrainPillarFace tpf in pillar.pillarFace) {
-                        threads.Add(ConstructMeshThread(tpf));
+                        MeshWorkerThread mwt = new MeshWorkerThread();
+                        Thread t = ConstructMeshThread(mwt, tpf);
+                        mwt.thread = t;
+
+                        threads.Add(t);//structMeshThread(tpf));
                     }
                 }
             }
@@ -794,9 +1090,7 @@ public class TerrainRoom
 
         //Add threads for each ground connected to pillars
         meshsets = new ConcurrentBag<MeshSet>();
-        int groundResolution = 8;
-        bool roundEdges = true;
-        float randomZLength = 1.2f;
+
 
         foreach (TerrainFace face in terrainFaces)
         {
@@ -804,10 +1098,14 @@ public class TerrainRoom
             {
                 foreach (Ground member in pillar.members)
                 {
-                    member.Initialize(this, self, pillar.pillarMaxRadius/4f,roundEdges,randomZLength, groundResolution);
+                    member.Initialize(this, self, pillar.pillarMaxRadius/4f,ROUND_EDGES,RANDOM_GROUND_Z_LENGTH, GROUND_RESOLUTION);
                     
                     foreach (GroundFace gf in member.faces) {
-                        threads.Add(ConstructMeshThread(gf));
+                        MeshWorkerThread mwt = new MeshWorkerThread();
+                        Thread t = ConstructMeshThread(mwt, gf);
+                        mwt.thread = t;
+
+                        threads.Add(t); //ConstructMeshThread(gf));
                     }
                 }
             }
@@ -820,6 +1118,8 @@ public class TerrainRoom
         {
             ms.normals = ApplyMeshSetToMesh(ms, ms.parent.Mesh()); //face.mesh.normals;
         }
+
+        SpawnAllProps(props);
 
         //Pillar mesh create
         /*foreach (TerrainFace face in terrainFaces)
@@ -1105,9 +1405,15 @@ public class TerrainRoom
         }
     }
 
+    public Thread GenerateFaunaWorkerThread(MeshWorkerThread mwt) //TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
+    {
+        var t = new Thread(() => GenerateFauna(mwt.workingOn,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
+        t.Start();
+        return t;
+    }
 
     public void GenerateFauna(
-      GameObject props,
+      /*GameObject props,*/
       MeshSet ms,
       FaunaMeshSet faunaMS
       )
@@ -1224,8 +1530,14 @@ public class TerrainRoom
 
     }
 
+    public Thread CreatePropsPlacingThread(MeshWorkerThread mwt) {
+        var t = new Thread(() => PlaceProps(mwt.workingOn,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
+        t.Start();
+        return t;
+    }
 
-    public void PlaceProps(GameObject props,
+
+    public void PlaceProps(/*GameObject props,*/
       MeshSet ms,
       FaunaMeshSet faunaMS) {
 
@@ -1236,7 +1548,7 @@ public class TerrainRoom
         // Place centerpiece light
         if (ms.maxDensity > 0)
         {
-            bool placedProp = PlaceCenterpiece(props,ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+            bool placedProp = PlaceCenterpiece(/*props,ms,*/ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
             ms.faunaPreferredPos, ms.faunaPreferredNormal, (int)ms.faunaMeshPos.x, (int)ms.faunaMeshPos.y, xResolution, yResolution);
 
             int placedAmount = placedProp ? 1 : 0;
@@ -1267,7 +1579,7 @@ public class TerrainRoom
 
                     int iPosFaunaMaps = (int)(foundPos.y * xResolution + foundPos.x);
 
-                    placedProp = PlaceCenterpiece(props,ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+                    placedProp = PlaceCenterpiece(/*props,ms,,*/ ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
                         ms.vertices[iPosFaunaMaps], ms.normals[iPosFaunaMaps], (int)foundPos.x, (int)foundPos.y, xResolution, yResolution);
 
                     placedAmount += placedProp ? 1 : 0;
@@ -1279,7 +1591,7 @@ public class TerrainRoom
     }
 
     public bool PlaceCenterpiece(
-    GameObject props,
+    //GameObject props,
     MeshSet ms,
     PrefabNames centralPiece,
     Vector3 pos,
@@ -1300,9 +1612,9 @@ public class TerrainRoom
             )
         {
 
-            foreach (Transform prop in this.props)
+            foreach (PlacedTerrainProp prop in this.props)
             {
-                if (Vector3.Distance(prop.localPosition, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE)
+                if (Vector3.Distance(prop.position, pos) < FAUNA_CENTERPIECE_MIN_DISTANCE)
                 {
                     tooClose = true;
                     break;
@@ -1317,10 +1629,7 @@ public class TerrainRoom
                 //GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
                 //faunaCenterPieces.transform.parent = self.transform;
 
-                Transform centerpiece = Global.Create(Global.Resources[centralPiece], props.transform); //faunaCenterPieces.transform);
-                centerpiece.localPosition = pos;
-                centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
-                this.props.Add(centerpiece);
+                this.props.Add(new PlacedTerrainProp(centralPiece,pos,normal));
 
                 //centerpiece.gameObject.isStatic = true;
             }
@@ -1341,6 +1650,16 @@ public class TerrainRoom
         }
         return placedProp;
 
+    }
+
+    public void SpawnAllProps(GameObject parent) {
+
+        foreach (PlacedTerrainProp prop in props) {
+
+            Transform centerpiece = Global.Create(Global.Resources[prop.prop], parent.transform); //faunaCenterPieces.transform);
+            centerpiece.localPosition = prop.position;
+            centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, prop.normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
+        }
     }
 
     public Material ApplyTextureFromColormapToMaterial(Color[,] colors, int size) {
@@ -1494,9 +1813,9 @@ public class TerrainRoom
     {
         GenerateTexture(ms, size); //normals,vertices,xResolution,yResolution, size);
     }
-    private void ConstructMeshes(MeshFace face) {
+    private void ConstructMeshes(MeshWorkerThread mwt, MeshFace face) {
 
-        meshsets.Add(face.GenerateMesh(position));
+        meshsets.Add(face.GenerateMesh(mwt, position));
     }
 
     public Thread ConstructTextureThread(MeshSet ms, int size) //TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
@@ -1506,11 +1825,25 @@ public class TerrainRoom
         return t;
     }
 
-    public Thread ConstructMeshThread(MeshFace face)
+
+
+    public Thread ConstructMeshThread(MeshWorkerThread mwt, MeshFace face)
     {
-        var t = new Thread(() => ConstructMeshes(face));
+        var t = new Thread(() => ConstructMeshes(mwt, face));
         t.Start();
         return t;
+    }
+
+    public MeshWorkerThread ConstructMeshWorkerThread(MeshFace face)
+    {
+        MeshWorkerThread mwt = new MeshWorkerThread();
+        var t = new Thread(() => ConstructMeshes(mwt, face));
+        t.Start();
+        mwt.thread = t;
+        mwt.room = this;
+        mwt.currentPhase = MeshGenerationPhase.Mesh;
+
+        return mwt;
     }
 
     public TerrainRoom(int room, Ground g)

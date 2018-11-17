@@ -60,8 +60,21 @@ public class GroundFace : MeshFace {
         return MeshFaceType.Ground;
     }
 
+    public TerrainHeightMaps GetHeightMaps()
+    {
+        return null;
+    }
+    public MeshRenderer GetRenderer()
+    {
+        return renderer;
+    }
+    public Transform GetParentTransform()
+    {
+        return ground.obj;
+    }
 
-    public MeshSet GenerateMesh(Vector3 position)
+
+    public MeshSet GenerateMesh(MeshWorkerThread mwt, Vector3 position)
     {
         int xMod = 1;
         int yMod = 1;
@@ -207,7 +220,9 @@ public class GroundFace : MeshFace {
             }
         }
 
-        return new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
+        mwt.workingOn = new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
+
+        return mwt.workingOn;
     }
 
 }

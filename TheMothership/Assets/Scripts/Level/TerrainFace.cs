@@ -19,10 +19,14 @@ public enum MeshFaceType
 }
 public interface MeshFace
 {
-    MeshSet GenerateMesh(Vector3 position);
+    MeshSet GenerateMesh(MeshWorkerThread mwt, Vector3 position);
     Vector3 LocalUp();
     Mesh Mesh();
     MeshFaceType GetMeshFaceType();
+    TerrainHeightMaps GetHeightMaps();
+    MeshRenderer GetRenderer();
+    Transform GetParentTransform();
+
 }
 
 public class RoomNoiseEvaluator {
@@ -160,6 +164,15 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
     }
     public Mesh Mesh() {
         return mesh;
+    }
+    public TerrainHeightMaps GetHeightMaps() {
+        return thm;
+    }
+    public MeshRenderer GetRenderer() {
+        return renderer;
+    }
+    public Transform GetParentTransform() {
+        return room.self;
     }
 
 
@@ -795,7 +808,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
         return new Vector3(startX, startY, yProgression); //xProgression * xBind + yProgression * yBind; //
     }
 
-    public MeshSet GenerateMesh(Vector3 position)
+    public MeshSet GenerateMesh(MeshWorkerThread mwt , Vector3 position)
     {
         int xMod = 1;
         int yMod = 1;
@@ -1136,8 +1149,9 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
             }
         }
 
-
-        return new MeshSet(this, localUp, vertices, uvs, triangles,xResolution,yResolution);
+        mwt.workingOn = new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
+        
+        return mwt.workingOn;
 
     }
 

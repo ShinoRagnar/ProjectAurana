@@ -54,10 +54,20 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
     public MeshFaceType GetMeshFaceType() {
         return MeshFaceType.Pillar;
     }
+    public TerrainHeightMaps GetHeightMaps() {
+        return null;
+    }
+    public MeshRenderer GetRenderer()
+    {
+        return renderer;
+    }
+    public Transform GetParentTransform()
+    {
+        return pillar.self;
+    }
 
 
-
-    public MeshSet GenerateMesh(Vector3 position)
+    public MeshSet GenerateMesh(MeshWorkerThread mwt, Vector3 position)
     {
         int xMod = 1;
         int yMod = 1;
