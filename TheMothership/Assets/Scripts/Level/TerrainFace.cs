@@ -129,7 +129,7 @@ public class TerrainHeightMaps
 
 }
 
-public class TerrainFace : RoomNoiseEvaluator,  MeshFace
+public class TerrainFace : RoomNoiseEvaluator, MeshFace
 {
 
     private struct GroundBounds
@@ -149,11 +149,12 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
     public Vector3 localUp;
     Vector3 axisA;
     Vector3 axisB;
-  //  TerrainRoom room;
+    //  TerrainRoom room;
     public MeshRenderer renderer;
     GameObject self;
     public TerrainHeightMaps thm;
 
+    public List<TerrainPillar> pillars = new List<TerrainPillar>();
 
 
     public static int STALAGMITE_LENGTH = 50;
@@ -174,19 +175,25 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
     public Transform GetParentTransform() {
         return room.self;
     }
-
-
-
     public MeshFaceType GetMeshFaceType() {
         return MeshFaceType.Room;
     }
 
-    public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr): base(tr)
+    public void GeneratePillars(List<Ground> members) {
+
+        if (room.isBig && localUp == Vector3.forward) {
+            foreach (Ground member in members) {
+                AddToPillars(member);
+            }
+        }
+    }
+
+    public TerrainFace(GameObject meshobj, Mesh mesh, TerrainRoom tr, Vector3 localUp, MeshRenderer mr) : base(tr)
     {
-        
+
         this.self = meshobj;
         this.mesh = mesh;
-       // this.room = tr;
+        // this.room = tr;
         this.localUp = localUp;
         this.renderer = mr;
 
@@ -266,7 +273,7 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
 
             if (room.isBig && localUp == Vector3.forward)
             {
-                AddToPillars(member, gb);
+                // AddToPillars(member, gb);
             }
             else {
                 Imprint(
@@ -291,9 +298,8 @@ public class TerrainFace : RoomNoiseEvaluator,  MeshFace
         // return thm;
     }
 
-    public List<TerrainPillar> pillars = new List<TerrainPillar>();
 
-    private void AddToPillars(Ground g, GroundBounds gb) {
+    private void AddToPillars(Ground g) {//, GroundBounds gb) {
 
         TerrainPillar foundPillar = null;
 

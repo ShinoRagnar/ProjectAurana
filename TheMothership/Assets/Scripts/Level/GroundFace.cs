@@ -26,6 +26,8 @@ public class GroundFace : MeshFace {
 
     Vector3 random;
 
+    Transform parent;
+
     public GroundFace(Vector3 up, Vector3 offset, Ground ground, GameObject gob, int resolution)
     {
         this.self = gob.transform;
@@ -39,6 +41,7 @@ public class GroundFace : MeshFace {
         this.ground = ground;
         this.offset = offset;
         this.localUp = up;
+        this.parent = ground.ground.transform;
 
         axisA = new Vector3(localUp.y, localUp.z, localUp.x);
         axisB = Vector3.Cross(localUp, axisA);
@@ -70,8 +73,10 @@ public class GroundFace : MeshFace {
     }
     public Transform GetParentTransform()
     {
-        return ground.obj;
+        return parent;
     }
+
+
 
 
     public MeshSet GenerateMesh(MeshWorkerThread mwt, Vector3 position)
@@ -155,21 +160,10 @@ public class GroundFace : MeshFace {
 
                 if (ground.roundEdges) {
 
-                    /*
-                    Vector3 pointOnSphere = pointOnUnitCube.normalized * maxLength;
-
-                    pointOnSphere = new Vector3(
-                        pointOnSphere.x * xHeight,
-                        pointOnSphere.y * yHeight,
-                        pointOnSphere.z * zHeight
-                        );
-                        */
-
                     float yProg = Mathf.Sin(percent.y * Mathf.PI);
                     float xProg = localUp == Vector3.back ? 
                         (percent.x == 1f || percent.x == 0f) ?  0 : 1
                         : Mathf.Sin(percent.x * Mathf.PI);
-                    //float zProg = Mathf.Clamp01(-pointOnUnitCube.z / zSize);
 
                     Vector3 zRoundness = localUp * (zMod + extent) + (percent.x - .5f) * 2 * axisA * ((float)xMod) + (percent.y - .5f) * 2 * axisB * ((float)yMod);
 
@@ -184,17 +178,6 @@ public class GroundFace : MeshFace {
 
 
                     final = Vector3.Lerp(final, zRoundness, Mathf.Clamp01(n*10f) * noise);
-
-                   
-
-
-
-                    // final = Vector3.Lerp(final, pointOnSphere, Mathf.Clamp01(zProg * 2));
-
-                    // final = Vector3.Lerp(final, pointOnUnitCube, 0.5f);
-                    // final = Vector3.Lerp(final, zRoundness, 0.5f);
-
-
                 }
 
 

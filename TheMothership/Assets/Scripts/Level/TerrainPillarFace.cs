@@ -282,7 +282,9 @@ public class TerrainPillarFace : RoomNoiseEvaluator, MeshFace
        //
        // }
 
-        return new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
+        mwt.workingOn = new MeshSet(this, localUp, vertices, uvs, triangles, xResolution, yResolution);
+
+        return mwt.workingOn;
 
     }
 

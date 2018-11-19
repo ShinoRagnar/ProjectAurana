@@ -244,6 +244,7 @@ public class TerrainGenerator {
     //Underground
     public static int BOUNDARY_DISTANCE = 20;
     public static int BOUNDARY_DEPTH = 100;
+    public static int VERTEX_LIMIT = 65535;
 
     public static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
@@ -461,31 +462,63 @@ public class TerrainGenerator {
         }
         float startTime;
 
-        foreach (int i in rooms)
+        startTime = Time.realtimeSinceStartup;
+        /*foreach (int i in rooms)
         {
-
             GameObject terr = new GameObject("UndergroundMeshes <" + i + ">");
             terr.transform.parent = terra.transform;
-
             rooms[i].GroupMembers();
-
-            startTime = Time.realtimeSinceStartup;
             rooms[i].SpawnRoom(terr.transform, materials, grasses, hangWeeds, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
-            Debug.Log("SpawnRoom() " + (Time.realtimeSinceStartup - startTime));
-            //rooms[i].DebugPrint();
-
-            /*SpawnAmbient(fog,
-                Global.Resources[PrefabNames.Fog],
-                rooms[i].position+new Vector3(0,0,rooms[i].zLength/4f), 
-                rooms[i].xLength, rooms[i].zLength / 2f, rooms[i].yLength, "Fog < " + i + " > ");
-                */
 
             SpawnAmbient(dust,
                 Global.Resources[PrefabNames.DustEmber],
                 rooms[i].position,
                 rooms[i].xLength, rooms[i].zLength, rooms[i].yLength, "Dust < " + i + " > ");
+        }*/
+        List<MeshWorkerThread> workerThreads = new List<MeshWorkerThread>();
+        foreach (int i in rooms)
+        {
+            GameObject terr = new GameObject("UndergroundMeshes <" + i + ">");
+            terr.transform.parent = terra.transform;
+            rooms[i].GroupMembers();
+
+            rooms[i].SpawnRoom(terr.transform, materials, grasses, hangWeeds, faunaCentralPieces, TERRAIN_Z_MARGIN, seed);
+            workerThreads.AddRange(rooms[i].GetMeshWorkerThreads());
+        }
+        bool workerThreadsNotYetDone = true;
+
+        while (workerThreadsNotYetDone) {
+
+            workerThreadsNotYetDone = false;
+            foreach (MeshWorkerThread mwt in workerThreads)
+            {
+                if (mwt.currentPhase != MeshGenerationPhase.Finished)
+                {
+                    workerThreadsNotYetDone = true;
+                    if (mwt.room.CanGoToNextTask(mwt)) {
+                        mwt.room.GoToNextTask(mwt);
+                    }
+                }
+            }
+            Thread.Sleep(2);
         }
 
+        foreach (int i in rooms)
+        {
+            rooms[i].FinalizeTerrainGeneration();
+        }
+
+
+        Debug.Log("SpawnRoom() " + (Time.realtimeSinceStartup - startTime));
+        //SpawnRoom() 1.147708
+
+        foreach (int i in rooms)
+        {
+            SpawnAmbient(dust,
+                Global.Resources[PrefabNames.DustEmber],
+                rooms[i].position,
+                rooms[i].xLength, rooms[i].zLength, rooms[i].yLength, "Dust < " + i + " > ");
+        }
 
         startTime = Time.realtimeSinceStartup;
         FillUndergroundTerrain(boundries);

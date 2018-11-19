@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Ground : RoomNoiseEvaluator{
+public class Ground : RoomNoiseEvaluator {
 
     public static Vector3[] directions = { Vector3.left, Vector3.right, Vector3.forward, Vector3.back, Vector3.up, Vector3.down };
 
@@ -59,9 +59,9 @@ public class Ground : RoomNoiseEvaluator{
         localScaleY = obj.transform.localScale.y;
         localScaleZ = obj.transform.localScale.z;
 
-        halfScaleX = obj.transform.localScale.x/2f;
-        halfScaleY = obj.transform.localScale.y/2f;
-        halfScaleZ = obj.transform.localScale.z/2f;
+        halfScaleX = obj.transform.localScale.x / 2f;
+        halfScaleY = obj.transform.localScale.y / 2f;
+        halfScaleZ = obj.transform.localScale.z / 2f;
 
         positionX = obj.transform.position.x;
         positionY = obj.transform.position.y;
@@ -71,10 +71,10 @@ public class Ground : RoomNoiseEvaluator{
 
     public void Initialize(
         TerrainRoom room,
-        Transform parent, 
-        float zAxisAdded, 
-        bool roundEdges, 
-        float randomZLength,  
+        Transform parent,
+        float zAxisAdded,
+        bool roundEdges,
+        float randomZLength,
         int resolution
         )
     {
@@ -82,7 +82,7 @@ public class Ground : RoomNoiseEvaluator{
         this.resolution = resolution;
         this.zAxisAdded = zAxisAdded;
         this.roundEdges = roundEdges;
-        this.randomZLength = Random.Range(1,randomZLength);
+        this.randomZLength = Random.Range(1, randomZLength);
 
         faces = new GroundFace[directions.Length];
 
@@ -95,9 +95,9 @@ public class Ground : RoomNoiseEvaluator{
 
         ground.transform.SetParent(obj.transform, true);
         ground.transform.position = new Vector3(
-            ground.transform.position.x, 
-            ground.transform.position.y, 
-            ground.transform.position.z+ zAxisAdded
+            ground.transform.position.x,
+            ground.transform.position.y,
+            ground.transform.position.z + zAxisAdded
             );
 
 
@@ -109,7 +109,7 @@ public class Ground : RoomNoiseEvaluator{
         {
             GameObject meshObj = new GameObject("GroundFace " + directions[i].ToString());
             meshObj.transform.SetParent(ground.transform, false);
-            faces[i] = new GroundFace(directions[i], obj.position,this, meshObj, resolution);
+            faces[i] = new GroundFace(directions[i], obj.position, this, meshObj, resolution);
             meshObj.transform.localPosition = Vector3.zero;
         }
     }
@@ -151,7 +151,6 @@ public class Ground : RoomNoiseEvaluator{
 
         return Mathf.Sin(Mathf.Clamp01((point.x - minPos) / len) * Mathf.PI);
     }
-
 
 
 

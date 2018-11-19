@@ -35,7 +35,7 @@ public class MeshSet {
     public Vector3 faunaPreferredPos;
     public Vector3 faunaPreferredNormal;
     public float maxDensity;
-    public FaunaMeshSet faunaMeshSet = null;
+    //public FaunaMeshSet faunaMeshSet = null;
 
     //Texture size
     public int textureSize = -1;
@@ -426,14 +426,16 @@ public class BoundaryRectangle {
 public class TerrainRoom
 {
     public struct PlacedTerrainProp {
-        public PrefabNames prop;
+        public PrefabNames[] options;
+        public Transform parent;
         public Vector3 position;
         public Vector3 normal;
 
-        public PlacedTerrainProp(PrefabNames prop, Vector3 position, Vector3 normal){
-            this.prop = prop;
+        public PlacedTerrainProp(PrefabNames[] options, Vector3 position, Vector3 normal, Transform parent){
+            this.options = options;
             this.position = position;
             this.normal = normal;
+            this.parent = parent;
         }
     }
 
@@ -642,15 +644,28 @@ public class TerrainRoom
         this.topY = topRight.y;
         this.bottomY = bottomRight.y;
 
-
-        FullUpdate();
+        Initialize();
+        //FullUpdate();
     }
 
 
-    private void FullUpdate()
-    {
-        Initialize();
-        GenerateMeshAndTexture();
+    // private void FullUpdate()
+    // {
+    //     Initialize();
+    //     GenerateMeshAndTexture();
+    //     self.position = position;
+    //     self.gameObject.isStatic = true;
+    // }
+
+    public void FinalizeTerrainGeneration() {
+
+        GameObject props = new GameObject("Props for <" + roomNr + ">");
+        props.transform.parent = self;
+        SpawnAllProps(props);
+        foreach (Ground g in members)
+        {
+            g.obj.GetComponent<MeshRenderer>().enabled = false;
+        }
         self.position = position;
         self.gameObject.isStatic = true;
     }
@@ -694,6 +709,8 @@ public class TerrainRoom
             mwt.combineFaunaWith = combineFaunaWith;
             combineFaunaWith.Add(mwt);
             threads.Add(mwt);
+
+            face.GeneratePillars(directionMembers[face.localUp]);
 
             //Add worker threads for each pillar
             if (face.pillars.Count > 0)
@@ -764,45 +781,53 @@ public class TerrainRoom
             return false;
         }
         else {
-            if (mwt.dependsOn != null && mwt.dependsOn.Count > 0) {
-                bool threadsWorking = false;
-                foreach (MeshWorkerThread depends in mwt.dependsOn) {
-                    if (depends.thread.IsAlive) {
+
+            bool threadsWorking = false;
+            bool faunathreadsWorking = false;
+
+            if ((mwt.dependsOn != null && mwt.dependsOn.Count > 0))
+            {
+                foreach (MeshWorkerThread depends in mwt.dependsOn)
+                {
+                    if (depends != mwt && depends.thread.IsAlive && depends.currentPhase == mwt.currentPhase)
+                    {
                         threadsWorking = true;
                         break;
                     }
                 }
-                bool faunathreadsWorking = false;
+            }
+            if ((mwt.combineFaunaWith != null && mwt.combineFaunaWith.Count > 0)) {
+
                 foreach (MeshWorkerThread depends in mwt.combineFaunaWith)
                 {
-                    if (depends.thread.IsAlive)
+                    if (depends != mwt && depends.thread.IsAlive && depends.currentPhase == mwt.currentPhase)
                     {
                         faunathreadsWorking = true;
                         break;
                     }
                 }
-                if (mwt.currentPhase == MeshGenerationPhase.Mesh && mwt.workingOn.textureSize == -1)
-                {
-                    return !threadsWorking;
-                }
-                else if(mwt.currentPhase == MeshGenerationPhase.Texture) {
-
-                    return !threadsWorking;
-                }
-                else if (mwt.currentPhase == MeshGenerationPhase.Fauna)
-                {
-                    return !faunathreadsWorking;
-                }
-                else if (mwt.currentPhase == MeshGenerationPhase.Props)
-                {
-                    return !faunathreadsWorking;
-                }
-                else {
-                    return true;
-                }
-
             }
-            return true;
+
+            if (mwt.currentPhase == MeshGenerationPhase.Mesh && mwt.workingOn.textureSize == -1)
+            {
+                return !threadsWorking;
+            }
+            else if (mwt.currentPhase == MeshGenerationPhase.Texture)
+            {
+                return !threadsWorking;
+            }
+            else if (mwt.currentPhase == MeshGenerationPhase.Fauna)
+            {
+                return !faunathreadsWorking;
+            }
+            else if (mwt.currentPhase == MeshGenerationPhase.Props)
+            {
+                return !faunathreadsWorking;
+            }
+            else
+            {
+                return true;
+            }
 
         }
 
@@ -866,9 +891,12 @@ public class TerrainRoom
 
                         Transform parent = mwt.workingOn.parent.GetParentTransform();
 
+                        GameObject combinedMesh = new GameObject("Combined mesh");
+                        combinedMesh.transform.parent = parent;
+
                         MeshSet mCombine = CombineMeshes(setsToCombine);
-                        MeshRenderer renderer = parent.gameObject.AddComponent<MeshRenderer>();
-                        MeshFilter mfilter = parent.gameObject.AddComponent<MeshFilter>();
+                        MeshRenderer renderer = combinedMesh.gameObject.AddComponent<MeshRenderer>();
+                        MeshFilter mfilter = combinedMesh.gameObject.AddComponent<MeshFilter>();
                         mfilter.sharedMesh = new Mesh();
                         ApplyMeshSetToMesh(mCombine, mfilter.sharedMesh);
                         renderer.material =
@@ -876,6 +904,8 @@ public class TerrainRoom
                                 CombineColorMaps(colormapsToCombine, mwt.workingOn.textureSize)
                                 , ((int)Mathf.Sqrt(colormapsToCombine.Count) * mwt.workingOn.textureSize
                                 ));
+                        combinedMesh.transform.localPosition = Vector3.zero;
+
 
 
                     }
@@ -895,17 +925,18 @@ public class TerrainRoom
         }
         else if (mwt.currentPhase == MeshGenerationPhase.Fauna)
         {
-            if (mwt.workingOn.faunaMeshSet == null)
-            {
-                FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
 
-                foreach (MeshWorkerThread fauna in mwt.combineFaunaWith)
-                {
-                    fauna.workingOn.faunaMeshSet = fms;
-                }
+           // if (mwt.workingOn.faunaMeshSet == null)
+           // {
+              //  FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
 
-            }
-            mwt.thread = GenerateFaunaWorkerThread(mwt);
+               // foreach (MeshWorkerThread fauna in mwt.combineFaunaWith)
+               // {
+                //    fauna.workingOn.faunaMeshSet = fms;
+               // }
+
+            //}
+            //mwt.thread = GenerateFaunaWorkerThread(mwt);
             mwt.currentPhase = MeshGenerationPhase.Props;
         }
         else if (mwt.currentPhase == MeshGenerationPhase.Props)
@@ -913,7 +944,14 @@ public class TerrainRoom
 
             if (mwt == mwt.combineFaunaWith[0])
             {
-                CreateFaunaMeshes(mwt.workingOn.faunaMeshSet);
+                FaunaMeshSet fms = new FaunaMeshSet(grass.Length, hangWeed.Length);
+
+                foreach (MeshWorkerThread fauna in mwt.combineFaunaWith)
+                {
+                    GenerateFauna(fauna.workingOn, fms);
+                }
+
+                CreateFaunaMeshes(mwt.workingOn.parent.GetParentTransform(), fms);
             }
             mwt.thread = CreatePropsPlacingThread(mwt);
             mwt.currentPhase = MeshGenerationPhase.Finalizing;
@@ -1045,13 +1083,13 @@ public class TerrainRoom
                 {
                     //face.GenerateFauna(props, fms, ms.normals, ms.triangles, ms.vertices, ms.xResolution, ms.yResolution);
                     GenerateFauna(ms, fms);
-                    PlaceProps(ms, fms);
+                    PlaceProps(props.transform, ms);
                     break;
                 }
             }
         }
 
-        CreateFaunaMeshes(fms);
+        CreateFaunaMeshes(self, fms);
 
 
         //Spawn pillars within room
@@ -1161,46 +1199,55 @@ public class TerrainRoom
 
     }
 
-    public void CreateFaunaMeshes(FaunaMeshSet fms) {
+    public void CreateFaunaMeshes(Transform parent, FaunaMeshSet fms) {
 
-          for (int a = 0; a < hangWeed.Length; a++)
-          {
-            GameObject go = new GameObject("HangWeed <" + hangWeed[a].ToString() + "> ");
-            go.transform.parent = self.transform;
+        for (int a = 0; a < hangWeed.Length; a++)
+        {
+            if (fms.hangWeedTriangles[a].Count > 0)
+            {
+                GameObject go = new GameObject("HangWeed <" + hangWeed[a].ToString() + "> ");
+                go.transform.parent = parent; // ms.parent.GetParentTransform(); //self.transform;
 
-            MeshRenderer ren = go.AddComponent<MeshRenderer>();
-            // renderer.shaaredMaterial = mat;
-            MeshFilter fil = go.AddComponent<MeshFilter>();
-            Mesh m = fil.sharedMesh = new Mesh();
+                MeshRenderer ren = go.AddComponent<MeshRenderer>();
+                // renderer.shaaredMaterial = mat;
+                MeshFilter fil = go.AddComponent<MeshFilter>();
+                Mesh m = fil.sharedMesh = new Mesh();
 
-            m.Clear();
-            m.vertices = fms.hangWeedVertices[a].ToArray();
-            m.triangles = fms.hangWeedTriangles[a].ToArray();
-            m.RecalculateNormals();
+                m.Clear();
+                m.vertices = fms.hangWeedVertices[a].ToArray();
+                m.triangles = fms.hangWeedTriangles[a].ToArray();
+                m.RecalculateNormals();
 
-            ren.material = Global.Resources[hangWeed[a]];
-            ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            go.isStatic = true;
-          }
+                ren.material = Global.Resources[hangWeed[a]];
 
-          for (int a = 0; a < grass.Length; a++)
-          {
-            GameObject go = new GameObject("Grass <" + grass[a].ToString() + "> ");
-            go.transform.parent = self.transform;
+                go.transform.localPosition = Vector3.zero;
+                ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                go.isStatic = true;
+            }
+        }
 
-            MeshRenderer ren = go.AddComponent<MeshRenderer>();
-            // renderer.shaaredMaterial = mat;
-            MeshFilter fil = go.AddComponent<MeshFilter>();
-            Mesh m = fil.sharedMesh = new Mesh();
+        for (int a = 0; a < grass.Length; a++)
+        {
+            if (fms.faunaTriangles[a].Count > 0)
+            {
+                GameObject go = new GameObject("Grass <" + grass[a].ToString() + "> ");
+                go.transform.parent = parent; // ms.parent.GetParentTransform();  //self.transform;
 
-            m.Clear();
-            m.vertices = fms.faunaVertices[a].ToArray();
-            m.triangles = fms.faunaTriangles[a].ToArray();
-            m.RecalculateNormals();
+                MeshRenderer ren = go.AddComponent<MeshRenderer>();
+                // renderer.shaaredMaterial = mat;
+                MeshFilter fil = go.AddComponent<MeshFilter>();
+                Mesh m = fil.sharedMesh = new Mesh();
 
-            ren.material = Global.Resources[grass[a]];
-            ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            go.isStatic = true;
+                m.Clear();
+                m.vertices = fms.faunaVertices[a].ToArray();
+                m.triangles = fms.faunaTriangles[a].ToArray();
+                m.RecalculateNormals();
+
+                ren.material = Global.Resources[grass[a]];
+                go.transform.localPosition = Vector3.zero;
+                ren.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                go.isStatic = true;
+            }
         }
 
     }
@@ -1405,12 +1452,12 @@ public class TerrainRoom
         }
     }
 
-    public Thread GenerateFaunaWorkerThread(MeshWorkerThread mwt) //TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
-    {
-        var t = new Thread(() => GenerateFauna(mwt.workingOn,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
-        t.Start();
-        return t;
-    }
+    //public Thread GenerateFaunaWorkerThread(MeshWorkerThread mwt) //TerrainFace face, Vector3[] normals, Vector3[] vertices, int xResolution, int yResolution, int size)
+   // {
+   //     var t = new Thread(() => GenerateFauna(mwt.workingOn,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
+   //     t.Start();
+    //    return t;
+    //}
 
     public void GenerateFauna(
       /*GameObject props,*/
@@ -1531,15 +1578,19 @@ public class TerrainRoom
     }
 
     public Thread CreatePropsPlacingThread(MeshWorkerThread mwt) {
-        var t = new Thread(() => PlaceProps(mwt.workingOn,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
+        var t = new Thread(() => PlaceProps(mwt.workingOn.parent.GetParentTransform(), mwt.workingOn)); //,mwt.workingOn.faunaMeshSet)); //face, normals, vertices, xResolution, yResolution, size));
         t.Start();
         return t;
     }
 
 
     public void PlaceProps(/*GameObject props,*/
-      MeshSet ms,
-      FaunaMeshSet faunaMS) {
+        Transform parent,
+      MeshSet ms
+        //,
+     // FaunaMeshSet faunaMS
+        ) {
+
 
         int yResolution = ms.yResolution;
         int xResolution = ms.xResolution;
@@ -1548,7 +1599,7 @@ public class TerrainRoom
         // Place centerpiece light
         if (ms.maxDensity > 0)
         {
-            bool placedProp = PlaceCenterpiece(/*props,ms,*/ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+            bool placedProp = PlaceCenterpiece(/*props,ms,*/ parent, ms, faunaCentralPieces,
             ms.faunaPreferredPos, ms.faunaPreferredNormal, (int)ms.faunaMeshPos.x, (int)ms.faunaMeshPos.y, xResolution, yResolution);
 
             int placedAmount = placedProp ? 1 : 0;
@@ -1579,7 +1630,7 @@ public class TerrainRoom
 
                     int iPosFaunaMaps = (int)(foundPos.y * xResolution + foundPos.x);
 
-                    placedProp = PlaceCenterpiece(/*props,ms,,*/ ms, faunaCentralPieces[(int)UnityEngine.Random.Range(0, faunaCentralPieces.Length - 1)],
+                    placedProp = PlaceCenterpiece(/*props,ms,,*/ parent, ms, faunaCentralPieces,
                         ms.vertices[iPosFaunaMaps], ms.normals[iPosFaunaMaps], (int)foundPos.x, (int)foundPos.y, xResolution, yResolution);
 
                     placedAmount += placedProp ? 1 : 0;
@@ -1592,8 +1643,9 @@ public class TerrainRoom
 
     public bool PlaceCenterpiece(
     //GameObject props,
+    Transform parent,
     MeshSet ms,
-    PrefabNames centralPiece,
+    PrefabNames[] centralPiece,
     Vector3 pos,
     Vector3 normal,
     int xMeshPos,
@@ -1629,7 +1681,7 @@ public class TerrainRoom
                 //GameObject faunaCenterPieces = new GameObject("Fauna Centerp. <" + centralPiece.ToString() + "> ");
                 //faunaCenterPieces.transform.parent = self.transform;
 
-                this.props.Add(new PlacedTerrainProp(centralPiece,pos,normal));
+                this.props.Add(new PlacedTerrainProp(centralPiece,pos,normal,parent));
 
                 //centerpiece.gameObject.isStatic = true;
             }
@@ -1656,7 +1708,9 @@ public class TerrainRoom
 
         foreach (PlacedTerrainProp prop in props) {
 
-            Transform centerpiece = Global.Create(Global.Resources[prop.prop], parent.transform); //faunaCenterPieces.transform);
+            PrefabNames pref = prop.options[(int)UnityEngine.Random.Range(0, prop.options.Length - 1)];
+            Transform centerpiece = Global.Create(Global.Resources[pref], parent.transform); //faunaCenterPieces.transform);
+            centerpiece.transform.parent = prop.parent;
             centerpiece.localPosition = prop.position;
             centerpiece.rotation = Quaternion.FromToRotation(centerpiece.up, prop.normal) * centerpiece.rotation; //Quaternion.LookRotation(thm.faunaPreferredNormal);
         }
