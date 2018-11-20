@@ -95,6 +95,10 @@ public class ShaderTerrain : MonoBehaviour {
         return new Vector2(xResolution, yResolution);
 
     }
+    public static int GetAddedVerts(Vector2 res) {
+
+        return (int)(res.x * 2 - 4 + res.y * 2);
+    }
 
     public MeshArrays Generate() {
 
@@ -103,23 +107,31 @@ public class ShaderTerrain : MonoBehaviour {
             if (res > maxResolution) { maxResolution = res;  }
         }
 
-        int vertCount = 0;
+        /*int vertCount = 0;
         int triCount = 0;
 
         for (int dir = 0; dir < directions.Length; dir++)
         {
             Vector3 localUp = directions[dir];
             int resolution = resolutions[dir];
-
             Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
             Vector2 res = GetResolution(resolution, mod);
-            vertCount += (int)(res.x * res.y);
-            triCount += (int)((res.x - 1) * (res.y - 1) * 6);
+
+            //int extraVerts = resolution == maxResolution ? 0 : GetAddedVerts(GetResolution(maxResolution,mod));
+
+            vertCount += (int)(res.x * res.y);//+extraVerts;
+            triCount += (int)((res.x - 1) * (res.y - 1) * 6);// +extraVerts*6;
         }
 
         Vector3[] vertices = new Vector3[vertCount];
         Vector2[] uvs = new Vector2[vertCount];
         int[] triangles = new int[triCount];
+        */
+
+        List<Vector3> vertices = new List<Vector3>();
+        List<Vector2> uvs = new List<Vector2>();
+        List<int> triangles = new List<int>();
+
 
 
         int triIndex = 0;
@@ -130,62 +142,199 @@ public class ShaderTerrain : MonoBehaviour {
             Vector3 localUp = directions[dir];
             int resolution = resolutions[dir];
 
-
             Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
             Vector3 modExtent = GetMod(localUp, xSize+extents.x, ySize + extents.y, zSize + extents.z);
-            Vector3 halfMod = mod / 2f;
-            Vector3 halfModExtent = modExtent / 2f;
-            Vector3 halfSizeExtent = new Vector3(xSize + extents.x, ySize + extents.y, zSize + extents.z) / 2f;
 
             Vector3 axisA = new Vector3(localUp.y, localUp.z, localUp.x);
             Vector3 axisB = Vector3.Cross(localUp, axisA);
 
             Vector2 res = GetResolution(resolution, mod);
 
+            //Halfsizes
+            Vector3 halfMod = mod / 2f;
+            Vector3 halfModExtent = modExtent / 2f;
+            Vector3 halfSizeExtent = new Vector3(xSize + extents.x, ySize + extents.y, zSize + extents.z) / 2f;
             Vector3 halfSize = new Vector3(((float)xSize) / 2f, ((float)ySize) / 2f, ((float)zSize) / 2f);
 
+
+            //Vector2 borderRes = GetResolution(maxResolution, mod);
+            //int borderVerts = resolution == maxResolution ? 0 : GetAddedVerts(borderRes);
+
+            
             int xResolution = (int)res.x;
             int yResolution = (int)res.y;
 
-            for (int y = 0; y < yResolution; y++)
+            if (resolution != maxResolution)
             {
-                for (int x = 0; x < xResolution; x++)
-                {
-                    Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
+                Vector2 borderRes = GetResolution(maxResolution, mod);
+                xResolution = (int)borderRes.x;
+                yResolution = (int)borderRes.y;
 
-                    //Vector3 pointOnUnitCube = localUp * halfMod.z + (percent.x - .5f) * 2 * axisA * halfMod.x + (percent.y - .5f) * 2 * axisB * halfMod.y;
+                int[] links = GetVertexLinks(borderRes, maxResolution, resolution);
+                int[,] vertexPositions = new int[xResolution, yResolution];
 
-                    vertices[i] = Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent); //pointOnUnitCube;
+                for (int y = 1; y < yResolution; y++){
+                    for (int x = 1; x < xResolution; x++){
 
-                    uvs[i] = percent;
+                        int j = (int)(y * xResolution) + x;
 
+                        if (links[j] != 0) {
 
-                    if (x != xResolution - 1 && y != yResolution - 1)
-                    {
-                        triangles[triIndex] = i;
-                        triangles[triIndex + 1] = i + xResolution + 1;
-                        triangles[triIndex + 2] = i + xResolution;
+                            int xPos = (x + links[j]);
+                            int yPos = (y + links[j]);
 
-                        triangles[triIndex + 3] = i;
-                        triangles[triIndex + 4] = i + 1;
-                        triangles[triIndex + 5] = i + xResolution + 1;
-                        triIndex += 6;
+                            if (xPos < 0 || yPos < 0) {
+                                Debug.Log(" x: " + x + " y:" + y + " links:" + links[j]);
+                            }
+
+                            if (AddVertex(x, y, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+                            if (AddVertex(xPos, yPos, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+                            if (AddVertex(x, yPos, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+                            if (AddVertex(xPos, y, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+
+                            int thisPos = vertexPositions[x, y] - 1;
+                            int backPos = vertexPositions[x, yPos] - 1;
+                            int backLeftPos = vertexPositions[xPos, yPos] - 1;
+                            int leftPos = vertexPositions[xPos, y] - 1;
+
+                            triangles.Add(backLeftPos);
+                            triangles.Add(thisPos);
+                            triangles.Add(leftPos);
+
+                            triangles.Add(backLeftPos);
+                            triangles.Add(backPos);
+                            triangles.Add(thisPos);
+                        }
                     }
-
-                    i++;
                 }
             }
+            else {
+                for (int y = 0; y < yResolution; y++)
+                {
+                    for (int x = 0; x < xResolution; x++)
+                    {
+                        Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
+
+                        vertices.Add(Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent)); //pointOnUnitCube;
+
+                        uvs.Add(percent);
+
+                        if (x != xResolution - 1 && y != yResolution - 1)
+                        {
+                            triangles.Add(i);
+                            triangles.Add(i + xResolution + 1);
+                            triangles.Add(i + xResolution);
+
+                            triangles.Add(i);
+                            triangles.Add(i + 1);
+                            triangles.Add(i + xResolution + 1);
+                           // triIndex += 6;
+                        }
+
+                        i++;
+                    }
+                }
+            }
+
         }
 
-        return new MeshArrays(vertices, uvs, triangles);
+        return new MeshArrays(vertices.ToArray(), uvs.ToArray(), triangles.ToArray());
     }
 
-    public static Vector3 Calc(Vector2 percent, Vector3 localUp, Vector3 mod, Vector3 axisA, Vector3 axisB) {
+    public bool AddVertex(
+        int x, int y, int i, int xResolution, int yResolution, 
+        Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions
+        ) {
+
+        if (vertexPositions[x, y] == 0)
+        {
+            Vector2 percent = new Vector2(x / (float)(xResolution - 1), (float)y / (float)(yResolution - 1));
+            vertexPositions[x, y] = i + 1;
+            uvs.Add(percent);
+            vertices.Add(Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent));
+            return true;
+        }
+        return false;
+    }
+
+    /*public static Vector3 Calc(Vector2 percent, Vector3 localUp, Vector3 mod, Vector3 axisA, Vector3 axisB) {
 
         Vector3 pointOnUnitCube = localUp * mod.z + (percent.x - .5f) * 2 * axisA * mod.x + (percent.y - .5f) * 2 * axisB * mod.y;
 
         return pointOnUnitCube;
 
+    }*/
+
+    public static int[] GetVertexLinks(
+        Vector2 borderRes,
+        int maxResolution,
+        int resolution
+        ) {
+
+        int[] vertLinks = new int[(int)(borderRes.x * borderRes.y)];
+
+        int b = 1;
+        int r = maxResolution / resolution;
+
+        if (b * 2 < r)
+        {
+            r--;
+        }
+        //Mark up and down as border
+        for (int y = b; y < borderRes.y; y++)
+        {
+            int j = (int)(y * borderRes.x) + b;
+            int k = (int)(y * borderRes.x) + (int)(borderRes.x - 1);
+
+            vertLinks[j] = -b;
+            vertLinks[k] = -b;
+        }
+        //Mark left and right as border
+        for (int x = b; x < borderRes.x; x++)
+        {
+            int j = (int)(b * borderRes.x) + x;
+            int k = (int)((borderRes.y - 1) * borderRes.x) + x;
+
+            vertLinks[j] = -b;
+            vertLinks[k] = -b;
+        }
+
+        //Mark as regular res
+        for (int y = b + r; y < borderRes.y - b; y += r)
+        {
+            for (int x = b + r; x < (borderRes.x - b); x += r)
+            {
+                int j = (int)(y * borderRes.x) + x;
+                vertLinks[j] = -r;
+            }
+        }
+
+        //Mark rectangles that cant be grouped within res
+        /*int xStart = (int)borderRes.x - (int)((borderRes.x - b) % r) - b;
+        for (int x = xStart; x < borderRes.x; x++)
+        {
+            for (int y = b; y < borderRes.y; y++)
+            {
+
+                int j = (int)(y * borderRes.x) + x;
+                vertLinks[j] = -b;
+            }
+        }
+
+        //Mark rectangles that cant be grouped within res
+        int yStart = (int)borderRes.y - (int)((borderRes.y - b) % r) - b;
+        for (int y = yStart; y < borderRes.y; y++)
+        {
+            for (int x = b; x < borderRes.x; x++)
+            {
+                int j = (int)(y * borderRes.x) + x;
+                vertLinks[j] = -b;
+            }
+        }*/
+
+
+        return vertLinks;
     }
 
 
@@ -203,64 +352,7 @@ public class ShaderTerrain : MonoBehaviour {
         Vector3 roundedCube = GetRounded(pointOnUnitCube, halfSize, roundness);
         Vector3 roundedExtentCube = GetRounded(pointOnExtentCube, halfSizeExtent, roundness);
 
-        /*Vector3 inner = pointOnUnitCube;
-
-        float halfX = ((float)xSize)/ 2f;
-        float halfY = ((float)ySize) / 2f;
-        float halfZ = ((float)zSize) / 2f;
-
-
-        if (inner.x < -halfX+roundness)
-        {
-            inner.x = -halfX+roundness;
-        }
-        else if (inner.x > halfX-roundness)
-        {
-            inner.x = halfX - roundness;
-        }
-
-        if (inner.y < -halfY + roundness)
-        {
-            inner.y = -halfY + roundness;
-        }
-        else if (inner.y > halfY - roundness)
-        {
-            inner.y = halfY - roundness;
-        }
-
-        if (inner.z < -halfZ + roundness)
-        {
-            inner.z = -halfZ + roundness;
-        }
-        else if (inner.z > halfZ - roundness)
-        {
-            inner.z = halfZ - roundness;
-        }
-        */
-
-        //
-
-        /*
-        Vector3 sizes = new Vector3((((float)xSize) / 2f), (((float)ySize) / 2f), (((float)zSize) / 2f));
-
-        float yProg = Mathf.Sin(percent.y * Mathf.PI);
-        float xProg = Mathf.Sin(percent.x * Mathf.PI);
-        
-        float n = yProg * xProg;
-        n = n + (n - (n * n * (3.0f - 2.0f * n)));
-        n = Mathf.Clamp01(n * 2);
-
-        Vector3 pointOnUnitSphere = pointOnExtentCube.normalized;
-        pointOnUnitSphere = new Vector3(
-            pointOnExtentCube.x * extentMod.x * 1.314f, //maxRadius, //(((float)xSize) / 2f) * 1.314f, 
-            pointOnExtentCube.y * extentMod.y * 1.314f,  //maxRadius, //(((float)ySize) / 2f) * 1.314f, 
-            pointOnExtentCube.z * extentMod.z * 1.314f  //maxRadius//(((float)zSize) / 2f) * 1.314f
-        );
-        */
-
         float noi = EvaluateNoise(currentPos, pointOnUnitCube, noiseBaseRoughness, noiseRoughness, noisePersistance, noiseStrength, noiseLayers, noiseRigid);
-        //Vector3 normal = (pointOnUnitCube - inner).normalized;
-        //Vector3 final = inner + normal * roundness;
 
         return Vector3.Lerp(roundedCube, roundedExtentCube, noi);
 
