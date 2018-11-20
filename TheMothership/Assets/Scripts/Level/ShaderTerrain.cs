@@ -140,7 +140,7 @@ public class ShaderTerrain : MonoBehaviour {
         for(int dir = 0; dir < directions.Length; dir++) {
 
             Vector3 localUp = directions[dir];
-            int resolution = resolutions[dir];
+            int resolution = Mathf.Max(resolutions[dir],1);
 
             Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
             Vector3 modExtent = GetMod(localUp, xSize+extents.x, ySize + extents.y, zSize + extents.z);
@@ -170,7 +170,7 @@ public class ShaderTerrain : MonoBehaviour {
                 xResolution = (int)borderRes.x;
                 yResolution = (int)borderRes.y;
 
-                int[] links = GetVertexLinks(borderRes, maxResolution, resolution);
+                int[] links = GetVertexLinks(borderRes, maxResolution, resolution, localUp == Vector3.forward);
                 int[,] vertexPositions = new int[xResolution, yResolution];
 
                 for (int y = 1; y < yResolution; y++){
@@ -263,78 +263,142 @@ public class ShaderTerrain : MonoBehaviour {
         Vector3 pointOnUnitCube = localUp * mod.z + (percent.x - .5f) * 2 * axisA * mod.x + (percent.y - .5f) * 2 * axisB * mod.y;
 
         return pointOnUnitCube;
-
+        
     }*/
 
     public static int[] GetVertexLinks(
         Vector2 borderRes,
         int maxResolution,
-        int resolution
+        int resolution,
+        bool debug = false
         ) {
 
         int[] vertLinks = new int[(int)(borderRes.x * borderRes.y)];
 
+        float maxY = 0;
         int b = 1;
         int r = maxResolution / resolution;
 
-        if (b * 2 < r)
-        {
-            r--;
+        //Find the optimal resolution that does not exceed r
+        int vertCount = -1;
+        for (int n = r; n > 0; n--) {
+
+            int vtt = GetVertexCountForResolution(borderRes, n, b);
+
+            if (vertCount == -1 || vtt < vertCount) {
+                vertCount = vtt;
+                r = n;
+            }
         }
+        
+
+        int vert = 0;
+
+        //if (b * 2 < r)
+        //{
+        //    r--;
+        //}
         //Mark up and down as border
-        for (int y = b; y < borderRes.y; y++)
+        for (int y = b+1; y < (borderRes.y - b); y++)
         {
             int j = (int)(y * borderRes.x) + b;
             int k = (int)(y * borderRes.x) + (int)(borderRes.x - 1);
 
             vertLinks[j] = -b;
             vertLinks[k] = -b;
+            vert += 2;
         }
         //Mark left and right as border
-        for (int x = b; x < borderRes.x; x++)
+        for (int x = b+1; x < (borderRes.x - b); x++)
         {
             int j = (int)(b * borderRes.x) + x;
             int k = (int)((borderRes.y - 1) * borderRes.x) + x;
 
             vertLinks[j] = -b;
             vertLinks[k] = -b;
+            vert += 2;
         }
+
+        //Corners
+        vertLinks[(int)((borderRes.y - 1) * borderRes.x + (borderRes.x - 1))] = -b;
+        vertLinks[(int)((borderRes.y - 1) * borderRes.x + b)] = -b;
+        vertLinks[(int)(b * borderRes.x + (borderRes.x - 1))] = -b;
+        vertLinks[(int)(b * borderRes.x + b)] = -b;
+        vert+=4;
 
         //Mark as regular res
         for (int y = b + r; y < borderRes.y - b; y += r)
         {
+
             for (int x = b + r; x < (borderRes.x - b); x += r)
             {
                 int j = (int)(y * borderRes.x) + x;
                 vertLinks[j] = -r;
+                vert++;
+
+                //Fix not meeting borders
+                if (x + r > (borderRes.x - b) - 1)
+                {
+                    for (int ix = x + b; ix < (borderRes.x - b); ix += b)
+                    {
+                        maxY = Mathf.Min(y + r, borderRes.y - b);
+
+                        for (int iy = y - r; iy < maxY; iy += b)
+                        {
+                            int jx = (int)(iy * borderRes.x) + ix;
+                            if (vertLinks[jx] == 0) {
+                                vert++;
+                            }
+                            vertLinks[jx] = -b;
+                            
+                        }
+                    }
+                }
             }
+
+            //Fix not meeting borders
+            if (y + r > (borderRes.y - b) - 1)
+            {
+                for (int ix = b; ix < (borderRes.x - b); ix += b)
+                {
+                    maxY = Mathf.Min(y + r, borderRes.y - b);
+
+                    for (int iy = y + b; iy < maxY; iy += b)
+                    {
+                        int jy = (int)(iy * borderRes.x) + ix;
+                        if (vertLinks[jy] == 0)
+                        {
+                            vert++;
+                        }
+                        vertLinks[jy] = -b;
+                    }
+                }
+            }
+
         }
 
-        //Mark rectangles that cant be grouped within res
-        /*int xStart = (int)borderRes.x - (int)((borderRes.x - b) % r) - b;
-        for (int x = xStart; x < borderRes.x; x++)
-        {
-            for (int y = b; y < borderRes.y; y++)
-            {
+        if (debug) {
+            int debugRes = GetVertexCountForResolution(borderRes, r, b);
+            Debug.Log("DebugRes: " + debugRes + " actual res: "+vert);
 
-                int j = (int)(y * borderRes.x) + x;
-                vertLinks[j] = -b;
-            }
         }
-
-        //Mark rectangles that cant be grouped within res
-        int yStart = (int)borderRes.y - (int)((borderRes.y - b) % r) - b;
-        for (int y = yStart; y < borderRes.y; y++)
-        {
-            for (int x = b; x < borderRes.x; x++)
-            {
-                int j = (int)(y * borderRes.x) + x;
-                vertLinks[j] = -b;
-            }
-        }*/
 
 
         return vertLinks;
+    }
+
+    public static int GetVertexCountForResolution(
+        Vector2 borderRes,
+        int r,
+        int b
+    ) {
+        int xResolution = (int)borderRes.x;
+        int yResolution = (int)borderRes.y;
+        int border = (xResolution - 1) * 2 + (yResolution - 1) * 2 - 4;
+        int yRes = Mathf.FloorToInt((float)(yResolution - b * 2 - 1) / (float)r);
+        int xRes = Mathf.FloorToInt((float)(xResolution - b * 2 - 1) / (float)r);
+        int remain = (xResolution - 1) * (yResolution - 1) - xRes*yRes*r*r-border;
+        return border + xRes * yRes+remain;
     }
 
 
