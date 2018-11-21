@@ -185,105 +185,66 @@ public class ShaderTerrain : MonoBehaviour {
 
                         if (links[j,0] != 0) {
 
-
-
                             if (links[j, 1] != 0 || links[j, 2] != 0)
                             {
                                 if (links[j, 1] != 0) {
 
-                                    int selfX = x - links[j, 3] + links[j,4];
-                                    int yMinus = y - 1 + links[j, 5];
-                                    int leftX = x - links[j, 1];
-                                    int ySelf = y - links[j, 5];
+                                    bool isX = links[j, 6] == 0;
 
-                                    bool clockwise = links[j, 5] == 1;
+                                    int selfX = (isX ? x : y) - links[j, 3] + links[j,4];
+                                    int yMinus = (isX ? y : x) - 1 + links[j, 5];
+                                    int leftX = (isX ? x : y) - links[j, 1];
+                                    int ySelf = (isX ? y : x) - links[j, 5];
+                                    int axis = (isX ? x : y);
+
+                                    bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
                                     i = AddTriangle(
-                                        leftX, yMinus, 
-                                        selfX, ySelf, 
-                                        x, yMinus, clockwise, i ,
-                                        xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                                        isX ? leftX : yMinus, isX ? yMinus : leftX,
+                                        isX ? axis : yMinus, isX ? yMinus : axis,
+                                        isX ? selfX : ySelf, isX ? ySelf : selfX, 
+                                        clockwise, i , xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
                                         );
-
-                                    /*
-                                    if (AddVertex(leftX, yMinus, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                    if (AddVertex(selfX, ySelf, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                    if (AddVertex(x, yMinus, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-
-                                    int abovePos = vertexPositions[leftX, yMinus] - 1;
-                                    int selfPos = vertexPositions[selfX, ySelf] - 1;
-                                    int leftPos = vertexPositions[x, yMinus] - 1;
-
-                                    triangles.Add(abovePos);
-                                    triangles.Add(leftPos);
-                                    triangles.Add(selfPos);
-                                    */
-
                                 }
 
                                 if (links[j, 2] != 0)
                                 {
+                                    bool isX = links[j, 6] == 0;
 
-                                    int selfX = x - links[j, 3] + links[j, 4];
-                                    int yMinus = y - 1 + links[j, 5];
-                                    int leftX = x + links[j, 2];
-                                    int ySelf = y - links[j, 5];
+                                    int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
+                                    int yMinus = (isX ? y : x) - 1 + links[j, 5];
+                                    int leftX = (isX ? x : y) + links[j, 2];
+                                    int ySelf = (isX ? y : x) - links[j, 5];
+                                    int axis = (isX ? x : y);
 
-                                    bool clockwise = links[j, 5] == 0;
+                                    bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
                                     i = AddTriangle(
-                                            leftX, yMinus,
-                                            selfX, ySelf,
-                                            x, yMinus, clockwise, i,
-                                            xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                                            isX ? leftX : yMinus, isX ? yMinus : leftX,
+                                            isX ? selfX : ySelf, isX ? ySelf : selfX,
+                                            isX ? axis : yMinus, isX ? yMinus : axis, 
+                                            clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
                                             );
-
-                                    /*
-                                    if (AddVertex(leftX, yMinus, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                    if (AddVertex(selfX, ySelf, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                    if (AddVertex(x, yMinus, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-
-                                    int abovePos = vertexPositions[leftX, yMinus] - 1;
-                                    int selfPos = vertexPositions[selfX, ySelf] - 1;
-                                    int leftPos = vertexPositions[x, yMinus] - 1;
-
-                                    triangles.Add(abovePos);
-                                    triangles.Add(selfPos);
-                                    triangles.Add(leftPos);
-                                    */
                                 }
-
-
                             }
                             else if (links[j, 3] != 0 || links[j, 4] != 0)
                             {
-                                int xAbove = x + links[j, 4];
-                                int xBelow = x - links[j, 3];
-                                int yMinus = y - 1 + links[j, 5];
-                                int ySelf = y - links[j, 5];
+                                bool isX = links[j, 6] == 0; // Switches main axis
 
-                                bool clockwise = links[j, 5] == 0;
+                                int xAbove = (isX ? x : y) + links[j, 4];
+                                int xBelow = (isX ? x : y) - links[j, 3];
+                                int yMinus = (isX ? y : x) - 1 + links[j, 5];
+                                int ySelf = (isX ? y : x) - links[j, 5];
+                                int axis = (isX ? x : y);
+
+                                bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
                                 i = AddTriangle(
-                                        xAbove, ySelf,
-                                        xBelow, ySelf,
-                                        x, yMinus, clockwise, i,
-                                        xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                                        isX ? xAbove : ySelf, isX ? ySelf : xAbove,
+                                        isX ? xBelow : ySelf, isX ? ySelf : xBelow,
+                                        isX ? axis : yMinus, isX ? yMinus : axis, 
+                                        clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
                                         );
-                                /*
-                                if (AddVertex(xAbove, ySelf, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                if (AddVertex(xBelow, ySelf, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                if (AddVertex(x, yMinus, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-
-                                int abovePos = vertexPositions[xAbove, ySelf] - 1;
-                                int belowPos = vertexPositions[xBelow, ySelf] - 1;
-                                int minusPos = vertexPositions[x, yMinus] - 1;
-
-                                triangles.Add(minusPos);
-                                triangles.Add(abovePos);
-                                triangles.Add(belowPos);
-                                */
-
                             }
                             else {
 
@@ -510,6 +471,43 @@ public class ShaderTerrain : MonoBehaviour {
                         vertLinks[g, 3] = rx >= rh ? (r - rx) : vertLinks[g, 3];
                         vertLinks[g, 4] = rx <= rh ? rx : vertLinks[g, 4];
                         vertLinks[g, 5] = 1; // Swap y
+
+                    }
+
+                }
+                //Same for x
+                if (b != r && x == b + r)
+                {
+
+                    for (int ry = r; ry >= 0; ry--)
+                    {
+                        int g = ((y - ry) * xResolution) + b; /*(int)((y - b - r) * borderRes.x) +*/
+
+                        vertLinks[g, 1] = ry < rh ? 1 : vertLinks[g, 1];
+                        vertLinks[g, 2] = ry > rh ? 1 : vertLinks[g, 2];
+                        vertLinks[g, 3] = ry >= rh ? (r - ry) : vertLinks[g, 3];
+                        vertLinks[g, 4] = ry <= rh ? ry : vertLinks[g, 4];
+
+                        vertLinks[g, 6] = 2; // Use x
+
+                    }
+
+                }
+                //Same for this x but swapped axis
+                if (b != r && x + r >= (xResolution - b))
+                {
+
+                    for (int ry = r; ry >= 0; ry--)
+                    {
+                        int g = ((y - ry) * xResolution) + x+b;
+
+                        vertLinks[g, 1] = ry < rh ? 1 : vertLinks[g, 1];
+                        vertLinks[g, 2] = ry > rh ? 1 : vertLinks[g, 2];
+                        vertLinks[g, 3] = ry >= rh ? (r - ry) : vertLinks[g, 3];
+                        vertLinks[g, 4] = ry <= rh ? ry : vertLinks[g, 4];
+                        vertLinks[g, 5] = 1; // Swap x
+
+                        vertLinks[g, 6] = 1; // Use x
 
                     }
 
