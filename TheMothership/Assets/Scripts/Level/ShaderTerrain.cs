@@ -191,40 +191,27 @@ public class ShaderTerrain : MonoBehaviour {
 
                                     bool isX = links[j, 6] == 0;
 
-                                    int selfX = (isX ? x : y) - links[j, 3] + links[j,4];
-                                    int yMinus = (isX ? y : x) - 1 + links[j, 5];
-                                    int leftX = (isX ? x : y) - links[j, 1];
-                                    int ySelf = (isX ? y : x) - links[j, 5];
-                                    int axis = (isX ? x : y);
+                                    i = AddTopTriangle(x, y, isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
 
-                                    bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
+                                    if (links[j, 6] == 3) { //Corner case
 
-                                    i = AddTriangle(
-                                        isX ? leftX : yMinus, isX ? yMinus : leftX,
-                                        isX ? axis : yMinus, isX ? yMinus : axis,
-                                        isX ? selfX : ySelf, isX ? ySelf : selfX, 
-                                        clockwise, i , xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
-                                        );
+                                        i = AddTopTriangle(x, y, !isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+
+                                    }
                                 }
 
                                 if (links[j, 2] != 0)
                                 {
                                     bool isX = links[j, 6] == 0;
 
-                                    int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
-                                    int yMinus = (isX ? y : x) - 1 + links[j, 5];
-                                    int leftX = (isX ? x : y) + links[j, 2];
-                                    int ySelf = (isX ? y : x) - links[j, 5];
-                                    int axis = (isX ? x : y);
+                                    i = AddBotTriangle(x, y, isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
 
-                                    bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
+                                    if (links[j, 6] == 3) // Corner case
+                                    {
 
-                                    i = AddTriangle(
-                                            isX ? leftX : yMinus, isX ? yMinus : leftX,
-                                            isX ? selfX : ySelf, isX ? ySelf : selfX,
-                                            isX ? axis : yMinus, isX ? yMinus : axis, 
-                                            clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
-                                            );
+                                        i = AddBotTriangle(x, y, !isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+
+                                    }
                                 }
                             }
                             else if (links[j, 3] != 0 || links[j, 4] != 0)
@@ -306,6 +293,53 @@ public class ShaderTerrain : MonoBehaviour {
         }
 
         return new MeshArrays(vertices.ToArray(), uvs.ToArray(), triangles.ToArray());
+    }
+
+    public int AddTopTriangle(
+        int x, int y, bool isX, int[,] links,
+        int i, int j,
+        int xResolution, int yResolution,
+        Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles) {
+
+        int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
+        int yMinus = (isX ? y : x) - 1 + links[j, 5];
+        int leftX = (isX ? x : y) - links[j, 1];
+        int ySelf = (isX ? y : x) - links[j, 5];
+        int axis = (isX ? x : y);
+
+        bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
+
+        return AddTriangle(
+            isX ? leftX : yMinus, isX ? yMinus : leftX,
+            isX ? axis : yMinus, isX ? yMinus : axis,
+            isX ? selfX : ySelf, isX ? ySelf : selfX,
+            clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+            );
+    }
+
+    public int AddBotTriangle(
+        int x, int y, bool isX, int[,] links,
+        int i, int j,
+        int xResolution, int yResolution,
+        Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles)
+    {
+
+        int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
+        int yMinus = (isX ? y : x) - 1 + links[j, 5];
+        int leftX = (isX ? x : y) + links[j, 2];
+        int ySelf = (isX ? y : x) - links[j, 5];
+        int axis = (isX ? x : y);
+
+        bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
+
+        return AddTriangle(
+                isX ? leftX : yMinus, isX ? yMinus : leftX,
+                isX ? selfX : ySelf, isX ? ySelf : selfX,
+                isX ? axis : yMinus, isX ? yMinus : axis,
+                clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                );
     }
 
     public int AddTriangle(
@@ -447,26 +481,27 @@ public class ShaderTerrain : MonoBehaviour {
                 vert++;
 
                 // Alter the smaller triangles connected to this quad
-                if(b != r && y == b + r )
+                if (b != r && y == b + r)
                 {
                     for (int rx = r; rx >= 0; rx--) {
                         int g = (b * xResolution) + x - rx; /*(int)((y - b - r) * borderRes.x) +*/
 
-                        vertLinks[g, 1] = rx < rh ? 1 : vertLinks[g, 1];
-                        vertLinks[g, 2] = rx > rh ? 1 : vertLinks[g, 2];
+                        vertLinks[g, 1] = rx < rh? 1 : vertLinks[g, 1];
+                        vertLinks[g, 2] = rx > rh || (x+r >= (xResolution - b) && rx == 0)  ? 1 : vertLinks[g, 2];
                         vertLinks[g, 3] = rx >= rh ? (r - rx)  : vertLinks[g, 3];
                         vertLinks[g, 4] = rx <= rh ? rx : vertLinks[g, 4];
                         vertLinks[g, 5] = 0; //Original
                     }
 
                 }
+                
                 if (b != r && y + r >= (yResolution - b)){
 
                     for (int rx = r; rx >= 0; rx--)
                     {
-                        int g = ((y+b) * xResolution) + x - rx; /*(int)((y - b - r) * borderRes.x) +*/
+                        int g = ((y+b) * xResolution) + x - rx; 
 
-                        vertLinks[g, 1] = rx < rh ? 1 : vertLinks[g, 1];
+                        vertLinks[g, 1] = rx < rh || (x == b + r && rx == r) ? 1 : vertLinks[g, 1];
                         vertLinks[g, 2] = rx > rh ? 1 : vertLinks[g, 2];
                         vertLinks[g, 3] = rx >= rh ? (r - rx) : vertLinks[g, 3];
                         vertLinks[g, 4] = rx <= rh ? rx : vertLinks[g, 4];
@@ -475,24 +510,31 @@ public class ShaderTerrain : MonoBehaviour {
                     }
 
                 }
+                
                 //Same for x
                 if (b != r && x == b + r)
                 {
 
                     for (int ry = r; ry >= 0; ry--)
                     {
-                        int g = ((y - ry) * xResolution) + b; /*(int)((y - b - r) * borderRes.x) +*/
+                            int g = ((y - ry) * xResolution) + b;
 
-                        vertLinks[g, 1] = ry < rh ? 1 : vertLinks[g, 1];
-                        vertLinks[g, 2] = ry > rh ? 1 : vertLinks[g, 2];
-                        vertLinks[g, 3] = ry >= rh ? (r - ry) : vertLinks[g, 3];
-                        vertLinks[g, 4] = ry <= rh ? ry : vertLinks[g, 4];
+                            vertLinks[g, 1] = ry < rh || (y == b + r && ry == r) ? 1 : vertLinks[g, 1];
+                            vertLinks[g, 2] = ry > rh || (y + r >= (yResolution - b) && ry == 0) ? 1 : vertLinks[g, 2];
+                            vertLinks[g, 3] = ry >= rh ? (r - ry) : vertLinks[g, 3];
+                            vertLinks[g, 4] = ry <= rh ? ry : vertLinks[g, 4];
 
-                        vertLinks[g, 6] = 2; // Use x
-
+                        if (y == b + r && ry == r)
+                        {
+                            vertLinks[g, 6] = 3; // Corner
+                        }
+                        else {
+                            vertLinks[g, 6] = 2; // Use x
+                        }
                     }
 
                 }
+                
                 //Same for this x but swapped axis
                 if (b != r && x + r >= (xResolution - b))
                 {
@@ -501,7 +543,7 @@ public class ShaderTerrain : MonoBehaviour {
                     {
                         int g = ((y - ry) * xResolution) + x+b;
 
-                        vertLinks[g, 1] = ry < rh ? 1 : vertLinks[g, 1];
+                        vertLinks[g, 1] = ry < rh || (y == b + r && ry == r) ? 1 : vertLinks[g, 1];
                         vertLinks[g, 2] = ry > rh ? 1 : vertLinks[g, 2];
                         vertLinks[g, 3] = ry >= rh ? (r - ry) : vertLinks[g, 3];
                         vertLinks[g, 4] = ry <= rh ? ry : vertLinks[g, 4];
