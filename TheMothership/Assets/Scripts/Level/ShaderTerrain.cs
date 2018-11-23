@@ -25,16 +25,22 @@ public class ShaderTerrain : MonoBehaviour {
     public Material material;
 
     public bool update = false;
+
+    [Header("Size Settings")]
     public int zSize = 2;
     public int xSize = 3;
     public int ySize = 1;
-
+    [Header("LOD Settings")]
+    public int LODLevels = 0;
+    public int LODResolutionDecreasePerLevel = 1;
+    [Header("Roundness")]
     public float roundness = 1f;
-
+    [Header("Faces")]
     public Vector3[] directions = new Vector3[] {   Vector3.up,     Vector3.forward,    Vector3.left,   Vector3.right,  Vector3.down };
     public int[] resolutions = new int[]        {          1,              4,                  2,              2,             1 };
+    [Header("Extends per axis")]
     public Vector3 extents = new Vector3(1, 0.5f, 2);
-
+    [Header("Noise")]
     public float noiseBaseRoughness = 1f;
     public float noiseRoughness = 1f;
     public float noisePersistance = 0.5f;
@@ -93,11 +99,13 @@ public class ShaderTerrain : MonoBehaviour {
         m.triangles = ms.triangles;
         m.RecalculateNormals();
     }
-    public static Vector2 GetResolution(int resolution, Vector3 mod)
+    public static Vector3 GetResolution(int resolution, Vector3 mod)
     {
-        int xResolution = Mathf.Max(2, (int)(resolution * (mod.x))+1);
-        int yResolution = Mathf.Max(2, (int)(resolution * (mod.y))+1);
-        return new Vector2(xResolution, yResolution);
+        int xResolution = Mathf.Max(2, (int)(resolution * (mod.x)) + 1);
+        int yResolution = Mathf.Max(2, (int)(resolution * (mod.y)) + 1);
+        int zResolution = Mathf.Max(2, (int)(resolution * (mod.z)) + 1);
+
+        return new Vector3(xResolution, yResolution, zResolution);
 
     }
     public static int GetAddedVerts(Vector2 res) {
@@ -112,34 +120,26 @@ public class ShaderTerrain : MonoBehaviour {
             if (res > maxResolution) { maxResolution = res;  }
         }
 
-        /*int vertCount = 0;
-        int triCount = 0;
-
-        for (int dir = 0; dir < directions.Length; dir++)
-        {
-            Vector3 localUp = directions[dir];
-            int resolution = resolutions[dir];
-            Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
-            Vector2 res = GetResolution(resolution, mod);
-
-            //int extraVerts = resolution == maxResolution ? 0 : GetAddedVerts(GetResolution(maxResolution,mod));
-
-            vertCount += (int)(res.x * res.y);//+extraVerts;
-            triCount += (int)((res.x - 1) * (res.y - 1) * 6);// +extraVerts*6;
-        }
-
-        Vector3[] vertices = new Vector3[vertCount];
-        Vector2[] uvs = new Vector2[vertCount];
-        int[] triangles = new int[triCount];
-        */
-
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         List<int> triangles = new List<int>();
 
+        //int[,] zShared = new int[maxResolution * zSize,4];
+        //int[,] xShared = new int[Mathf.Max((maxResolution * xSize) - 2, 1), 4];
+        //int[,] yShared = new int[Mathf.Max((maxResolution * ySize) - 2, 1), 4];
 
+        Dictionary<Vector3, int[,]> vertexFaces = new Dictionary<Vector3, int[,]>();
 
-        int triIndex = 0;
+        //Add each vertex f
+        for (int dir = 0; dir < directions.Length; dir++)
+        {
+            Vector3 localUp = directions[dir];
+            Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
+            Vector2 borderRes = GetResolution(maxResolution, mod);
+
+            vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
+        }
+
         int i = 0;
 
         for(int dir = 0; dir < directions.Length; dir++) {
@@ -153,7 +153,7 @@ public class ShaderTerrain : MonoBehaviour {
             Vector3 axisA = new Vector3(localUp.y, localUp.z, localUp.x);
             Vector3 axisB = Vector3.Cross(localUp, axisA);
 
-            Vector2 res = GetResolution(resolution, mod);
+            Vector3 res = GetResolution(resolution, mod);
 
             //Halfsizes
             Vector3 halfMod = mod / 2f;
@@ -161,60 +161,63 @@ public class ShaderTerrain : MonoBehaviour {
             Vector3 halfSizeExtent = new Vector3(xSize + extents.x, ySize + extents.y, zSize + extents.z) / 2f;
             Vector3 halfSize = new Vector3(((float)xSize) / 2f, ((float)ySize) / 2f, ((float)zSize) / 2f);
 
+            int[,] vertexPositions = vertexFaces[localUp];
 
-            //Vector2 borderRes = GetResolution(maxResolution, mod);
-            //int borderVerts = resolution == maxResolution ? 0 : GetAddedVerts(borderRes);
-
-            
             int xResolution = (int)res.x;
             int yResolution = (int)res.y;
+            int zResolution = (int)res.z;
 
             if (resolution != maxResolution)
             {
-                Vector2 borderRes = GetResolution(maxResolution, mod);
+                Vector3 borderRes = GetResolution(maxResolution, mod);
                 xResolution = (int)borderRes.x;
                 yResolution = (int)borderRes.y;
+                zResolution = (int)borderRes.z;
 
-                int[,] links = GetVertexLinks(borderRes, maxResolution, resolution, localUp == Vector3.forward);
-                int[,] vertexPositions = new int[xResolution, yResolution];
+                int[,] links = GetVertexLinks(  borderRes, maxResolution, resolution, localUp == Vector3.up);
+
+                
+
+                    //new int[xResolution, yResolution];
+                //vertexFaces.Add(localUp, vertexPositions);
 
                 for (int y = 1; y < yResolution; y++){
                     for (int x = 1; x < xResolution; x++){
 
                         int j = (int)(y * xResolution) + x;
 
-                        if (links[j,0] != 0) {
+                        if (links[j,0] != 0) { // Triangles for non-center padding between larger quads
 
                             if (links[j, 1] != 0 || links[j, 2] != 0)
                             {
-                                if (links[j, 1] != 0) {
+                                if (links[j, 1] != 0) { //Top
 
                                     bool isX = links[j, 6] == 0;
 
-                                    i = AddTopTriangle(x, y, isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+                                    i = AddTopTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces);
 
                                     if (links[j, 6] == 3) { //Corner case
 
-                                        i = AddTopTriangle(x, y, !isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+                                        i = AddTopTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces);
 
                                     }
                                 }
 
-                                if (links[j, 2] != 0)
+                                if (links[j, 2] != 0) //Bottom
                                 {
                                     bool isX = links[j, 6] == 0;
 
-                                    i = AddBotTriangle(x, y, isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+                                    i = AddBotTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces);
 
                                     if (links[j, 6] == 3) // Corner case
                                     {
 
-                                        i = AddBotTriangle(x, y, !isX, links, i, j, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles);
+                                        i = AddBotTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces);
 
                                     }
                                 }
                             }
-                            else if (links[j, 3] != 0 || links[j, 4] != 0)
+                            else if (links[j, 3] != 0 || links[j, 4] != 0) // Triangles for center padding between larger quads
                             {
                                 bool isX = links[j, 6] == 0; // Switches main axis
 
@@ -230,18 +233,18 @@ public class ShaderTerrain : MonoBehaviour {
                                         isX ? xAbove : ySelf, isX ? ySelf : xAbove,
                                         isX ? xBelow : ySelf, isX ? ySelf : xBelow,
                                         isX ? axis : yMinus, isX ? yMinus : axis, 
-                                        clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                                        clockwise, i, xResolution, yResolution, zResolution,  localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces
                                         );
                             }
-                            else {
+                            else { //Normal quad case
 
                                 int xPos = (x - links[j, 0]);
                                 int yPos = (y - links[j, 0]);
 
-                                if (AddVertex(x, y, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                if (AddVertex(xPos, yPos, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                if (AddVertex(x, yPos, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-                                if (AddVertex(xPos, y, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+                                if (AddVertex(x, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
+                                if (AddVertex(xPos, yPos, i, xResolution, yResolution, zResolution,  localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
+                                if (AddVertex(x, yPos, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
+                                if (AddVertex(xPos, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
 
                                 int thisPos = vertexPositions[x, y] - 1;
                                 int backPos = vertexPositions[x, yPos] - 1;
@@ -263,10 +266,25 @@ public class ShaderTerrain : MonoBehaviour {
                 }
             }
             else {
-                for (int y = 0; y < yResolution; y++)
+                for (int y = 1; y < yResolution; y++)
                 {
-                    for (int x = 0; x < xResolution; x++)
+                    for (int x = 1; x < xResolution; x++)
                     {
+                        int xPos = (x - 1);
+                        int yPos = (y - 1);
+
+                        i = AddTriangle( x,y,
+                                         xPos, yPos,
+                                         xPos, y,
+                                        false, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces
+                                        );
+
+                        i = AddTriangle(x, y,
+                                         xPos, yPos,
+                                         x, yPos,
+                                        true, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces
+                                        );
+                        /*
                         Vector2 percent = new Vector2(x / (float)(xResolution - 1), y / (float)(yResolution - 1));
 
                         vertices.Add(Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent)); //pointOnUnitCube;
@@ -286,11 +304,14 @@ public class ShaderTerrain : MonoBehaviour {
                         }
 
                         i++;
+                        */
                     }
                 }
             }
 
         }
+
+        Debug.Log("Vert total: " + vertices.Count + " triangle total: " + triangles.Count/3);
 
         return new MeshArrays(vertices.ToArray(), uvs.ToArray(), triangles.ToArray());
     }
@@ -298,9 +319,9 @@ public class ShaderTerrain : MonoBehaviour {
     public int AddTopTriangle(
         int x, int y, bool isX, int[,] links,
         int i, int j,
-        int xResolution, int yResolution,
+        int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles) {
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles, Dictionary<Vector3, int[,]> vertexFaces) {
 
         int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
         int yMinus = (isX ? y : x) - 1 + links[j, 5];
@@ -314,16 +335,16 @@ public class ShaderTerrain : MonoBehaviour {
             isX ? leftX : yMinus, isX ? yMinus : leftX,
             isX ? axis : yMinus, isX ? yMinus : axis,
             isX ? selfX : ySelf, isX ? ySelf : selfX,
-            clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+            clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces
             );
     }
 
     public int AddBotTriangle(
         int x, int y, bool isX, int[,] links,
         int i, int j,
-        int xResolution, int yResolution,
+        int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles)
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles, Dictionary<Vector3, int[,]> vertexFaces)
     {
 
         int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
@@ -338,7 +359,7 @@ public class ShaderTerrain : MonoBehaviour {
                 isX ? leftX : yMinus, isX ? yMinus : leftX,
                 isX ? selfX : ySelf, isX ? ySelf : selfX,
                 isX ? axis : yMinus, isX ? yMinus : axis,
-                clockwise, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles
+                clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces
                 );
     }
 
@@ -347,15 +368,15 @@ public class ShaderTerrain : MonoBehaviour {
         int xTwo, int yTwo,
         int xThree, int yThree,
         bool clockwise,
-        int i, int xResolution, int yResolution,
+        int i, int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles
+        List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles, Dictionary<Vector3, int[,]> vertexFaces
 
         ) {
 
-        if (AddVertex(xOne, yOne, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-        if (AddVertex(xTwo, yTwo, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
-        if (AddVertex(xThree, yThree, i, xResolution, yResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions)) { i++; }
+        if (AddVertex(xOne, yOne, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
+        if (AddVertex(xTwo, yTwo, i, xResolution, yResolution, zResolution,  localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
+        if (AddVertex(xThree, yThree, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces)) { i++; }
 
         int onePos = vertexPositions[xOne, yOne] - 1;
         int twoPos = vertexPositions[xTwo, yTwo] - 1;
@@ -378,14 +399,145 @@ public class ShaderTerrain : MonoBehaviour {
     }
 
     public bool AddVertex(
-        int x, int y, int i, int xResolution, int yResolution, 
+        int x, int y, int i, int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
         List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions
+        , Dictionary<Vector3, int[,]> vertexFaces
         ) {
+
+        //int[,] zShared = new int[maxResolution * zSize, 4];
+        //int[,] xShared = new int[Mathf.Max((maxResolution * xSize) - 2, 1), 4];
+        //int[,] yShared = new int[Mathf.Max((maxResolution * ySize) - 2, 1), 4];
 
         if (vertexPositions[x, y] == 0)
         {
+            //Share vertices between faces where they connect
+            if (x == xResolution - 1 || y == yResolution - 1 || x == 0 || y == 0)
+            {
+                if (localUp == Vector3.up){
+                    if (x == xResolution - 1){
+                        vertexFaces[Vector3.right][(yResolution - 1) - y, 0] = i + 1;
+                    }
+                    else if (x == 0){
+                        vertexFaces[Vector3.left][y, 0] = i + 1;
+                    }
+                    if (y == 0){
+                        vertexFaces[Vector3.forward][zResolution - 1, (xResolution - 1) - x] = i + 1;
+                    }
+                    else if (y == yResolution - 1){
+                        vertexFaces[Vector3.back][0, (xResolution - 1) - x] = i + 1;
+                    }
+                }else if (localUp == Vector3.down){
+                    if (x == 0){
+                        vertexFaces[Vector3.right][(yResolution - 1) - y, zResolution-1] = i+1;
+                    }else if (x == xResolution-1){
+                        vertexFaces[Vector3.left][y, zResolution - 1] = i + 1;
+                    }
+                    if (y == yResolution - 1) {
+                        vertexFaces[Vector3.back][zResolution - 1, x] = i + 1;
+                    } else if (y == 0) {
+                        vertexFaces[Vector3.forward][0, x] = i + 1;
+                    }
+                }
+                else if (localUp == Vector3.forward)
+                {
+                    if (x == xResolution - 1)
+                    {
+                        vertexFaces[Vector3.up][(yResolution - 1) - y, 0] = i + 1;
+
+                    }else if (x == 0)
+                    {
+                        vertexFaces[Vector3.down][y, 0] = i + 1;
+                    }
+
+                    if (y == 0)
+                    {
+                        vertexFaces[Vector3.right][zResolution-1, (xResolution - 1)-x] = i + 1;
+
+                    }else if (y == yResolution - 1)
+                    {
+                        vertexFaces[Vector3.left][0, (xResolution - 1) - x] = i + 1;
+                    }
+
+                }
+                else if (localUp == Vector3.back)
+                {
+                    if (x == 0)
+                    {
+                        vertexFaces[Vector3.up][(yResolution - 1) - y, zResolution - 1] = i + 1;
+
+                    }else if (x == xResolution-1)
+                    {
+                        vertexFaces[Vector3.down][y, zResolution - 1] = i + 1;
+                    }
+
+                    if (y == yResolution - 1)
+                    {
+                        vertexFaces[Vector3.left][zResolution - 1, x] = i + 1;
+                    }
+                    else if (y == 0) {
+                        vertexFaces[Vector3.right][0, x] = i+1;
+                    }
+
+                }
+                else if (localUp == Vector3.right)
+                {
+                    if (y == 0)
+                    {
+                        vertexFaces[Vector3.up][zResolution - 1, (xResolution - 1) - x] = i + 1;
+
+                    }else if (y == yResolution-1)
+                    {
+                        vertexFaces[Vector3.down][0, (xResolution - 1) - x] = i + 1;
+                    }
+
+                    if (x == xResolution-1)
+                    {
+                        vertexFaces[Vector3.forward][(yResolution - 1)-y, 0] = i + 1;
+
+                    }else if (x == 0)
+                    {
+                        vertexFaces[Vector3.back][y, 0] = i+1;
+
+                    }
+                }
+                else if (localUp == Vector3.left)
+                {
+                    if (y == 0)
+                    {
+                        vertexFaces[Vector3.up][0, x] = i + 1;
+
+                    }else if (y == yResolution-1)
+                    {
+                        vertexFaces[Vector3.down][zResolution-1, x] = i+1;
+                    }
+
+                    if (x == 0)
+                    {
+                        vertexFaces[Vector3.forward][(yResolution-1)-y,zResolution-1] = i + 1;
+
+                    }else if (x == xResolution-1)
+                    {
+                        vertexFaces[Vector3.back][y, zResolution - 1] = i + 1;
+                    }
+                }
+
+                //if (localUp == Vector3.left || localUp == Vector3.right){
+                //    xMod = zSize;
+                //    yMod = ySize;
+                //    zMod = xSize;
+                //}else if (localUp == Vector3.back || localUp == Vector3.forward){
+                //    xMod = ySize;
+                //    yMod = xSize;
+                //    zMod = zSize;
+                //}else if (localUp == Vector3.up || localUp == Vector3.down){
+                //    xMod = xSize;
+                //    yMod = zSize;
+                //    zMod = ySize;
+                // }
+            }
             Vector2 percent = new Vector2(x / (float)(xResolution - 1), (float)y / (float)(yResolution - 1));
+            //vertexFaces[localUp][x, y] = i + 1;
             vertexPositions[x, y] = i + 1;
             uvs.Add(percent);
             vertices.Add(Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent));
@@ -426,7 +578,7 @@ public class ShaderTerrain : MonoBehaviour {
         int b = 1;
         int r = (int)(maxResolution / resolution);
 
-        //Find the optimal resolution that does not exceed r
+        //Find the optimal resolution that does not exceed r to start at
         int vertCount = -1;
         for (int n = r; n > 0; n--) {
 
@@ -437,6 +589,8 @@ public class ShaderTerrain : MonoBehaviour {
                 r = n;
             }
         }
+        r = Mathf.Max(r, 1);
+
 
         int rh = (int)(((float)r) / 2f);
 
@@ -473,7 +627,6 @@ public class ShaderTerrain : MonoBehaviour {
         //Mark as regular res
         for (int y = b + r; y < yResolution - b; y += r)
         {
-
             for (int x = b + r; x < (xResolution - b); x += r)
             {
                 int j = (int)(y * xResolution) + x;
@@ -593,7 +746,6 @@ public class ShaderTerrain : MonoBehaviour {
                     }
                 }
             }
-
         }
 
         if (debug) {
