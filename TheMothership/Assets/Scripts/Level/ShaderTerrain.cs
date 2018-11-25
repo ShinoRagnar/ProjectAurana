@@ -742,8 +742,10 @@ public class ShaderTerrain : MonoBehaviour {
             
             Vector4 calc = Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
-            float r = ((1f - calc.w) * 255f);
-            float g = (calc.w * 255f);
+            float noise = Mathf.Clamp01(calc.w - 0.3f)*2f;
+            
+            float r = ((1f - noise) * 255f);
+            float g = (noise * 255f);
 
             vertexColors.Add(new Color32((byte)r, (byte)g,0,0));
 
