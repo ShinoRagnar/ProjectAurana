@@ -1,13 +1,14 @@
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "UVFree/Terrain/StandardMetallic" {
+Shader "MixTerrain/VertexColorSplat" {
+
 	Properties {
 		_TexPower("Texture Power", Range (0.0, 20.0)) = 10.0
 		_UVScale("Texture Scale %", Float) = 100.0	
 		_BumpScale("Bump Scale", Range(-2.0, 2.0)) = 1.0
 				
 		// set by terrain engine [HideInInspector]
-		 _Control ("Control (RGBA)", 2D) = "red" {}
+		// _Control ("Control (RGBA)", 2D) = "red" {}
 		 _Splat3 ("Layer 3 (A)", 2D) = "white" {}
 		 _Splat2 ("Layer 2 (B)", 2D) = "white" {}
 		 _Splat1 ("Layer 1 (G)", 2D) = "white" {}
@@ -37,8 +38,8 @@ Shader "UVFree/Terrain/StandardMetallic" {
 			"RenderType" = "Opaque"
 		}
 
-		CGPROGRAM
-		#pragma surface surf Standard vertex:SplatmapVert finalcolor:SplatmapFinalColor fullforwardshadows
+		CGPROGRAM //finalcolor:SplatmapFinalColor
+		#pragma surface surf Standard vertex:SplatmapVert finalcolor:SplatmapFinalColor  fullforwardshadows
 
 		#define TERRAIN_SURFACE_OUTPUT SurfaceOutputStandard
 
@@ -59,9 +60,9 @@ Shader "UVFree/Terrain/StandardMetallic" {
 		sampler2D _Splat0,_Splat1,_Splat2,_Splat3;
 		half4 _Splat0_ST, _Splat1_ST, _Splat2_ST, _Splat3_ST;
 		
-		#ifdef _TERRAIN_NORMAL_MAP
+		//#ifdef _TERRAIN_NORMAL_MAP
 			sampler2D _Normal0, _Normal1, _Normal2, _Normal3;
-		#endif
+		//#endif
 
 
 		fixed _Metallic0, _Metallic1, _Metallic2, _Metallic3;
@@ -79,7 +80,8 @@ Shader "UVFree/Terrain/StandardMetallic" {
 				fixed3 normal;
 			#endif
 			float3 worldPos;			
-			float2 tc_Control : TEXCOORD4;	// Not prefixing '_Control' with 'uv' allows a tighter packing of interpolators, which is necessary to support directional lightmap.
+			//float2 tc_Control : TEXCOORD4;	// Not prefixing '_Control' with 'uv' allows a tighter packing of interpolators, which is necessary to support directional lightmap.
+			float4 color: Color;
 			UNITY_FOG_COORDS(5)
 		};
 		
@@ -112,7 +114,8 @@ Shader "UVFree/Terrain/StandardMetallic" {
 
 			// Need to manually transform uv here,
 			// as we choose not to use 'uv' prefix for this texcoord.			
-			o.tc_Control = TRANSFORM_TEX(v.texcoord, _Control);
+			//o.tc_Control = TRANSFORM_TEX(v.texcoord, _Control);
+
 			float4 pos = UnityObjectToClipPos (v.vertex);
 			UNITY_TRANSFER_FOG(o, pos);			
 		}
@@ -135,20 +138,21 @@ Shader "UVFree/Terrain/StandardMetallic" {
 				float2 yUV = xUV;
 			#endif
 								
-			half4 splat_control;
-			half weight;
+			//half4 splat_control;
+			//half weight;
 			fixed4 mixedDiffuse;
 						
-			splat_control = tex2D(_Control, IN.tc_Control);
-			weight = dot(splat_control, half4(1.0,1.0,1.0,1.0));
+			//splat_control = tex2D(_Control, IN.tc_Control);
 
-			#ifndef UNITY_PASS_DEFERRED
-				splat_control /= (weight + 1e-3f); // avoid NaNs in splat_control
-			#endif
+			//weight = dot(splat_control, half4(1.0,1.0,1.0,1.0));
 
-			#if !defined(SHADER_API_MOBILE) && defined(TERRAIN_SPLAT_ADDPASS)
-				clip(weight - 0.0039);
-			#endif
+			//#ifndef UNITY_PASS_DEFERRED
+				//splat_control /= (weight + 1e-3f); // avoid NaNs in splat_control
+			//#endif
+
+			//#if !defined(SHADER_API_MOBILE) && defined(TERRAIN_SPLAT_ADDPASS)
+			//	clip(weight - 0.0039);
+			//#endif
 
 			fixed4 texX0 = tex2D(_Splat0, (posX * _Splat0_ST.xy + _Splat0_ST.zw)*xUV/_UVScale);
 			fixed4 texY0 = tex2D(_Splat0, (posY * _Splat0_ST.xy + _Splat0_ST.zw)*yUV/_UVScale);
@@ -187,12 +191,18 @@ Shader "UVFree/Terrain/StandardMetallic" {
 			  + texZ3 * IN.powerNormal.z;
 
 			mixedDiffuse = 0.0f;
-			mixedDiffuse += splat_control.r * tex0 * fixed4(1.0, 1.0, 1.0, _Smoothness0);
-			mixedDiffuse += splat_control.g * tex1 * fixed4(1.0, 1.0, 1.0, _Smoothness1);
-			mixedDiffuse += splat_control.b * tex2 * fixed4(1.0, 1.0, 1.0, _Smoothness2);
-			mixedDiffuse += splat_control.a * tex3 * fixed4(1.0, 1.0, 1.0, _Smoothness3);
+			mixedDiffuse += IN.color.r * tex0 * fixed4(1.0, 1.0, 1.0, _Smoothness0);
+			mixedDiffuse += IN.color.g * tex1 * fixed4(1.0, 1.0, 1.0, _Smoothness1);
+			mixedDiffuse += IN.color.b * tex2 * fixed4(1.0, 1.0, 1.0, _Smoothness2);
+			mixedDiffuse += IN.color.a * tex3 * fixed4(1.0, 1.0, 1.0, _Smoothness3);
 
-			#ifdef _TERRAIN_NORMAL_MAP
+
+			//mixedDiffuse += splat_control.r * tex0 * fixed4(1.0, 1.0, 1.0, _Smoothness0);
+			//mixedDiffuse += splat_control.g * tex1 * fixed4(1.0, 1.0, 1.0, _Smoothness1);
+			//mixedDiffuse += splat_control.b * tex2 * fixed4(1.0, 1.0, 1.0, _Smoothness2);
+			//mixedDiffuse += splat_control.a * tex3 * fixed4(1.0, 1.0, 1.0, _Smoothness3);
+
+			//#ifdef _TERRAIN_NORMAL_MAP
 			
 				// NORMAL
 				//
@@ -234,24 +244,30 @@ Shader "UVFree/Terrain/StandardMetallic" {
 				  + bumpY3 * IN.powerNormal.y
 				  + bumpZ3 * IN.powerNormal.z;
 				  			 
+				//fixed4 bump =
+				//	splat_control.r * bump0
+				//  + splat_control.g * bump1
+				//  + splat_control.b * bump2
+				//  + splat_control.a * bump3;
+
 				fixed4 bump =
-					splat_control.r * bump0
-				  + splat_control.g * bump1
-				  + splat_control.b * bump2
-				  + splat_control.a * bump3;
+					IN.color.r * bump0
+				  + IN.color.g * bump1
+				  + IN.color.b * bump2
+				  + IN.color.a * bump3;
 				bump *= _BumpScale;
 				
 				bump += flatNormal;
 
 				o.Normal = UnpackNormal(bump);
 			
-			#endif
+			//#endif
 				
 			o.Albedo = max(fixed3(0.0, 0.0, 0.0), mixedDiffuse.rgb);
-			o.Alpha = weight;
+			o.Alpha = 1;//weight;
 			o.Smoothness = mixedDiffuse.a;
 			
-			o.Metallic = dot(splat_control, fixed4(_Metallic0, _Metallic1, _Metallic2, _Metallic3));
+			o.Metallic = dot(IN.color, fixed4(_Metallic0, _Metallic1, _Metallic2, _Metallic3));
 		}
 
 		void SplatmapFinalColor(Input IN, TERRAIN_SURFACE_OUTPUT o, inout fixed4 color)

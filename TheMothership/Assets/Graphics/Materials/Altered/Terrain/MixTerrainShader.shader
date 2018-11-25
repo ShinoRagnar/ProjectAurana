@@ -1,6 +1,7 @@
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "UVFree/Terrain/StandardMetallic" {
+Shader "MixTerrain/MixTerrainShader" {
+
 	Properties {
 		_TexPower("Texture Power", Range (0.0, 20.0)) = 10.0
 		_UVScale("Texture Scale %", Float) = 100.0	
@@ -59,9 +60,9 @@ Shader "UVFree/Terrain/StandardMetallic" {
 		sampler2D _Splat0,_Splat1,_Splat2,_Splat3;
 		half4 _Splat0_ST, _Splat1_ST, _Splat2_ST, _Splat3_ST;
 		
-		#ifdef _TERRAIN_NORMAL_MAP
+		//#ifdef _TERRAIN_NORMAL_MAP
 			sampler2D _Normal0, _Normal1, _Normal2, _Normal3;
-		#endif
+		//#endif
 
 
 		fixed _Metallic0, _Metallic1, _Metallic2, _Metallic3;
@@ -192,7 +193,7 @@ Shader "UVFree/Terrain/StandardMetallic" {
 			mixedDiffuse += splat_control.b * tex2 * fixed4(1.0, 1.0, 1.0, _Smoothness2);
 			mixedDiffuse += splat_control.a * tex3 * fixed4(1.0, 1.0, 1.0, _Smoothness3);
 
-			#ifdef _TERRAIN_NORMAL_MAP
+			//#ifdef _TERRAIN_NORMAL_MAP
 			
 				// NORMAL
 				//
@@ -245,7 +246,7 @@ Shader "UVFree/Terrain/StandardMetallic" {
 
 				o.Normal = UnpackNormal(bump);
 			
-			#endif
+			//#endif
 				
 			o.Albedo = max(fixed3(0.0, 0.0, 0.0), mixedDiffuse.rgb);
 			o.Alpha = weight;
