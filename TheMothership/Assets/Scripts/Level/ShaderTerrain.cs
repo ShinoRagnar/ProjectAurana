@@ -44,6 +44,9 @@ public class ShaderTerrain : MonoBehaviour {
     public Vector3[] directions = new Vector3[] {   Vector3.up,     Vector3.forward,    Vector3.left,   Vector3.right,  Vector3.down };
     public int[] resolutions = new int[]        {          1,              4,                  2,              2,             1 };
 
+    [Header("Children")]
+    public ShaderTerrain[] children;
+
     [Header("Texture")]
    // public float splatBorderWidth = 2f;
     public float textureScale = 100;
@@ -66,6 +69,7 @@ public class ShaderTerrain : MonoBehaviour {
     private Mesh mesh;
     private Noise noise;
     private Vector3 currentPos;
+    private List<ShaderTerrain>[] childrenPerFace;
 
     private static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
     public static Color32[] DEBUG_COLORS = new Color32[] {
@@ -106,6 +110,7 @@ public class ShaderTerrain : MonoBehaviour {
     public void OnValidate()
     {
         if (update) {
+            SortChildren();
             Initialize();
             ApplyMeshArrays(Generate(), mesh);
 
@@ -157,7 +162,74 @@ public class ShaderTerrain : MonoBehaviour {
 
         renderer.material = newMat;
 
+
     }
+    public void SortChildren() {
+
+        childrenPerFace = new List<ShaderTerrain>[directions.Length];
+
+        foreach (ShaderTerrain st in children)
+        {
+            if (st.GetCorner(Vector3.down).y > GetCorner(Vector3.up).y)
+            {
+                AddIfDirection(st, Vector3.up);
+
+            }
+            else if (st.GetCorner(Vector3.up).y < GetCorner(Vector3.down).y)
+            {
+                AddIfDirection(st, Vector3.down);
+
+            }
+            else if (st.GetCorner(Vector3.right).x < GetCorner(Vector3.left).x)
+            {
+                AddIfDirection(st, Vector3.left);
+
+            }
+            else if (st.GetCorner(Vector3.left).x > GetCorner(Vector3.right).x)
+            {
+                AddIfDirection(st, Vector3.right);
+            }
+            else if (st.GetCorner(Vector3.back).z > GetCorner(Vector3.forward).z)
+            {
+                AddIfDirection(st, Vector3.forward);
+            }
+            else if (st.GetCorner(Vector3.forward).z < GetCorner(Vector3.back).z)
+            {
+                AddIfDirection(st, Vector3.back);
+            }
+            else {
+                Debug.Log("Could not combine with child <" + st.xSize + "," + st.ySize + "," + st.zSize + "> " + st.currentPos);
+            }
+
+        }
+
+    }
+
+    private void AddIfDirection(ShaderTerrain st, Vector3 dir)
+    {
+        for (int i = 0; i < directions.Length; i++)
+        {
+            if (directions[i] == dir)
+            {
+                if (childrenPerFace[i] == null)
+                {
+                    childrenPerFace[i] = new List<ShaderTerrain>();
+                }
+                childrenPerFace[i].Add(st);
+                Debug.Log("Added child to: " + dir);
+                return;
+            }
+        }
+        Debug.Log("Missing direction: " + dir);
+    }
+
+    public Vector3 GetCorner(Vector3 orientation) {
+        return currentPos + new Vector3(orientation.x * xSize / 2f, orientation.y * ySize / 2f, orientation.z * zSize / 2f);
+    }
+
+
+
+
     public static Vector3 GetResolution(int resolution, Vector3 mod)
     {
         int xResolution = Mathf.Max(2, (int)(resolution * (mod.x)) + 1);
@@ -627,46 +699,52 @@ public class ShaderTerrain : MonoBehaviour {
             if (x == xResolution - 1 || y == yResolution - 1 || x == 0 || y == 0)
             {
                 if (localUp == Vector3.up){
-                    if (x == xResolution - 1){
+                    if (x == xResolution - 1 && vertexFaces.ContainsKey(Vector3.right))
+                    {
                         vertexFaces[Vector3.right][(yResolution - 1) - y, 0] = i + 1;
                     }
-                    else if (x == 0){
+                    else if (x == 0 && vertexFaces.ContainsKey(Vector3.left))
+                    {
                         vertexFaces[Vector3.left][y, 0] = i + 1;
                     }
-                    if (y == 0){
+                    if (y == 0 && vertexFaces.ContainsKey(Vector3.forward))
+                    {
                         vertexFaces[Vector3.forward][zResolution - 1, (xResolution - 1) - x] = i + 1;
                     }
-                    else if (y == yResolution - 1){
+                    else if (y == yResolution - 1 && vertexFaces.ContainsKey(Vector3.back))
+                    {
                         vertexFaces[Vector3.back][0, (xResolution - 1) - x] = i + 1;
                     }
-                }else if (localUp == Vector3.down){
-                    if (x == 0){
+                }else if (localUp == Vector3.down ){
+                    if (x == 0 && vertexFaces.ContainsKey(Vector3.right))
+                    {
                         vertexFaces[Vector3.right][(yResolution - 1) - y, zResolution-1] = i+1;
-                    }else if (x == xResolution-1){
+                    }else if (x == xResolution-1 && vertexFaces.ContainsKey(Vector3.left))
+                    {
                         vertexFaces[Vector3.left][y, zResolution - 1] = i + 1;
                     }
-                    if (y == yResolution - 1) {
+                    if (y == yResolution - 1 && vertexFaces.ContainsKey(Vector3.back)) {
                         vertexFaces[Vector3.back][zResolution - 1, x] = i + 1;
-                    } else if (y == 0) {
-                        vertexFaces[Vector3.forward][0, x] = i + 1;
+                    } else if (y == 0 && vertexFaces.ContainsKey(Vector3.left)) {
+                        vertexFaces[Vector3.left][0, x] = i + 1;
                     }
                 }
                 else if (localUp == Vector3.forward)
                 {
-                    if (x == xResolution - 1)
+                    if (x == xResolution - 1 && vertexFaces.ContainsKey(Vector3.up))
                     {
                         vertexFaces[Vector3.up][(yResolution - 1) - y, 0] = i + 1;
 
-                    }else if (x == 0)
+                    }else if (x == 0 && vertexFaces.ContainsKey(Vector3.down))
                     {
                         vertexFaces[Vector3.down][y, 0] = i + 1;
                     }
 
-                    if (y == 0)
+                    if (y == 0 && vertexFaces.ContainsKey(Vector3.right))
                     {
                         vertexFaces[Vector3.right][zResolution-1, (xResolution - 1)-x] = i + 1;
 
-                    }else if (y == yResolution - 1)
+                    }else if (y == yResolution - 1 && vertexFaces.ContainsKey(Vector3.left))
                     {
                         vertexFaces[Vector3.left][0, (xResolution - 1) - x] = i + 1;
                     }
@@ -674,40 +752,40 @@ public class ShaderTerrain : MonoBehaviour {
                 }
                 else if (localUp == Vector3.back)
                 {
-                    if (x == 0)
+                    if (x == 0 && vertexFaces.ContainsKey(Vector3.up))
                     {
                         vertexFaces[Vector3.up][(yResolution - 1) - y, zResolution - 1] = i + 1;
 
-                    }else if (x == xResolution-1)
+                    }else if (x == xResolution-1 && vertexFaces.ContainsKey(Vector3.down))
                     {
                         vertexFaces[Vector3.down][y, zResolution - 1] = i + 1;
                     }
 
-                    if (y == yResolution - 1)
+                    if (y == yResolution - 1 && vertexFaces.ContainsKey(Vector3.left))
                     {
                         vertexFaces[Vector3.left][zResolution - 1, x] = i + 1;
                     }
-                    else if (y == 0) {
+                    else if (y == 0 && vertexFaces.ContainsKey(Vector3.right)) {
                         vertexFaces[Vector3.right][0, x] = i+1;
                     }
 
                 }
                 else if (localUp == Vector3.right)
                 {
-                    if (y == 0)
+                    if (y == 0 && vertexFaces.ContainsKey(Vector3.up))
                     {
                         vertexFaces[Vector3.up][zResolution - 1, (xResolution - 1) - x] = i + 1;
 
-                    }else if (y == yResolution-1)
+                    }else if (y == yResolution-1 && vertexFaces.ContainsKey(Vector3.down))
                     {
                         vertexFaces[Vector3.down][0, (xResolution - 1) - x] = i + 1;
                     }
 
-                    if (x == xResolution-1)
+                    if (x == xResolution-1 && vertexFaces.ContainsKey(Vector3.forward))
                     {
                         vertexFaces[Vector3.forward][(yResolution - 1)-y, 0] = i + 1;
 
-                    }else if (x == 0)
+                    }else if (x == 0 && vertexFaces.ContainsKey(Vector3.back))
                     {
                         vertexFaces[Vector3.back][y, 0] = i+1;
 
@@ -715,20 +793,20 @@ public class ShaderTerrain : MonoBehaviour {
                 }
                 else if (localUp == Vector3.left)
                 {
-                    if (y == 0)
+                    if (y == 0 && vertexFaces.ContainsKey(Vector3.up))
                     {
                         vertexFaces[Vector3.up][0, x] = i + 1;
 
-                    }else if (y == yResolution-1)
+                    }else if (y == yResolution-1 && vertexFaces.ContainsKey(Vector3.down))
                     {
                         vertexFaces[Vector3.down][zResolution-1, x] = i+1;
                     }
 
-                    if (x == 0)
+                    if (x == 0 && vertexFaces.ContainsKey(Vector3.forward))
                     {
                         vertexFaces[Vector3.forward][(yResolution-1)-y,zResolution-1] = i + 1;
 
-                    }else if (x == xResolution-1)
+                    }else if (x == xResolution-1 && vertexFaces.ContainsKey(Vector3.back))
                     {
                         vertexFaces[Vector3.back][y, zResolution - 1] = i + 1;
                     }
