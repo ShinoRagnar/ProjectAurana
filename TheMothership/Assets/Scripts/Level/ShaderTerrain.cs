@@ -27,6 +27,7 @@ public class ShaderTerrain : MonoBehaviour
 
         public Vector3[] vertices;
         public Vector2[] uvs;
+        public Vector3[] normals;
         public int[] triangles;
         public Color32[] vertexColors;
         public Dictionary<Vector3, int[,]> faces;
@@ -34,11 +35,13 @@ public class ShaderTerrain : MonoBehaviour
         public int[,] sharedY;
         public int[,] sharedZ;
 
+
         //public Color[,] splat;
 
         public MeshArrays(
             Vector3[] vertices,
             Vector2[] uvs,
+            Vector3[] normals,
             int[] triangles
             /*, Color[,] colors*/ ,
             Color32[] vertexColors,
@@ -51,6 +54,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             this.vertices = vertices;
             this.uvs = uvs;
+            this.normals = normals;
             this.triangles = triangles;
             //this.splat = colors;
             this.vertexColors = vertexColors;
@@ -79,7 +83,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         public void Divide(Vector3 v)
         {
-            first = new Vector3(first.x/v.x,first.y/v.y, first.z/v.z);
+            first = new Vector3(first.x / v.x, first.y / v.y, first.z / v.z);
             second = new Vector3(second.x / v.x, second.y / v.y, second.z / v.z);
         }
         public void Multiply(Vector3 v)
@@ -108,6 +112,20 @@ public class ShaderTerrain : MonoBehaviour
         }
         public void DebugPrint() {
             Debug.Log("VectorPair first: " + first + " second: " + second);
+        }
+    }
+
+    public struct VertexPoint {
+
+        public Vector3 normal;
+        public Vector3 point;
+        public float noise;
+
+        public VertexPoint(Vector3 normal, Vector3 point, float noise) {
+            this.normal = normal;
+            this.point = point;
+            this.noise = noise;
+
         }
     }
 
@@ -176,7 +194,7 @@ public class ShaderTerrain : MonoBehaviour
     private Vector3 currentPos;
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace;
-   // private MeshArrays lastGeneratedMesh;
+    // private MeshArrays lastGeneratedMesh;
 
 
 
@@ -243,9 +261,12 @@ public class ShaderTerrain : MonoBehaviour
         m.Clear();
         m.vertices = ms.vertices;
         m.uv = ms.uvs;
+        m.normals = ms.normals;
         m.colors32 = ms.vertexColors;
         m.triangles = ms.triangles;
-        m.RecalculateNormals();
+
+        //m.RecalculateNormals();
+
 
         Debug.Log(" Colors: " + ms.vertexColors.Length);
 
@@ -390,13 +411,13 @@ public class ShaderTerrain : MonoBehaviour
             Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
             Vector3 mod = GetMod(-projectDirection, size);
 
-           // Debug.Log("Local pos: " + localPos);
-            minmax.Add(new Vector3(localPos.x,localPos.y,-localPos.z) + size/2f);
+            // Debug.Log("Local pos: " + localPos);
+            minmax.Add(new Vector3(localPos.x, localPos.y, -localPos.z) + size / 2f);
             //minmax.DebugPrint();
             minmax.Divide(size);
             //minmax.DebugPrint();
             minmax.Clamp01();
-           // minmax.DebugPrint();
+            // minmax.DebugPrint();
             minmax.Multiply(size * resolution - Vector3.one);
             //minmax.DebugPrint();
             minmax.FloorFirstCeilSecond();
@@ -487,6 +508,7 @@ public class ShaderTerrain : MonoBehaviour
 
         List<Color32> vertexColors = new List<Color32>();
         List<Vector3> vertices = new List<Vector3>();
+        List<Vector3> normals = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
         List<int> triangles = new List<int>();
 
@@ -642,11 +664,11 @@ public class ShaderTerrain : MonoBehaviour
                 zResolution = (int)borderRes.z;
 
                 int[,] links = GetVertexLinks(
-                    childlist, 
-                    projections, 
-                    borderRes, 
-                    maxResolution, 
-                    resolution, 
+                    childlist,
+                    projections,
+                    borderRes,
+                    maxResolution,
+                    resolution,
                     localUp == Vector3.up);
 
 
@@ -681,7 +703,7 @@ public class ShaderTerrain : MonoBehaviour
 
                         int j = (int)(y * xResolution) + x;
 
-                        if (links[j, 0] != 0 && links[j,LINK_PROJECTION] == 0)
+                        if (links[j, 0] != 0 && links[j, LINK_PROJECTION] == 0)
                         { // Triangles for non-center padding between larger quads
 
                             if (links[j, 1] != 0 || links[j, 2] != 0)
@@ -693,14 +715,14 @@ public class ShaderTerrain : MonoBehaviour
 
                                     i = AddTopTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles,
-                                        vertexFaces, /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ);
+                                        vertexFaces, /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ, normals);
 
                                     if (links[j, 6] == 3)
                                     { //Corner case
 
                                         i = AddTopTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                             halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles,
-                                            vertexFaces,  /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ);
+                                            vertexFaces,  /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ, normals);
 
                                     }
                                 }
@@ -711,14 +733,14 @@ public class ShaderTerrain : MonoBehaviour
 
                                     i = AddBotTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles,
-                                        vertexFaces,/* uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ);
+                                        vertexFaces,/* uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ, normals);
 
                                     if (links[j, 6] == 3) // Corner case
                                     {
 
                                         i = AddBotTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                             halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles,
-                                            vertexFaces,  /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ);
+                                            vertexFaces,  /*uvCoord,*/ dir, vertexColors, sharedX, sharedY, sharedZ, normals);
 
                                     }
                                 }
@@ -741,7 +763,7 @@ public class ShaderTerrain : MonoBehaviour
                                         isX ? axis : yMinus, isX ? yMinus : axis,
                                         clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB,
                                         halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces,/* uvCoord,*/ dir, vertexColors,
-                                        sharedX, sharedY, sharedZ
+                                        sharedX, sharedY, sharedZ, normals
                                         );
                             }
                             else
@@ -752,16 +774,16 @@ public class ShaderTerrain : MonoBehaviour
 
                                 if (AddVertex(x, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB,
                                     halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces,/* uvCoord,*/ dir, vertexColors,
-                                    sharedX, sharedY, sharedZ)) { i++; }
+                                    sharedX, sharedY, sharedZ, normals)) { i++; }
                                 if (AddVertex(xPos, yPos, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB,
                                     halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces,/*  uvCoord,*/ dir, vertexColors,
-                                    sharedX, sharedY, sharedZ)) { i++; }
+                                    sharedX, sharedY, sharedZ, normals)) { i++; }
                                 if (AddVertex(x, yPos, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB,
                                     halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces,/*  uvCoord,*/ dir, vertexColors,
-                                    sharedX, sharedY, sharedZ)) { i++; }
+                                    sharedX, sharedY, sharedZ, normals)) { i++; }
                                 if (AddVertex(xPos, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB,
                                     halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces,/*  uvCoord,*/ dir, vertexColors,
-                                    sharedX, sharedY, sharedZ)) { i++; }
+                                    sharedX, sharedY, sharedZ, normals)) { i++; }
 
                                 int thisPos = vertexPositions[x, y] - 1;
                                 int backPos = vertexPositions[x, yPos] - 1;
@@ -818,6 +840,7 @@ public class ShaderTerrain : MonoBehaviour
         return new MeshArrays(
             vertices.ToArray(),
             uvs.ToArray(),
+            normals.ToArray(),
             triangles.ToArray(),
             vertexColors.ToArray(),
             vertexFaces,
@@ -834,7 +857,7 @@ public class ShaderTerrain : MonoBehaviour
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
         List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles, Dictionary<Vector3, int[,]> vertexFaces//, 
                                                                                                                                        //Vector3 uvCoord
-        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ
+        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ, List<Vector3> normals
         )
     {
 
@@ -852,7 +875,7 @@ public class ShaderTerrain : MonoBehaviour
             isX ? selfX : ySelf, isX ? ySelf : selfX,
             clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces /*, uvCoord*/, dir, vertexColors,
-            sharedX, sharedY, sharedZ
+            sharedX, sharedY, sharedZ, normals
             );
     }
 
@@ -863,7 +886,8 @@ public class ShaderTerrain : MonoBehaviour
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
         List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles,
         Dictionary<Vector3, int[,]> vertexFaces /*, Vector3 uvCoord*/
-        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ)
+        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ, List<Vector3> normals
+        )
     {
 
         int selfX = (isX ? x : y) - links[j, 3] + links[j, 4];
@@ -880,7 +904,7 @@ public class ShaderTerrain : MonoBehaviour
                 isX ? axis : yMinus, isX ? yMinus : axis,
                 clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
                 axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, triangles, vertexFaces /*, uvCoord*/, dir, vertexColors,
-                sharedX, sharedY, sharedZ
+                sharedX, sharedY, sharedZ, normals
                 );
     }
 
@@ -893,19 +917,19 @@ public class ShaderTerrain : MonoBehaviour
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
         List<Vector3> vertices, List<Vector2> uvs, int[,] vertexPositions, List<int> triangles, Dictionary<Vector3, int[,]> vertexFaces
         /*,Vector3 uvCoord*/
-        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ
+        , int dir, List<Color32> vertexColors, int[,] sharedX, int[,] sharedY, int[,] sharedZ, List<Vector3> normals
         )
     {
 
         if (AddVertex(xOne, yOne, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces/*, uvCoord*/, dir, vertexColors,
-            sharedX, sharedY, sharedZ)) { i++; }
+            sharedX, sharedY, sharedZ, normals)) { i++; }
         if (AddVertex(xTwo, yTwo, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces/*, uvCoord*/, dir, vertexColors,
-            sharedX, sharedY, sharedZ)) { i++; }
+            sharedX, sharedY, sharedZ, normals)) { i++; }
         if (AddVertex(xThree, yThree, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertices, uvs, vertexPositions, vertexFaces/*, uvCoord*/, dir, vertexColors,
-            sharedX, sharedY, sharedZ)) { i++; }
+            sharedX, sharedY, sharedZ, normals)) { i++; }
 
         int onePos = vertexPositions[xOne, yOne] - 1;
         int twoPos = vertexPositions[xTwo, yTwo] - 1;
@@ -935,7 +959,7 @@ public class ShaderTerrain : MonoBehaviour
         Dictionary<Vector3, int[,]> vertexFaces,
         // Vector3 uvCoord, 
         int dir, List<Color32> vertexColors,
-        int[,] sharedX, int[,] sharedY, int[,] sharedZ
+        int[,] sharedX, int[,] sharedY, int[,] sharedZ, List<Vector3> normals
         //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
         )
     {
@@ -944,6 +968,23 @@ public class ShaderTerrain : MonoBehaviour
         {
             int val = 0;
             int iplus = i + 1;
+
+            /*
+            Vector2 topLeft = new Vector2((x-1) / (float)(xResolution - 1), (float)(y+1) / (float)(yResolution - 1));
+            Vector2 topRight = new Vector2((x + 1) / (float)(xResolution - 1), (float)(y+1) / (float)(yResolution - 1));
+            Vector2 bottomLeft = new Vector2((x - 1) / (float)(xResolution - 1), (float)(y - 1) / (float)(yResolution - 1));
+            Vector2 bottomRight = new Vector2((x + 1) / (float)(xResolution - 1), (float)(y - 1) / (float)(yResolution - 1));
+
+            Vector3 topLeftNormalFace = localUp;
+            Vector3 topRightNormalFace = localUp;
+            Vector3 bottomLeftNormalFace = localUp;
+            Vector3 bottomRightNormalFace = localUp;
+            */
+
+           // Vector3 yNormal = Vector3.zero;
+           // Vector3 xNormal = Vector3.zero;
+           // Vector2 xNormalPos = Vector2.zero;
+           // Vector2 yNormalPos = Vector2.zero;
 
             //Share vertices between faces where they connect
             if (x == xResolution - 1 || y == yResolution - 1 || x == 0 || y == 0)
@@ -956,23 +997,44 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.right)) { vertexFaces[Vector3.right][val, 0] = iplus; }
                         sharedZ[MeshArrays.Z_TOP_RIGHT, val] = iplus;
+                        //Normals
+                        //topRightNormalFace = Vector3.right;
+                        //bottomRightNormalFace = Vector3.right;
+                        //topRight = new Vector2(Mathf.Clamp01(((float)val + 1f) / ((float)yResolution - 1f)), 1f/ ((float)zResolution - 1f));
+                        ///bottomRight = new Vector2(Mathf.Clamp01(((float)val - 1f) / ((float)yResolution - 1f)), topRight.y);
+
                     }
                     else if (x == 0)
                     {
                         if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.left][y, 0] = iplus; }
                         sharedZ[MeshArrays.Z_TOP_LEFT, y] = iplus;
+                        //Normals
+                        //topLeftNormalFace = Vector3.left;
+                        //bottomLeftNormalFace = Vector3.left;
+                        //topLeft = new Vector2(Mathf.Clamp01(((float)y + 1f) / ((float)yResolution - 1f)), 1f / ((float)zResolution - 1f));
+                        //bottomLeft = new Vector2(Mathf.Clamp01(((float)y - 1f) / ((float)yResolution - 1f)), topLeft.y);
+
                     }
                     if (y == 0)
                     {
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.forward)) { vertexFaces[Vector3.forward][zResolution - 1, val] = iplus; }
                         sharedX[MeshArrays.X_TOP_FORWARD, val] = iplus;
+                        //Normals
+                        //bottomLeftNormalFace = Vector3.forward;
+                        //bottomRightNormalFace = Vector3.forward;
+                        ///bottomLeft = new Vector2(((float)zResolution - 2f)/((float)zResolution-1f), Mathf.Clamp01(((float)val - 1f) / ((float)xResolution - 1f)));
+                        ///bottomRight = new Vector2(bottomLeft.x, Mathf.Clamp01(((float)val + 1f) / ((float)xResolution - 1f)));
                     }
                     else if (y == yResolution - 1)
                     {
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.back)) { vertexFaces[Vector3.back][0, val] = iplus; }
                         sharedX[MeshArrays.X_TOP_BACK, val] = iplus;
+                        ///bottomLeftNormalFace = Vector3.forward;
+                        //bottomRightNormalFace = Vector3.forward;
+                        //bottomLeft = new Vector2(((float)zResolution - 2f) / ((float)zResolution - 1f), Mathf.Clamp01(((float)val - 1f) / ((float)xResolution - 1f)));
+                       // bottomRight = new Vector2(bottomLeft.x, Mathf.Clamp01(((float)val + 1f) / ((float)xResolution - 1f)));
                     }
                 }
                 else if (localUp == Vector3.down)
@@ -982,16 +1044,22 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.right)) { vertexFaces[Vector3.right][val, zResolution - 1] = iplus; }
                         sharedZ[MeshArrays.Z_BOT_RIGHT, val] = iplus;
+                        //xNormal = Vector3.right;
+                        ///xNormalPos = new Vector2(val, zResolution - 2);
                     }
                     else if (x == xResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.left][y, zResolution - 1] = iplus; }
                         sharedZ[MeshArrays.Z_BOT_LEFT, y] = iplus;
+                        //xNormal = Vector3.left;
+                        //xNormalPos = new Vector2(y, zResolution - 2);
                     }
                     if (y == yResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.back)) { vertexFaces[Vector3.back][zResolution - 1, x] = iplus; }
                         sharedX[MeshArrays.X_BOT_BACK, x] = iplus;
+                        //yNormal = Vector3.back;
+                        //yNormalPos = new Vector2(zResolution - 2, x);
 
                     }
                     else if (y == 0)
@@ -999,6 +1067,8 @@ public class ShaderTerrain : MonoBehaviour
 
                         if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.forward][0, x] = iplus; }
                         sharedX[MeshArrays.X_BOT_FORWARD, x] = iplus;
+                        //yNormal = Vector3.forward;
+                        //yNormalPos = new Vector2(1, x);
                     }
                 }
                 else if (localUp == Vector3.forward)
@@ -1008,11 +1078,15 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.up)) { vertexFaces[Vector3.up][val, 0] = iplus; }
                         sharedX[MeshArrays.X_TOP_FORWARD, val] = iplus;
+                        ///xNormal = Vector3.up;
+                        //xNormalPos = new Vector2(val, 1);
                     }
                     else if (x == 0)
                     {
                         if (vertexFaces.ContainsKey(Vector3.down)) { vertexFaces[Vector3.down][y, 0] = iplus; }
                         sharedX[MeshArrays.X_BOT_FORWARD, y] = iplus;
+                        //xNormal = Vector3.down;
+                        //xNormalPos = new Vector2(y, 1);
                     }
 
                     if (y == 0)
@@ -1020,12 +1094,16 @@ public class ShaderTerrain : MonoBehaviour
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.right)) { vertexFaces[Vector3.right][zResolution - 1, val] = iplus; }
                         sharedY[MeshArrays.Y_RIGHT_FORWARD, val] = iplus;
+                        //yNormal = Vector3.right;
+                        //yNormalPos = new Vector2(zResolution - 2, val);
                     }
                     else if (y == yResolution - 1)
                     {
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.left][0, val] = iplus; }
                         sharedY[MeshArrays.Y_LEFT_FORWARD, val] = iplus;
+                        //yNormal = Vector3.left;
+                       // yNormalPos = new Vector2(1, val);
                     }
 
                 }
@@ -1036,23 +1114,31 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.up)) { vertexFaces[Vector3.up][val, zResolution - 1] = iplus; }
                         sharedX[MeshArrays.X_TOP_BACK, val] = iplus;
+                        //xNormal = Vector3.up;
+                        //xNormalPos = new Vector2(val, zResolution - 2);
 
                     }
                     else if (x == xResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.down)) { vertexFaces[Vector3.down][y, zResolution - 1] = iplus; }
                         sharedX[MeshArrays.X_BOT_BACK, y] = iplus;
+                        //xNormal = Vector3.down;
+                        //xNormalPos = new Vector2(y, zResolution - 2);
                     }
 
                     if (y == yResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.left][zResolution - 1, x] = iplus; }
                         sharedY[MeshArrays.Y_LEFT_BACK, y] = iplus;
+                        //yNormal = Vector3.left;
+                        //yNormalPos = new Vector2(zResolution - 2, x);
                     }
                     else if (y == 0)
                     {
                         if (vertexFaces.ContainsKey(Vector3.right)) { vertexFaces[Vector3.right][0, x] = iplus; }
                         sharedY[MeshArrays.Y_RIGHT_BACK, x] = iplus;
+                        //yNormal = Vector3.right;
+                        //yNormalPos = new Vector2(1, x);
                     }
 
                 }
@@ -1063,6 +1149,8 @@ public class ShaderTerrain : MonoBehaviour
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.up)) { vertexFaces[Vector3.up][zResolution - 1, val] = iplus; }
                         sharedZ[MeshArrays.Z_TOP_RIGHT, val] = iplus;
+                        //yNormal = Vector3.up;
+                        //yNormalPos = new Vector2(zResolution - 2, val);
 
                     }
                     else if (y == yResolution - 1)
@@ -1070,6 +1158,8 @@ public class ShaderTerrain : MonoBehaviour
                         val = (xResolution - 1) - x;
                         if (vertexFaces.ContainsKey(Vector3.down)) { vertexFaces[Vector3.down][0, val] = iplus; }
                         sharedZ[MeshArrays.Z_BOT_RIGHT, val] = iplus;
+                        //yNormal = Vector3.down;
+                        //yNormalPos = new Vector2(1, val);
                     }
 
                     if (x == xResolution - 1)
@@ -1077,11 +1167,15 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.forward)) { vertexFaces[Vector3.forward][val, 0] = iplus; }
                         sharedY[MeshArrays.Y_RIGHT_FORWARD, val] = iplus;
+                        //xNormal = Vector3.forward;
+                        //xNormalPos = new Vector2(val, 1);
                     }
                     else if (x == 0)
                     {
                         if (vertexFaces.ContainsKey(Vector3.back)) { vertexFaces[Vector3.back][y, 0] = iplus; }
                         sharedY[MeshArrays.Y_RIGHT_BACK, y] = iplus;
+                        //xNormal = Vector3.back;
+                        //xNormalPos = new Vector2(y, 1);
                     }
                 }
                 else if (localUp == Vector3.left)
@@ -1090,11 +1184,15 @@ public class ShaderTerrain : MonoBehaviour
                     {
                         if (vertexFaces.ContainsKey(Vector3.up)) { vertexFaces[Vector3.up][0, x] = iplus; }
                         sharedZ[MeshArrays.Z_TOP_LEFT, x] = iplus;
+                        //yNormal = Vector3.up;
+                        //yNormalPos = new Vector2(1, x);
                     }
                     else if (y == yResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.down)) { vertexFaces[Vector3.down][zResolution - 1, x] = iplus; }
                         sharedZ[MeshArrays.Z_BOT_LEFT, x] = iplus;
+                        //yNormal = Vector3.down;
+                        //yNormalPos = new Vector2(zResolution - 2, x);
                     }
 
                     if (x == 0)
@@ -1102,31 +1200,57 @@ public class ShaderTerrain : MonoBehaviour
                         val = (yResolution - 1) - y;
                         if (vertexFaces.ContainsKey(Vector3.forward)) { vertexFaces[Vector3.forward][val, zResolution - 1] = iplus; }
                         sharedY[MeshArrays.Y_LEFT_FORWARD, val] = iplus;
-
+                        //xNormal = Vector3.forward;
+                        //xNormalPos = new Vector2(val, zResolution - 2);
                     }
                     else if (x == xResolution - 1)
                     {
                         if (vertexFaces.ContainsKey(Vector3.back)) { vertexFaces[Vector3.back][y, zResolution - 1] = iplus; }
                         sharedY[MeshArrays.Y_LEFT_BACK, y] = iplus;
+                        //xNormal = Vector3.back;
+                       // xNormalPos = new Vector2(y, zResolution - 2);
                     }
                 }
             }
 
-            Vector2 percent = new Vector2(x / (float)(xResolution - 1), (float)y / (float)(yResolution - 1));
-            vertexPositions[x, y] = i + 1;
-            //splat[x, y] = DEBUG_COLORS[dir];
-            uvs.Add(percent); // percent);
 
-            Vector4 calc = Calculate(percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+            Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
+            Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
 
-            float noise = Mathf.Clamp01(Mathf.Clamp01(calc.w - 0.3f) * 2f);
+            //Calculate 4 points for the normal vector
+            //Vector3 topLeft = Calculate(new Vector2((float)(x - 1f) / (float)(xResolution - 1f), (float)(y + 1f) / (float)(yResolution - 1f)), 
+            //    localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+            //Vector3 topRight = Calculate(new Vector2((float)(x + 1f) / (float)(xResolution - 1f), (float)(y + 1f) / (float)(yResolution - 1f)),
+            //    localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+            //Vector3 bottomRight = Calculate(new Vector2((float)(x + 1f) / (float)(xResolution - 1f), (float)(y - 1f) / (float)(yResolution - 1f)),
+            //    localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+            // Vector3 bottomLeft = Calculate(new Vector2((float)(x - 1f) / (float)(xResolution - 1f), (float)(y - 1f) / (float)(yResolution - 1f)),
+            //    localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            //Calculate the actual point
+            VertexPoint center = Calculate(percent, onePercent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            //Calculate the normal;
+           // Vector3 normalTop = CalculateNormal(center, topLeft, topRight);
+           // Vector3 normalLeft = CalculateNormal(center, bottomLeft, topLeft);
+           // Vector3 normalDown = CalculateNormal(center, bottomRight, bottomLeft);
+           // Vector3 normalRight = CalculateNormal(center, topRight, bottomRight);
+
+
+
+            float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
             float r = ((1f - noise) * 255f);
             float g = (noise * 255f);
 
-            vertexColors.Add(new Color32((byte)r, (byte)g, 0, 0));
 
-            vertices.Add((Vector3)calc);
+            vertexPositions[x, y] = i + 1;
+            uvs.Add(percent);
+            vertexColors.Add(new Color32((byte)r, (byte)g, 0, 0));
+            vertices.Add((Vector3)center.point);
+            normals.Add(center.normal); //JoinNormals(normalTop, normalLeft, normalDown, normalRight));
+
+
             return true;
         }
         return false;
@@ -1140,7 +1264,36 @@ public class ShaderTerrain : MonoBehaviour
         
     }*/
 
+    public static Vector3 JoinNormals(Vector3 top, Vector3 left, Vector3 down, Vector3 right) {
 
+        Vector3 sum = top;
+
+        if (left != top) {
+            sum += left;
+        }
+        if (down != top && down != left)
+        {
+            sum += down;
+        }
+        if (right != top && right != left && right != down)
+        {
+            sum += right;
+        }
+        return sum.normalized*-1f;
+    }
+
+    public static Vector3 CalculateNormal(Vector3 a, Vector3 b, Vector3 c) {
+        Vector3 sideOne = b - a;
+        Vector3 sideTwo = c - a;
+
+        return Vector3.Cross(sideOne, sideTwo).normalized;
+
+    }
+
+    public static Vector3 GetPointOnCube(Vector3 localUp, Vector3 percent, Vector3 halfMod, Vector3 axisA, Vector3 axisB) {
+
+        return localUp * (halfMod.z) + (percent.x - .5f) * 2 * axisA * halfMod.x + (percent.y - .5f) * 2 * axisB * halfMod.y;
+    }
 
 
 
@@ -1202,7 +1355,7 @@ public class ShaderTerrain : MonoBehaviour
             int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, 1, yResolution);
             int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, 1, xResolution);
             int yLast = (int)Mathf.Clamp(proj.second.y + ((proj.second.y - b) % r) + r, 1, yResolution);
-            int xLast = (int)Mathf.Clamp(proj.second.x + ((proj.second.x - b) % r)  + r, 1, xResolution);
+            int xLast = (int)Mathf.Clamp(proj.second.x + ((proj.second.x - b) % r) + r, 1, xResolution);
 
             for (int y = yFirst; y < yLast; y++)
             {
@@ -1400,25 +1553,63 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
-
-    public Vector4 Calculate(Vector3 percent, Vector3 localUp, Vector3 mod, Vector3 extentMod, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent)
+   // public Vector4 Calculate(float x, float y, float xResolution, float yResolution, Vector3 localUp, Vector3 mod, Vector3 extentMod, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent)
+   // {
+   //     return Calculate(new Vector2(x / (float)(xResolution - 1), (float)y / (float)(yResolution - 1)), localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
+   // }
+    public VertexPoint Calculate(Vector3 percent, Vector3 onePercent, Vector3 localUp, Vector3 mod, Vector3 extentMod, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent)
     {
+        //NOTE!! Percent can be negative!!
 
-
-        Vector3 pointOnUnitCube = localUp * mod.z
-                                    + (percent.x - .5f) * 2 * axisA * mod.x
-                                    + (percent.y - .5f) * 2 * axisB * mod.y;
-        Vector3 pointOnExtentCube = localUp * extentMod.z
-                                    + (percent.x - .5f) * 2 * axisA * extentMod.x
-                                    + (percent.y - .5f) * 2 * axisB * extentMod.y;
+        /*Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
+        Vector3 pointOnSmallerUnitCube = GetPointOnCube(localUp, percent, mod*0.9999f, axisA, axisB);
 
         Vector3 roundedCube = GetRounded(pointOnUnitCube, halfSize, roundness);
-        Vector3 roundedExtentCube = GetRounded(pointOnExtentCube, halfSizeExtent, roundness);
+        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, halfSize * 0.9999f, roundness * 0.9999f); ;
 
-        float noi = EvaluateNoise(currentPos, pointOnUnitCube, noiseBaseRoughness, noiseRoughness,
+        Vector3 roundedNormal = (roundedCube - pointOnSmallerRoundedCube).normalized;
+
+
+        float noi = EvaluateNoise(currentPos, roundedCube, noiseBaseRoughness, noiseRoughness,
             noisePersistance, noiseStrength, noiseLayers, noiseRigid);
 
-        Vector3 final = Vector3.Lerp(roundedCube, roundedExtentCube, noi);
+
+        Vector3 noiseVector = new Vector3(roundedNormal.x * extents.x, roundedNormal.y * extents.y, roundedNormal.z * extents.z);
+
+        //Vector3 roundedExtentCube = GetRounded(pointOnExtentCube, halfSizeExtent, roundness);
+
+
+        Vector3 final = Vector3.Lerp(roundedCube, roundedCube + noiseVector, noi);
+        */
+        Vector4 calc = CalculateAtPercent(percent, localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
+
+        //Calculate normal
+
+        Vector4 first = CalculateAtPercent(percent + new Vector3(onePercent.x, 0), localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
+        Vector4 second = CalculateAtPercent(percent + new Vector3(0, onePercent.y), localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
+
+
+        return new VertexPoint(CalculateNormal(calc,first,second), calc, calc.w);
+            //new Vector4(final.x, final.y, final.z, noi);
+
+    }
+
+    private Vector4 CalculateAtPercent(Vector3 percent, Vector3 localUp, Vector3 mod, Vector3 extentMod, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent)
+    {
+        Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
+        Vector3 pointOnSmallerUnitCube = GetPointOnCube(localUp, percent, mod * 0.9999f, axisA, axisB);
+
+        Vector3 roundedCube = GetRounded(pointOnUnitCube, halfSize, roundness);
+        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, halfSize * 0.9999f, roundness * 0.9999f); ;
+
+        Vector3 roundedNormal = (roundedCube - pointOnSmallerRoundedCube).normalized;
+
+        float noi = EvaluateNoise(currentPos, roundedCube, noiseBaseRoughness, noiseRoughness,
+            noisePersistance, noiseStrength, noiseLayers, noiseRigid);
+
+        Vector3 noiseVector = new Vector3(roundedNormal.x * extents.x, roundedNormal.y * extents.y, roundedNormal.z * extents.z);
+
+        Vector3 final = Vector3.Lerp(roundedCube, roundedCube + noiseVector, noi);
 
         return new Vector4(final.x, final.y, final.z, noi);
 

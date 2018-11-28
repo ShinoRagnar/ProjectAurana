@@ -55,8 +55,8 @@ Shader "MixTerrain/VertexColorSplat" {
 		// backward textures. Note: Causes some normals to be flipped.
 		// #define _UVFREE_FLIP_BACKWARD_TEXTURES
 		
-		sampler2D _Control;
-		float4 _Control_ST;
+		//sampler2D _Control;
+		//float4 _Control_ST;
 		sampler2D _Splat0,_Splat1,_Splat2,_Splat3;
 		half4 _Splat0_ST, _Splat1_ST, _Splat2_ST, _Splat3_ST;
 		
@@ -76,9 +76,9 @@ Shader "MixTerrain/VertexColorSplat" {
 		struct Input
 		{
 			fixed3 powerNormal;
-			#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
-				fixed3 normal;
-			#endif
+			//#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
+			//	fixed3 normal;
+			//#endif
 			float3 worldPos;			
 			//float2 tc_Control : TEXCOORD4;	// Not prefixing '_Control' with 'uv' allows a tighter packing of interpolators, which is necessary to support directional lightmap.
 			float4 color: Color;
@@ -90,9 +90,9 @@ Shader "MixTerrain/VertexColorSplat" {
 			UNITY_INITIALIZE_OUTPUT(Input,o);
 		
 			fixed3 worldNormal = normalize(mul(unity_ObjectToWorld, fixed4(v.normal, 0)).xyz);
-			#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
-					o.normal = worldNormal;
-			#endif
+			//#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
+			//		o.normal = worldNormal;
+			//#endif
 			fixed3 powerNormal = pow(abs(worldNormal), clamp(_TexPower,0.0, 20.0));
 			
 			powerNormal = max(powerNormal, 0.0001);
@@ -127,16 +127,16 @@ Shader "MixTerrain/VertexColorSplat" {
 			float2 posY = IN.worldPos.xz;
 			float2 posZ = float2(-IN.worldPos.x, IN.worldPos.y);
 			
-			#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
-				fixed3 powerSign = sign(IN.normal);
-				float2 xUV = float2(powerSign.x, 1.0);
-				float2 zUV = float2(powerSign.z, 1.0);
-				float2 yUV = float2(1.0, powerSign.y);
-			#else
+			//#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
+			///	fixed3 powerSign = sign(IN.normal);
+			//	float2 xUV = float2(powerSign.x, 1.0);
+			//	float2 zUV = float2(powerSign.z, 1.0);
+			//	float2 yUV = float2(1.0, powerSign.y);
+			//#else
 				float2 xUV = float2(1.0, 1.0);
 				float2 zUV = xUV;
 				float2 yUV = xUV;
-			#endif
+			//#endif
 								
 			//half4 splat_control;
 			//half weight;
