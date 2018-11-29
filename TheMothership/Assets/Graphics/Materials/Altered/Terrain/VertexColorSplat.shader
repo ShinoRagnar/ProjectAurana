@@ -39,17 +39,17 @@ Shader "MixTerrain/VertexColorSplat" {
 		}
 
 		CGPROGRAM //finalcolor:SplatmapFinalColor
-		#pragma surface surf Standard vertex:SplatmapVert finalcolor:SplatmapFinalColor  fullforwardshadows
+		#pragma surface surf Standard vertex:SplatmapVert fullforwardshadows
 
 		#define TERRAIN_SURFACE_OUTPUT SurfaceOutputStandard
 
-		#pragma multi_compile_fog
+		//#pragma multi_compile_fog
 		#pragma target 3.0
 		// needs more than 8 texcoords
 		#pragma exclude_renderers gles
 		#include "UnityPBSLighting.cginc"
 
-		#pragma multi_compile __ _TERRAIN_NORMAL_MAP
+		//#pragma multi_compile __ _TERRAIN_NORMAL_MAP
 		
 		// Uncomment to enable experimental feature which flips
 		// backward textures. Note: Causes some normals to be flipped.
@@ -77,12 +77,12 @@ Shader "MixTerrain/VertexColorSplat" {
 		{
 			fixed3 powerNormal;
 			//#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
-			//	fixed3 normal;
+			//fixed3 normal : NORMAL;
 			//#endif
 			float3 worldPos;			
 			//float2 tc_Control : TEXCOORD4;	// Not prefixing '_Control' with 'uv' allows a tighter packing of interpolators, which is necessary to support directional lightmap.
 			float4 color: Color;
-			UNITY_FOG_COORDS(5)
+			//UNITY_FOG_COORDS(5)
 		};
 		
 		void SplatmapVert(inout appdata_full v, out Input o)
@@ -111,13 +111,14 @@ Shader "MixTerrain/VertexColorSplat" {
 			  +	(-(worldNormal.y) * (powerNormal.y))
 			  +	(-(worldNormal.z) * (powerNormal.z))
 			;
-
+			
+			
 			// Need to manually transform uv here,
 			// as we choose not to use 'uv' prefix for this texcoord.			
 			//o.tc_Control = TRANSFORM_TEX(v.texcoord, _Control);
 
-			float4 pos = UnityObjectToClipPos (v.vertex);
-			UNITY_TRANSFER_FOG(o, pos);			
+			//float4 pos = UnityObjectToClipPos (v.vertex);
+			//UNITY_TRANSFER_FOG(o, pos);			
 		}
 		
 		void surf (Input IN, inout SurfaceOutputStandard o) {
@@ -270,21 +271,21 @@ Shader "MixTerrain/VertexColorSplat" {
 			o.Metallic = dot(IN.color, fixed4(_Metallic0, _Metallic1, _Metallic2, _Metallic3));
 		}
 
-		void SplatmapFinalColor(Input IN, TERRAIN_SURFACE_OUTPUT o, inout fixed4 color)
-		{
-			color *= o.Alpha;
-			#ifdef TERRAIN_SPLAT_ADDPASS
-				UNITY_APPLY_FOG_COLOR(IN.fogCoord, color, fixed4(0,0,0,0));
-			#else
-				UNITY_APPLY_FOG(IN.fogCoord, color);
-			#endif
-		}
+		//void SplatmapFinalColor(Input IN, TERRAIN_SURFACE_OUTPUT o, inout fixed4 color)
+		//{
+		//	color *= o.Alpha;
+		//	#ifdef TERRAIN_SPLAT_ADDPASS
+		//		UNITY_APPLY_FOG_COLOR(IN.fogCoord, color, fixed4(0,0,0,0));
+		//	#else
+		//		UNITY_APPLY_FOG(IN.fogCoord, color);
+		//	#endif
+		//}
 
 		ENDCG
 	}
 
-	Dependency "AddPassShader" = "Hidden/UVFree/Terrain/StandardMetallic-AddPass"
-	Dependency "BaseMapShader" = "Hidden/UVFree/Terrain/StandardMetallic-Base"
+	//Dependency "AddPassShader" = "Hidden/UVFree/Terrain/StandardMetallic-AddPass"
+	//Dependency "BaseMapShader" = "Hidden/UVFree/Terrain/StandardMetallic-Base"
 
 	Fallback "Nature/Terrain/Diffuse"
 }
