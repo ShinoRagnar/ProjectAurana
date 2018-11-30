@@ -1353,17 +1353,25 @@ public class ShaderTerrain : MonoBehaviour
             int linkPos = (y * xResolution) + x;
 
 
+            VertexPoint center;
 
-            VertexPoint center = Calculate(
-                ma.noise,
-                percent, onePercent, localUp, halfMod, halfModExtent,
-                axisA, axisB, halfSize, halfSizeExtent, childlist, projections, links[linkPos,LINK_BORDER] != 0);
+            if (links[linkPos, LINK_BORDER] == 0) {
+                center = Calculate(
+                    ma.noise,
+                    percent, onePercent, localUp, halfMod, halfModExtent,
+                    axisA, axisB, halfSize, halfSizeExtent, childlist, projections);
+            }
+            else {
+                Vector3 point = ma.vertices[links[linkPos, LINK_BORDER] - 1];
+                center = new VertexPoint(localUp, point, 0);
+              //  Debug.Log("Vert: " + (links[linkPos, LINK_BORDER] - 1) + " was linked");
+            }
 
             //Calculate the normal;
-           // Vector3 normalTop = CalculateNormal(center, topLeft, topRight);
-           // Vector3 normalLeft = CalculateNormal(center, bottomLeft, topLeft);
-           // Vector3 normalDown = CalculateNormal(center, bottomRight, bottomLeft);
-           // Vector3 normalRight = CalculateNormal(center, topRight, bottomRight);
+            // Vector3 normalTop = CalculateNormal(center, topLeft, topRight);
+            // Vector3 normalLeft = CalculateNormal(center, bottomLeft, topLeft);
+            // Vector3 normalDown = CalculateNormal(center, bottomRight, bottomLeft);
+            // Vector3 normalRight = CalculateNormal(center, topRight, bottomRight);
 
 
 
@@ -1509,7 +1517,7 @@ public class ShaderTerrain : MonoBehaviour
             Debug.Log("yFirst: "+yFirst + " yLast " + yLast+" r: "+r);
             Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " r: " + r);
 
-            for (int y = yFirst-r; y <= yLast; y+=r)
+            /*for (int y = yFirst-r; y <= yLast; y+=r)
             {
                 int j = (y * xResolution) + xFirst - r;
                 int u = (y * xResolution) + xLast ;
@@ -1517,8 +1525,31 @@ public class ShaderTerrain : MonoBehaviour
                 vertLinks[j, LINK_BORDER] = i + 1;
                 vertLinks[u, LINK_BORDER] = i + 1;
 
+            }*/
+            for (int g = 0; g <= xChildLength; g++) {
+                Debug.Log("Proj<"+projections[i].xFirst + "," + g + "> = " + projections[i].relativeX[projections[i].xFirst, g]);
+
             }
 
+            if (xLen >= xChildLength)
+            {
+                float div = xLen / xChildLength;
+                float sum = 0;
+                int pos = 0;
+                while (sum <= xLen)
+                {
+                    int j = ((yFirst - r) * xResolution) + Mathf.FloorToInt(sum)*r+(xFirst - r);
+
+
+                    vertLinks[j, LINK_BORDER] = projections[i].relativeX[projections[i].xFirst,pos] + 1;
+
+                    pos++;
+                    sum += div;
+                }
+
+            }
+
+            /*
             for (int x = xFirst-r; x <= xLast; x+=r)
             {
                 int j = ((yFirst - r) * xResolution) + x;
@@ -1528,19 +1559,8 @@ public class ShaderTerrain : MonoBehaviour
                 vertLinks[u, LINK_BORDER] = i + 1;
 
 
-               // if (xLen > xChildLength) {
-                  //  float div = xLen / xChildLength;
-                 //   float sum = 0;
-                 //   while (sum <= xLen) {
 
-                //        vertLinks[j, LINK_BORDER] = projections[i].relativeX[projections[i].xFirst,Mathf.FloorToInt(sum)]+1;
-
-                  //      sum += div;
-                  //  }
-
-               // }
-
-            }
+            }*/
             
 
 
@@ -1740,15 +1760,15 @@ public class ShaderTerrain : MonoBehaviour
         Noise noise,
         Vector3 percent, Vector3 onePercent, Vector3 localUp, Vector3 mod, Vector3 extentMod, 
         Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-        List<ShaderTerrain> childlist, List<Projection> projections, bool hasBorder
+        List<ShaderTerrain> childlist, List<Projection> projections //, bool hasBorder
         )
     {
         Vector4 calc = CalculateAtPercent(noise,percent, localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
         Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
 
-        if (hasBorder) {
-            calc = new Vector4(calc.x, calc.y+1f, calc.z, calc.w);
-        }
+       // if (hasBorder) {
+       //     calc = new Vector4(calc.x, calc.y+1f, calc.z, calc.w);
+       // }
         //if (projections.Count > 0) {
 
           //  foreach (VectorPair vp in projections) {
