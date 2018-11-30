@@ -1453,14 +1453,14 @@ public class ShaderTerrain : MonoBehaviour
             VectorPair proj = projections[i].bounds;
             Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
 
-            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + b, b + r, yResolution-(1)); //proj.first.y + b;
-            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + b, b + r, xResolution- (1)); //proj.first.x + b;
-            int yLast = (int)Mathf.Clamp(proj.second.y + ((proj.second.y - b) % r) + b, b + r, yResolution- (1)); //proj.second.y; 
-            int xLast = (int)Mathf.Clamp(proj.second.x + ((proj.second.x - b) % r) + b, b + r, xResolution- (1)); //proj.second.x;
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, yResolution- (r + b+1)); //proj.first.y + b;
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, xResolution-  (r + b + 1)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, yResolution- (r + b + 1)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, xResolution- (r + b + 1)); //proj.second.x;
 
-            for (int y = yFirst; y < yLast; y++)
+            for (int y = yFirst; y <= yLast; y+=r)
             {
-                for (int x = xFirst; x < xLast; x++)
+                for (int x = xFirst; x <= xLast; x+=r)
                 {
                     int j = (y * xResolution) + x;
                     vertLinks[j, LINK_PROJECTION] = i + 1;
@@ -1469,32 +1469,38 @@ public class ShaderTerrain : MonoBehaviour
 
             //int xFirstBorder = Mathf.Max(xFirst, 0);
             //int yFirstBorder = Mathf.Max(yFirst, 0);
-            int xChildLength = projections[i].relativeX.GetLength(1);
-            int yChildLength = projections[i].relativeY.GetLength(1);
+            float xChildLength = projections[i].relativeX.GetLength(1);
+            float yChildLength = projections[i].relativeY.GetLength(1);
 
-            int yLen = yLast - yFirst - b - 1;
+            float yLen = (yLast - (yFirst - b) - 1)/r;
+            float xLen = (xLast - (xFirst - b) - 1)/r;
 
+            Debug.Log(xChildLength + " xlen " + xLen);
+            Debug.Log(yChildLength + " ylen " + yLen);
 
+            Debug.Log("yFirst: "+yFirst + " yLast " + yLast+" r: "+r);
+            Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " r: " + r);
 
-            for (int y = yFirst-b; y < yLast; y++)
+            for (int y = yFirst-r; y <= yLast; y+=r)
             {
-                int j = (y * xResolution) + xFirst - b;
-                int u = (y * xResolution) + xLast  - b;
+                int j = (y * xResolution) + xFirst - r;
+                int u = (y * xResolution) + xLast ;
                 
                 vertLinks[j, LINK_BORDER] = i + 1;
                 vertLinks[u, LINK_BORDER] = i + 1;
 
             }
 
-            for (int x = xFirst-b; x < xLast; x++)
+            for (int x = xFirst-r; x <= xLast; x+=r)
             {
-                int j = ((yFirst - b) * xResolution) + x;
-                int u = ((yLast - b) * xResolution) + x;
+                int j = ((yFirst - r) * xResolution) + x;
+                int u = ((yLast) * xResolution) + x;
 
                 vertLinks[j, LINK_BORDER] = i + 1;
                 vertLinks[u, LINK_BORDER] = i + 1;
 
             }
+            
 
 
 
