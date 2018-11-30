@@ -601,7 +601,7 @@ public class ShaderTerrain : MonoBehaviour
 
 
 
-        int i = ma.vertices.Count;
+        //int i = ma.vertices.Count;
 
 
 
@@ -740,7 +740,7 @@ public class ShaderTerrain : MonoBehaviour
 
             }
 
-            i = ma.vertices.Count;
+            //i = ma.vertices.Count;
 
 
             //Texture coordinates on splatmap
@@ -827,14 +827,16 @@ public class ShaderTerrain : MonoBehaviour
 
                                     bool isX = links[j, 6] == 0;
 
-                                    i = AddTopTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                    //i = 
+                                        AddTopTriangle(x, y, isX, links, /*i,*/ j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                         vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
 
                                     if (links[j, 6] == 3)
                                     { //Corner case
 
-                                        i = AddTopTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                      //  i = 
+                                        AddTopTriangle(x, y, !isX, links, /*i,*/ j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                         vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
                                     }
@@ -844,14 +846,16 @@ public class ShaderTerrain : MonoBehaviour
                                 {
                                     bool isX = links[j, 6] == 0;
 
-                                    i = AddBotTriangle(x, y, isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                    ///i = 
+                                        AddBotTriangle(x, y, isX, links, /*i,*/ j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                         vertexFaces,dir, sharedX, sharedY, sharedZ, childlist, projections);
 
                                     if (links[j, 6] == 3) // Corner case
                                     {
 
-                                        i = AddBotTriangle(x, y, !isX, links, i, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                        //i = 
+                                        AddBotTriangle(x, y, !isX, links, /*i,*/ j, xResolution, yResolution, zResolution, localUp, halfMod,
                                         halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                         vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
 
@@ -870,11 +874,12 @@ public class ShaderTerrain : MonoBehaviour
 
                                 bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
-                                i = AddTriangle(
+                                /*i =*/
+                                AddTriangle(
                                         isX ? xAbove : ySelf, isX ? ySelf : xAbove,
                                         isX ? xBelow : ySelf, isX ? ySelf : xBelow,
                                         isX ? axis : yMinus, isX ? yMinus : axis,
-                                        clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                                        clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
                                         axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
                                         sharedX, sharedY, sharedZ, childlist, projections, links);
 
@@ -884,19 +889,33 @@ public class ShaderTerrain : MonoBehaviour
                                 int xPos = (x - links[j, 0]);
                                 int yPos = (y - links[j, 0]);
 
-                                if (AddVertex(x, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
-                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
-                                if (AddVertex(xPos, yPos, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
-                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
-                                if (AddVertex(x, yPos, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
-                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
-                                if (AddVertex(xPos, y, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
-                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
+                                AddTriangle(x, y,  xPos, yPos, x, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                                    axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                    sharedX, sharedY, sharedZ, childlist, projections, links);
 
-                                int thisPos = vertexPositions[x, y] - 1;
-                                int backPos = vertexPositions[x, yPos] - 1;
-                                int backLeftPos = vertexPositions[xPos, yPos] - 1;
-                                int leftPos = vertexPositions[xPos, y] - 1;
+                                AddTriangle(x, y, xPos, y, xPos, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                                    axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                    sharedX, sharedY, sharedZ, childlist, projections, links);
+
+                                // AddTriangle(x, y, xPos, yPos, x, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                                //   axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                //   sharedX, sharedY, sharedZ, childlist, projections, links);
+
+                                //if () { i++; }
+                                //if () { i++; }
+                                //if () { i++; }
+                                //if () { i++; }
+
+                                //vertexPositions[x, y] - 1;  vertexPositions[x, yPos] - 1;  vertexPositions[xPos, yPos] - 1; vertexPositions[xPos, y] - 1;
+
+                                /*int thisPos = AddVertex(x, y, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
+                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links);
+                                int backPos = AddVertex(xPos, yPos,  xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
+                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links);
+                                int backLeftPos = AddVertex(x, yPos,  xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
+                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links);
+                                int leftPos = AddVertex(xPos, y,  xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent,
+                                    ma, vertexPositions, vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections, links);
 
                                 ma.triangles.Add(backLeftPos);
                                 ma.triangles.Add(thisPos);
@@ -905,6 +924,7 @@ public class ShaderTerrain : MonoBehaviour
                                 ma.triangles.Add(backLeftPos);
                                 ma.triangles.Add(backPos);
                                 ma.triangles.Add(thisPos);
+                                */
 
                             }
 
@@ -961,9 +981,9 @@ public class ShaderTerrain : MonoBehaviour
         return ma;
     }
 
-    public int AddTopTriangle(
+    public void AddTopTriangle(
         int x, int y, bool isX, int[,] links,
-        int i, int j,
+        /*int i,*/ int j,
         int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
          int[,] vertexPositions, MeshArrays ma, Dictionary<Vector3, int[,]> vertexFaces
@@ -984,20 +1004,20 @@ public class ShaderTerrain : MonoBehaviour
 
         bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
-        return AddTriangle(
+         AddTriangle(
             isX ? leftX : yMinus, isX ? yMinus : leftX,
             isX ? axis : yMinus, isX ? yMinus : axis,
             isX ? selfX : ySelf, isX ? ySelf : selfX,
-            clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+            clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertexPositions,vertexFaces, ma , dir,
             sharedX, sharedY, sharedZ, childlist, projections, links
             );
         /*, uvCoord vertexColors,vertexFacestriangles, vertices, uvs normals, */
     }
 
-    public int AddBotTriangle(
+    public void AddBotTriangle(
         int x, int y, bool isX, int[,] links,
-        int i, int j,
+        /*int i,*/ int j,
         int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
          int[,] vertexPositions, MeshArrays ma, Dictionary<Vector3, int[,]> vertexFaces
@@ -1017,22 +1037,22 @@ public class ShaderTerrain : MonoBehaviour
 
         bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
-        return AddTriangle(
+         AddTriangle(
                 isX ? leftX : yMinus, isX ? yMinus : leftX,
                 isX ? selfX : ySelf, isX ? ySelf : selfX,
                 isX ? axis : yMinus, isX ? yMinus : axis,
-                clockwise, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
             sharedX, sharedY, sharedZ, childlist, projections, links
             );
     }
 
-    public int AddTriangle(
+    public void AddTriangle(
         int xOne, int yOne,
         int xTwo, int yTwo,
         int xThree, int yThree,
         bool clockwise,
-        int i, int xResolution, int yResolution, int zResolution,
+        /*int i,*/ int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
          int[,] vertexPositions,  Dictionary<Vector3, int[,]> vertexFaces, MeshArrays ma
 
@@ -1042,19 +1062,24 @@ public class ShaderTerrain : MonoBehaviour
         )
     {
 
-        if (AddVertex(xOne, yOne, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
-        if (AddVertex(xTwo, yTwo, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
-        if (AddVertex(xThree, yThree, i, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, childlist, projections, links)) { i++; }
+        //if () { i++; }
+        //if () { i++; }
+        //if () { i++; }
         /*, uvCoord vertices, uvs,vertexColors normals*/
-        int onePos = vertexPositions[xOne, yOne] - 1;
-        int twoPos = vertexPositions[xTwo, yTwo] - 1;
-        int threePos = vertexPositions[xThree, yThree] - 1;
+
+        int onePos = AddVertex(xOne, yOne, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
+            sharedX, sharedY, sharedZ, childlist, projections, links);
+
+        //vertexPositions[xOne, yOne] - 1; vertexPositions[xTwo, yTwo] - 1; vertexPositions[xThree, yThree] - 1;
+        int twoPos = AddVertex(xTwo, yTwo, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
+            sharedX, sharedY, sharedZ, childlist, projections, links);
+
+        int threePos = AddVertex(xThree, yThree, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+            axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
+            sharedX, sharedY, sharedZ, childlist, projections, links);
+
 
         ma.triangles.Add(onePos);
 
@@ -1070,11 +1095,11 @@ public class ShaderTerrain : MonoBehaviour
         }
 
 
-        return i;
+       // return i;
     }
 
-    public bool AddVertex(
-        int x, int y, int i, int xResolution, int yResolution, int zResolution,
+    public int AddVertex(
+        int x, int y, /*int i,*/ int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
         ,MeshArrays ma, int[,] vertexPositions,
         Dictionary<Vector3, int[,]> vertexFaces,
@@ -1089,7 +1114,7 @@ public class ShaderTerrain : MonoBehaviour
         if (vertexPositions[x, y] == 0)
         {
             int val = 0;
-            int iplus = i + 1;
+            int iplus = ma.vertices.Count + 1;
             
             /*
             Vector2 topLeft = new Vector2((x-1) / (float)(xResolution - 1), (float)(y+1) / (float)(yResolution - 1));
@@ -1381,16 +1406,16 @@ public class ShaderTerrain : MonoBehaviour
             float g = (noise * 255f);
 
 
-            vertexPositions[x, y] = i + 1;
+            vertexPositions[x, y] = iplus;
             ma.uvs.Add(percent);
             ma.vertexColors.Add(new Color32((byte)r, (byte)g, 0, 0));
             ma.vertices.Add((Vector3)center.point + (parent != null ? localPos : Vector3.zero));
             ma.normals.Add(center.normal); //JoinNormals(normalTop, normalLeft, normalDown, normalRight));
 
 
-            return true;
+            return iplus-1;
         }
-        return false;
+        return vertexPositions[x, y]-1;
     }
 
     /*public static Vector3 Calc(Vector2 percent, Vector3 localUp, Vector3 mod, Vector3 axisA, Vector3 axisB) {
