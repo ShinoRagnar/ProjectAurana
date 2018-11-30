@@ -138,6 +138,12 @@ public class DictionaryList<T, U> : IEnumerable , IEnumerator<T>{
         dictionary.Add(key, value);
         list.Add(key);
     }
+    public U AddGetValue(T key, U value)
+    {
+        dictionary.Add(key, value);
+        list.Add(key);
+        return value;
+    }
     public void Remove(T key)
     {
         if (Contains(key))
