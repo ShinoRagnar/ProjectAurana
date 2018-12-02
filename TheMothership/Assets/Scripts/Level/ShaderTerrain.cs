@@ -511,7 +511,7 @@ public class ShaderTerrain : MonoBehaviour
             //minmax.Reverse(GetMod(-projectDirection, size * resolution - Vector3.one));
 
             return new Projection(minmax,ma.sharedX[this], ma.sharedZ[this], 
-                MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD, MeshArrays.Z_BOT_LEFT, MeshArrays.Z_BOT_RIGHT, true, false);
+                MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD, MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_BOT_LEFT , true, false);
 
         }
 
@@ -1187,7 +1187,11 @@ public class ShaderTerrain : MonoBehaviour
 
             if (xLen >= xChildLength)
             {
-                float div = xLen / xChildLength;
+                LinkProjectionAxis(vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+                    projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond);
+
+
+                /*float div = xLen / xChildLength;
                 float sum = 0;
                 int pos = 0;
                 int lastPos = 0;
@@ -1236,7 +1240,13 @@ public class ShaderTerrain : MonoBehaviour
                     pos++;
                     sum += div;
                     lastPos = thisPos;
-                }
+                }*/
+
+            }
+            if (yLen >= yChildLength) {
+
+                LinkProjectionAxis(vertLinks, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+                   projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond);
 
             }
 
@@ -1252,7 +1262,7 @@ public class ShaderTerrain : MonoBehaviour
 
 
             }*/
-            
+
 
 
 
@@ -1426,6 +1436,70 @@ public class ShaderTerrain : MonoBehaviour
 
         return vertLinks;
     }
+
+    public static void LinkProjectionAxis(
+        int[,] vertLinks, bool isX, int yFirst, int yLast, int xFirst, int xLast, int r, 
+        float axisLength, float axisChildLength, int xResolution, bool reverse,
+        int[,] relative, int firstSlot, int secondSlot
+
+        ) {
+
+
+        float div = axisLength / axisChildLength;
+        float sum = 0;
+        int pos = 0;
+        int lastPos = 0;
+        while (sum <= axisLength)
+        {
+            int thisPos = Mathf.FloorToInt(sum);
+
+            int j = isX ? ((yFirst - r) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + (xFirst - r);
+            int u = isX ? ((yLast) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + xLast;
+
+            int thisChildPos = (reverse ? (int)(axisChildLength - pos) : pos);
+            int lastChildPos = (int)Mathf.Clamp((reverse ? (int)(axisChildLength - (pos - 1)) : pos - 1), 0, axisChildLength);
+
+            int firstSide = relative[firstSlot, thisChildPos];
+            int secondSide = relative[secondSlot, thisChildPos];
+            int firstSideLastPos = relative[firstSlot, lastChildPos];
+            int secondSideLastPos = relative[secondSlot, lastChildPos];
+
+
+            vertLinks[u, LINK_BORDER] = firstSide;
+            vertLinks[j, LINK_BORDER] = secondSide;
+
+            int halfPos = lastPos + Mathf.FloorToInt(((float)(thisPos - lastPos-1)) / 2f);
+
+            for (int f = lastPos+1; f < thisPos; f++)
+            {
+                int p = isX ? ((yFirst - r) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + (xFirst - r);
+                int o = isX ? ((yLast) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + xLast;
+
+                if (f == halfPos)
+                {
+                    vertLinks[o, LINK_BORDER] = firstSide;
+                    vertLinks[p, LINK_BORDER] = secondSide;
+                }
+                else if (f < halfPos)
+                {
+                    vertLinks[o, LINK_BORDER] = firstSideLastPos;
+                    vertLinks[p, LINK_BORDER] = secondSideLastPos;
+                }
+                else
+                {
+                    vertLinks[o, LINK_BORDER] = firstSide;
+                    vertLinks[p, LINK_BORDER] = secondSide;
+                }
+            }
+
+            pos++;
+            sum += div;
+            lastPos = thisPos;
+        }
+
+
+    }
+
 
     public static int GetVertexCountForResolution(
         Vector2 borderRes,
