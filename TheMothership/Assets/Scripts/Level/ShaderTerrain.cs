@@ -386,7 +386,7 @@ public class ShaderTerrain : MonoBehaviour
             }
             else if (st.GetCorner(Vector3.right).x < GetCorner(Vector3.left).x)
             {
-                AddIfDirection(st, Vector3.left);
+                AddIfDirection(st, Vector3.left); //swapped
 
             }
             else if (st.GetCorner(Vector3.left).x > GetCorner(Vector3.right).x)
@@ -464,60 +464,108 @@ public class ShaderTerrain : MonoBehaviour
 
     public Projection GetProjectionOn(ShaderTerrain projectOn, MeshArrays ma, Vector3 projectDirection, int resolution)
     {
+        Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
+        Vector3 mod = GetMod(-projectDirection, size);
 
-        if (projectDirection == Vector3.down)
+        if (projectDirection == Vector3.down) //Child is above
         {
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedX[this],
+                MeshArrays.Z_BOT_LEFT, MeshArrays.Z_BOT_RIGHT, MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD,
+                new Vector3(0, 0, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
+                MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD, MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_BOT_LEFT, true, false);
+        }
+        else if (projectDirection == Vector3.up) //Child is below
+        {
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedX[this],
+                MeshArrays.Z_TOP_LEFT, MeshArrays.Z_TOP_RIGHT, MeshArrays.X_TOP_BACK, MeshArrays.X_TOP_FORWARD,
+                 new Vector3(-localPos.x * 2f, 0, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
+                MeshArrays.X_TOP_BACK, MeshArrays.X_TOP_FORWARD, MeshArrays.Z_TOP_LEFT, MeshArrays.Z_TOP_RIGHT, true, false);
+        }
+        else if (projectDirection == Vector3.right) //Child is to the right (swapped)
+        {
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedY[this],
+                MeshArrays.Z_TOP_RIGHT, MeshArrays.Z_BOT_RIGHT, MeshArrays.Y_RIGHT_BACK, MeshArrays.Y_RIGHT_FORWARD,
+                new Vector3(0, -localPos.y * 2f, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
+                MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_TOP_RIGHT, MeshArrays.Y_RIGHT_BACK, MeshArrays.Y_RIGHT_FORWARD, true, false);
+        }
+        else if (projectDirection == Vector3.left) //Child is to the left (swapped)
+        {
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedY[this],
+                MeshArrays.Z_TOP_LEFT, MeshArrays.Z_BOT_LEFT, MeshArrays.Y_LEFT_BACK, MeshArrays.Y_LEFT_FORWARD,
+                new Vector3(0, -localPos.y * 2f, 0) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
+                MeshArrays.Z_BOT_LEFT, MeshArrays.Z_TOP_LEFT, MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_LEFT_BACK, true, false);
+        }
+        else if (projectDirection == Vector3.back) { 
 
-            VectorPair minmax = Scan(ma.vertices, ma.sharedZ[this], MeshArrays.Z_BOT_LEFT, new VectorPair(Vector3.zero, Vector3.zero), true);
-            //minmax.DebugPrint();
-            minmax = Scan(ma.vertices, ma.sharedZ[this], MeshArrays.Z_BOT_RIGHT, minmax, false);
-            //minmax.DebugPrint();
-            minmax = Scan(ma.vertices, ma.sharedX[this], MeshArrays.X_BOT_BACK, minmax, false);
-            //minmax.DebugPrint();
-            minmax = Scan(ma.vertices, ma.sharedX[this], MeshArrays.X_BOT_FORWARD, minmax, false);
-            minmax.DebugPrint();
-
-            Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
-            Vector3 mod = GetMod(-projectDirection, size);
-
-            // Debug.Log("Local pos: " + localPos);-localPos.z
-            //new Vector3(localPos.x, localPos.y, -localPos.z) 
-
-            //We add localpos to the vertices so we have to double reverse here
-            minmax.Add(new Vector3(0, 0, -localPos.z*2f) + size / 2f);
-
-            Debug.Log("local pos added:");
-
-            minmax.DebugPrint();
-
-            
-            //minmax.DebugPrint();
-
-            minmax.Divide(size);
-            minmax.DebugPrint();
-            minmax.Clamp01();
-            minmax.DebugPrint();
-            minmax.Multiply(size * resolution);
-            Debug.Log("multiply by resolution: ");
-
-            minmax.DebugPrint();
-            minmax.FloorFirstCeilSecond();
-            minmax = GetMod(-projectDirection, minmax);
-
-            //minmax.first = new Vector3(mod.x - minmax.second.x, minmax.first.y, minmax.first.z);
-            //minmax.second = new Vector3(mod.x - minmax.first.x, minmax.second.y, minmax.second.z);
-
-
-            //minmax.Reverse(GetMod(-projectDirection, size * resolution - Vector3.one));
-
-            return new Projection(minmax,ma.sharedX[this], ma.sharedZ[this], 
-                MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD, MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_BOT_LEFT , true, false);
-
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedY[this], ma.sharedX[this],
+                MeshArrays.Y_LEFT_BACK, MeshArrays.Y_RIGHT_BACK, MeshArrays.X_BOT_BACK, MeshArrays.X_TOP_BACK,
+                new Vector3(-localPos.x * 2f, 0, 0) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
+                MeshArrays.Y_LEFT_BACK, MeshArrays.Y_RIGHT_BACK, MeshArrays.X_TOP_BACK, MeshArrays.X_BOT_BACK, true, false);
+        }
+        else if (projectDirection == Vector3.forward) //Child is at the back (swapped)
+        {
+            VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedY[this], ma.sharedX[this],
+                MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_RIGHT_FORWARD, MeshArrays.X_BOT_FORWARD, MeshArrays.X_TOP_FORWARD,
+                new Vector3(-localPos.x * 2f, -localPos.y * 2f, 0) + size / 2f, size, resolution, projectDirection
+                );
+            return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
+                MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_RIGHT_FORWARD, MeshArrays.X_BOT_FORWARD, MeshArrays.X_TOP_FORWARD, true, false);
         }
 
         return new Projection(new VectorPair(Vector3.zero, Vector3.zero), null, null, 0, 0, 0, 0,false,false);
 
+        /*
+         *         if (localUp == Vector3.left || localUp == Vector3.right)
+        {
 
+            xMod = zSize;
+            yMod = ySize;
+            zMod = xSize;
+        }
+        else if (localUp == Vector3.back || localUp == Vector3.forward)
+        {
+
+            xMod = ySize;
+            yMod = xSize;
+            zMod = zSize;
+
+        }
+        else if (localUp == Vector3.up || localUp == Vector3.down)
+        {
+            xMod = xSize;
+            yMod = zSize;
+            zMod = ySize;
+        }*/
+    }
+
+    private static VectorPair GetVectorPairForProjection(
+        List<Vector3> vertices, int[,] firstShared, int[,] secondShared, 
+        int sharedFirstOne, int sharedFirstTwo, int sharedSecondOne, int sharedSecondTwo,
+        Vector3 offset, Vector3 size, int resolution, Vector3 projectionDirection
+        ) {
+
+        VectorPair minmax = Scan(vertices, firstShared, sharedFirstOne, new VectorPair(Vector3.zero, Vector3.zero), true);
+        minmax = Scan(vertices, firstShared, sharedFirstTwo, minmax, false);
+        minmax = Scan(vertices, secondShared, sharedSecondOne, minmax, false);
+        minmax = Scan(vertices, secondShared, sharedSecondTwo, minmax, false);
+        minmax.Add(offset);
+        minmax.Divide(size);
+        minmax.Clamp01();
+        minmax.Multiply(size * resolution);
+        minmax.FloorFirstCeilSecond();
+        minmax = GetMod(-projectionDirection, minmax);
+
+        return minmax;
     }
 
     private static VectorPair Scan(List<Vector3> vertices, int[,] scan, int pos, VectorPair minmax, bool first)
@@ -535,11 +583,7 @@ public class ShaderTerrain : MonoBehaviour
             {
                 val -= 1;
 
-                //if (val >= vertices.Length) {
-                //    Debug.Log("Unable to find: " + val + " because vertices has length: " + vertices.Length);
-                //}
                 Vector3 check = vertices[val];
-                //Debug.Log(check);
 
                 if (first)
                 {
@@ -628,9 +672,11 @@ public class ShaderTerrain : MonoBehaviour
             //Project child vertices down on this surface
             if (childlist != null) {
                 for (int ca = 0; ca < childlist.Count; ca++) {
+                    Debug.Log("Adding projection for: " + localUp);
                     childlist[ca].Generate(ma);
+                  
                     projections.Add(childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
-                    Debug.Log("Projection added");
+                    
                 }
             }
             
@@ -736,7 +782,8 @@ public class ShaderTerrain : MonoBehaviour
 
     public void AddTopTriangle(
         int x, int y, bool isX, int[,] links,
-        /*int i,*/ int j,
+        /*int i,*/
+        int j,
         int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
          int[,] vertexPositions, MeshArrays ma, Dictionary<Vector3, int[,]> vertexFaces
@@ -863,21 +910,28 @@ public class ShaderTerrain : MonoBehaviour
         //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
         )
     {
+        int linkPos = (y * xResolution) + x;
         int iplus = ma.vertices.Count + 1;
         int val = 0;
 
-        if (vertexPositions[x, y] == 0)
+        if (links[linkPos, LINK_BORDER] != 0) {
+
+            iplus = links[linkPos, LINK_BORDER];
+        }
+        else if (vertexPositions[x, y] == 0)
         {
             Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
             Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
 
             //Calculate the actual point
-            int linkPos = (y * xResolution) + x;
 
 
-            VertexPoint center;
+            VertexPoint center = Calculate(
+                    ma.noise,
+                    percent, onePercent, localUp, halfMod, halfModExtent,
+                    axisA, axisB, halfSize, halfSizeExtent, childlist, projections);
 
-            if (links[linkPos, LINK_BORDER] == 0) {
+            /*if (links[linkPos, LINK_BORDER] == 0) {
                 center = Calculate(
                     ma.noise,
                     percent, onePercent, localUp, halfMod, halfModExtent,
@@ -887,7 +941,7 @@ public class ShaderTerrain : MonoBehaviour
                 Vector3 point = ma.vertices[links[linkPos, LINK_BORDER] - 1];
                 center = new VertexPoint(localUp, point, 0);
                 //  Debug.Log("Vert: " + (links[linkPos, LINK_BORDER] - 1) + " was linked");
-            }
+            }*/
 
             float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
@@ -958,7 +1012,7 @@ public class ShaderTerrain : MonoBehaviour
                 }
                 else if (y == 0)
                 {
-                    if (vertexFaces.ContainsKey(Vector3.left)) { vertexFaces[Vector3.forward][0, x] = iplus; }
+                    if (vertexFaces.ContainsKey(Vector3.forward)) { vertexFaces[Vector3.forward][0, x] = iplus; }
                     sharedX[MeshArrays.X_BOT_FORWARD, x] = iplus;
                 }
             }
@@ -1141,12 +1195,12 @@ public class ShaderTerrain : MonoBehaviour
         for (int i = 0; i < projections.Count; i++)
         {
             VectorPair proj = projections[i].bounds;
-            Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
+            //Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
 
-            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, yResolution- (r + b+1)); //proj.first.y + b;
-            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, xResolution-  (r + b + 1)); //proj.first.x + b;
-            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, yResolution- (r + b + 1)); //proj.second.y; 
-            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, xResolution- (r + b + 1)); //proj.second.x;
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, yResolution- (b)); //proj.first.y + b;(r + b+1)
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, xResolution-  (b)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, yResolution- (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, xResolution- (b)); //proj.second.x;
 
             for (int y = yFirst; y <= yLast; y+=r)
             {
@@ -1162,85 +1216,19 @@ public class ShaderTerrain : MonoBehaviour
             float xChildLength = projections[i].relativeX.GetLength(1)-1;
             float yChildLength = projections[i].relativeY.GetLength(1)-1;
 
-            float yLen = (yLast - (yFirst - r) - 0)/r;
-            float xLen = (xLast - (xFirst - r) - 0)/r;
+            float yLen = (yLast - (yFirst - r) - 0);///r;
+            float xLen = (xLast - (xFirst - r) - 0);///r;
 
-            Debug.Log(xChildLength + " xlen " + xLen);
-            Debug.Log(yChildLength + " ylen " + yLen);
+            //Debug.Log(xChildLength + " xlen " + xLen);
+            //Debug.Log(yChildLength + " ylen " + yLen);
 
-            Debug.Log("yFirst: "+yFirst + " yLast " + yLast+" r: "+r);
-            Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " r: " + r);
-
-            /*for (int y = yFirst-r; y <= yLast; y+=r)
-            {
-                int j = (y * xResolution) + xFirst - r;
-                int u = (y * xResolution) + xLast ;
-                
-                vertLinks[j, LINK_BORDER] = i + 1;
-                vertLinks[u, LINK_BORDER] = i + 1;
-
-            }*/
-            for (int g = 0; g <= xChildLength; g++) {
-                Debug.Log("Proj<"+projections[i].xFirst + "," + g + "> = " + projections[i].relativeX[projections[i].xFirst, g]);
-
-            }
+            //Debug.Log("yFirst: "+yFirst + " yLast " + yLast+ " proj.first.y " + proj.first.y+" proj.second.y: "+ proj.second.y);
+            //Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " proj.first.x " + proj.first.x+ " proj.second.x " + proj.second.x);
 
             if (xLen >= xChildLength)
             {
                 LinkProjectionAxis(vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
                     projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond);
-
-
-                /*float div = xLen / xChildLength;
-                float sum = 0;
-                int pos = 0;
-                int lastPos = 0;
-                while (sum <= xLen)
-                {
-                    int thisPos = Mathf.FloorToInt(sum);
-
-                    int j = ((yFirst - r) * xResolution) + thisPos * r+(xFirst - r);
-                    int u = ((yLast) * xResolution) + thisPos * r + (xFirst - r);
-
-                    int thisChildPos = (projections[i].xReverse ? (int)(xChildLength - pos) : pos);
-                    int lastChildPos = (int)Mathf.Clamp((projections[i].xReverse ? (int)(xChildLength - (pos - 1)) : pos-1), 0, xChildLength);
-
-                    int firstSide = projections[i].relativeX[projections[i].xFirst, thisChildPos];
-                    int secondSide = projections[i].relativeX[projections[i].xSecond, thisChildPos];
-                    int firstSideLastPos = projections[i].relativeX[projections[i].xFirst, lastChildPos];
-                    int secondSideLastPos = projections[i].relativeX[projections[i].xSecond, lastChildPos];
-
-
-                    vertLinks[u, LINK_BORDER] = firstSide;
-                    vertLinks[j, LINK_BORDER] = secondSide;
-
-                    int halfPos = thisPos+Mathf.FloorToInt(((float)(thisPos - lastPos - 1f)) / 2f);
-
-                    for(int f = lastPos+1; f < thisPos; f++)
-                    {
-                        int p = ((yFirst - r) * xResolution) + f * r + (xFirst - r);
-                        int o = ((yLast) * xResolution) + f * r + (xFirst - r);
-
-                        if (f == halfPos){
-                            vertLinks[o, LINK_BORDER] = firstSide;
-                            vertLinks[o, LINK_DOUBLE] = firstSideLastPos;
-                            vertLinks[p, LINK_BORDER] = secondSide;
-                            vertLinks[p, LINK_DOUBLE] = secondSideLastPos;
-                        }
-                        else if (f < halfPos) {
-                            vertLinks[o, LINK_BORDER] = firstSideLastPos;
-                            vertLinks[p, LINK_BORDER] = secondSideLastPos;
-                        }
-                        else{
-                            vertLinks[o, LINK_BORDER] = firstSide;
-                            vertLinks[p, LINK_BORDER] = secondSide;
-                        }
-                    }
-
-                    pos++;
-                    sum += div;
-                    lastPos = thisPos;
-                }*/
 
             }
             if (yLen >= yChildLength) {
@@ -1249,23 +1237,6 @@ public class ShaderTerrain : MonoBehaviour
                    projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond);
 
             }
-
-            /*
-            for (int x = xFirst-r; x <= xLast; x+=r)
-            {
-                int j = ((yFirst - r) * xResolution) + x;
-                int u = ((yLast) * xResolution) + x;
-
-                
-                vertLinks[u, LINK_BORDER] = i + 1;
-
-
-
-            }*/
-
-
-
-
         }
 
 
@@ -1444,20 +1415,61 @@ public class ShaderTerrain : MonoBehaviour
 
         ) {
 
-
-        float div = axisLength / axisChildLength;
+        float dd = axisChildLength/ (axisLength);
         float sum = 0;
-        int pos = 0;
+        //int childPos = 0;
+
+        for (int i = (isX ? xFirst : yFirst)-r; i <= (isX ? xLast : yLast); i++) {
+            int p = isX ? ((yFirst - r) * xResolution) + i : (i * xResolution) + (xFirst - r);
+            int o = isX ? ((yLast) * xResolution) + i: ( i * xResolution) + xLast;
+
+            int val = (int)sum;
+
+            //Bugfix first and last pos
+            val = i == (isX ? xFirst : yFirst) - r ? 0 : val;
+            val = i == (isX ? xLast : yLast) ? (int) axisChildLength : val;
+
+            int thisChildPos = (reverse ? (int)(axisChildLength - val) : val);
+
+            vertLinks[o, LINK_BORDER] = relative[firstSlot, thisChildPos];
+            vertLinks[p, LINK_BORDER] = relative[secondSlot, thisChildPos];
+
+            sum += dd;
+        }
+
+        /*
+        int fixFirst = isX ? ((yFirst - r) * xResolution) + (xFirst - r) : ((yFirst-r) * xResolution) + (xFirst - r);
+        int fixFirstSecond = isX ? ((yFirst - r) * xResolution) + xLast : (yLast * xResolution) + (xFirst - r);
+
+        vertLinks[fixFirst, LINK_BORDER] = relative[firstSlot, (reverse ? (int)axisChildLength : 0)];
+        vertLinks[fixFirstSecond, LINK_BORDER] = relative[secondSlot, (reverse ? 0 : (int)axisChildLength)];
+
+
+        int fixLast = isX ? ((yLast - r) * xResolution) + (xFirst - r) : ((yFirst - r) * xResolution) + (xLast);
+        int fixLastSecond = isX ? ((yLast - r) * xResolution) + xLast : (yLast * xResolution) + (xLast);
+
+        vertLinks[fixLast, LINK_BORDER] = relative[firstSlot, (reverse ? (int)axisChildLength : 0)];
+        vertLinks[fixLastSecond, LINK_BORDER] = relative[secondSlot, (reverse ? 0 : (int)axisChildLength)];
+        */
+
+        //int fixLast = isX ? ((yLast) * xResolution) + i: ( i * xResolution) + xLast;
+
+        //Debug.Log((isX ? "X::" : "Y:: "));
+        //axisLength += 0.5f;
+        /*
+        float div = axisLength / axisChildLength;
+        int thisChildPos = reverse ? (int)axisChildLength : 0;
+        int lastChildPos = thisChildPos;
         int lastPos = 0;
         while (sum <= axisLength)
         {
             int thisPos = Mathf.FloorToInt(sum);
 
-            int j = isX ? ((yFirst - r) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + (xFirst - r);
-            int u = isX ? ((yLast) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + xLast;
+            //int j = isX ? ((yFirst - r) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + (xFirst - r);
+            //int u = isX ? ((yLast) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + xLast;
 
-            int thisChildPos = (reverse ? (int)(axisChildLength - pos) : pos);
-            int lastChildPos = (int)Mathf.Clamp((reverse ? (int)(axisChildLength - (pos - 1)) : pos - 1), 0, axisChildLength);
+            //int thisChildPos = //(reverse ? (int)(axisChildLength - pos) : pos);
+            //int lastChildPos = (int)Mathf.Clamp((reverse ? thisChildPos + 1 : thisChildPos - 1), 0, axisChildLength); //(int)Mathf.Clamp((reverse ? (int)(axisChildLength - (pos - 1)) : pos - 1), 0, axisChildLength);
 
             int firstSide = relative[firstSlot, thisChildPos];
             int secondSide = relative[secondSlot, thisChildPos];
@@ -1465,37 +1477,36 @@ public class ShaderTerrain : MonoBehaviour
             int secondSideLastPos = relative[secondSlot, lastChildPos];
 
 
-            vertLinks[u, LINK_BORDER] = firstSide;
-            vertLinks[j, LINK_BORDER] = secondSide;
+            //vertLinks[u, LINK_BORDER] = firstSide;
+            //vertLinks[j, LINK_BORDER] = secondSide;
 
-            int halfPos = lastPos + Mathf.FloorToInt(((float)(thisPos - lastPos-1)) / 2f);
+            int halfPos = lastPos + Mathf.FloorToInt(((float)(thisPos - lastPos)) / 2f);
 
-            for (int f = lastPos+1; f < thisPos; f++)
+            for (int f = lastPos; f <= thisPos; f++)
             {
                 int p = isX ? ((yFirst - r) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + (xFirst - r);
                 int o = isX ? ((yLast) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + xLast;
 
-                if (f == halfPos)
-                {
+               // Debug.Log((isX ? "X: thisChild:" : "Y: thisChild: ") + thisChildPos + " lastChild: " + lastChildPos);
+
+                if (halfPos + 1 >= thisPos || f > halfPos) {
                     vertLinks[o, LINK_BORDER] = firstSide;
                     vertLinks[p, LINK_BORDER] = secondSide;
-                }
-                else if (f < halfPos)
+                   // Debug.Log("linking: " + f +" (tp"+thisPos+",lp"+lastChildPos+") to "+thisChildPos);
+
+                }else
                 {
                     vertLinks[o, LINK_BORDER] = firstSideLastPos;
                     vertLinks[p, LINK_BORDER] = secondSideLastPos;
-                }
-                else
-                {
-                    vertLinks[o, LINK_BORDER] = firstSide;
-                    vertLinks[p, LINK_BORDER] = secondSide;
+                   // Debug.Log("linking: " + f + " (tp" + thisPos + ",lp" + lastChildPos + ") to " + lastChildPos);
                 }
             }
 
-            pos++;
+            lastChildPos = thisChildPos;
+            thisChildPos+= reverse? -1 : 1;
             sum += div;
             lastPos = thisPos;
-        }
+        }*/
 
 
     }
@@ -1710,3 +1721,70 @@ public class ShaderTerrain : MonoBehaviour
     }
     
 }
+
+
+/*float div = xLen / xChildLength;
+float sum = 0;
+int pos = 0;
+int lastPos = 0;
+while (sum <= xLen)
+{
+    int thisPos = Mathf.FloorToInt(sum);
+
+    int j = ((yFirst - r) * xResolution) + thisPos * r+(xFirst - r);
+    int u = ((yLast) * xResolution) + thisPos * r + (xFirst - r);
+
+    int thisChildPos = (projections[i].xReverse ? (int)(xChildLength - pos) : pos);
+    int lastChildPos = (int)Mathf.Clamp((projections[i].xReverse ? (int)(xChildLength - (pos - 1)) : pos-1), 0, xChildLength);
+
+    int firstSide = projections[i].relativeX[projections[i].xFirst, thisChildPos];
+    int secondSide = projections[i].relativeX[projections[i].xSecond, thisChildPos];
+    int firstSideLastPos = projections[i].relativeX[projections[i].xFirst, lastChildPos];
+    int secondSideLastPos = projections[i].relativeX[projections[i].xSecond, lastChildPos];
+
+
+    vertLinks[u, LINK_BORDER] = firstSide;
+    vertLinks[j, LINK_BORDER] = secondSide;
+
+    int halfPos = thisPos+Mathf.FloorToInt(((float)(thisPos - lastPos - 1f)) / 2f);
+
+    for(int f = lastPos+1; f < thisPos; f++)
+    {
+        int p = ((yFirst - r) * xResolution) + f * r + (xFirst - r);
+        int o = ((yLast) * xResolution) + f * r + (xFirst - r);
+
+        if (f == halfPos){
+            vertLinks[o, LINK_BORDER] = firstSide;
+            vertLinks[o, LINK_DOUBLE] = firstSideLastPos;
+            vertLinks[p, LINK_BORDER] = secondSide;
+            vertLinks[p, LINK_DOUBLE] = secondSideLastPos;
+        }
+        else if (f < halfPos) {
+            vertLinks[o, LINK_BORDER] = firstSideLastPos;
+            vertLinks[p, LINK_BORDER] = secondSideLastPos;
+        }
+        else{
+            vertLinks[o, LINK_BORDER] = firstSide;
+            vertLinks[p, LINK_BORDER] = secondSide;
+        }
+    }
+
+    pos++;
+    sum += div;
+    lastPos = thisPos;
+}*/
+/*VectorPair minmax = Scan(ma.vertices, ma.sharedZ[this], MeshArrays.Z_TOP_LEFT, new VectorPair(Vector3.zero, Vector3.zero), true);
+minmax = Scan(ma.vertices, ma.sharedZ[this], MeshArrays.Z_TOP_RIGHT, minmax, false);
+minmax = Scan(ma.vertices, ma.sharedX[this], MeshArrays.X_TOP_BACK, minmax, false);
+minmax = Scan(ma.vertices, ma.sharedX[this], MeshArrays.X_TOP_FORWARD, minmax, false);
+
+//Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
+//Vector3 mod = GetMod(-projectDirection, size);
+
+minmax.Add(new Vector3(0, 0, -localPos.z * 2f) + size / 2f);
+minmax.Divide(size);
+minmax.Clamp01();
+minmax.Multiply(size * resolution);
+minmax.FloorFirstCeilSecond();
+minmax = GetMod(-projectDirection, minmax);
+*/
