@@ -240,14 +240,19 @@ public class ShaderTerrain : MonoBehaviour
     public Material material;
     public ShaderTerrain parent;
     public bool update = false;
+    public bool debug = false;
 
     [Header("Size Settings")]
     public int zSize = 2;
     public int xSize = 3;
     public int ySize = 1;
+    public Vector3 extents = new Vector3(1, 0.5f, 2);
+    public bool flipTriangles = false;
+
     [Header("Child settings")]
     public Vector3 projectionDirection = Vector3.zero;
-    public bool roundInProjectionDirection = true;
+    public bool roundInProjectionDirection = false;
+   // public float spreadHeightToParent = 0;
 
     [Header("Roundness")]
     public float roundness = 1f;
@@ -264,8 +269,6 @@ public class ShaderTerrain : MonoBehaviour
     public float bumpScale = 1;
     public Material[] splatTextures = new Material[] { };
 
-    [Header("Extends per axis")]
-    public Vector3 extents = new Vector3(1, 0.5f, 2);
     [Header("Noise")]
     public float noiseBaseRoughness = 1f;
     public float noiseRoughness = 1f;
@@ -279,6 +282,7 @@ public class ShaderTerrain : MonoBehaviour
     private MeshFilter filter = null;
     private Mesh mesh;
     // private Noise noise;
+    private Vector3 relativePos;
     private Vector3 currentPos;
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
@@ -330,23 +334,22 @@ public class ShaderTerrain : MonoBehaviour
         if (update)
         {
             SetPos();
-
-            if (parent != null)
-            {
-                parent.ExecuteUpdate();
-            }
-            else {
-                ExecuteUpdate();
-            }
-
+            ExecuteUpdate();
         }
 
     }
     public void ExecuteUpdate() {
 
-        SortChildren();
-        Initialize();
-        ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
+
+        if (parent != null)
+        {
+            parent.ExecuteUpdate();
+        }
+        else
+        {
+            Initialize();
+            ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
+        }
     }
 
     public void SetPos() {
@@ -528,8 +531,8 @@ public class ShaderTerrain : MonoBehaviour
         {
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedX[this],
                 MeshArrays.Z_BOT_LEFT, MeshArrays.Z_BOT_RIGHT, MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD,
-                new Vector3(0, 0, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
-                );
+                new Vector3(0, 0, -localPos.z * 2f) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
+                ); //
             return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
                 MeshArrays.X_BOT_BACK, MeshArrays.X_BOT_FORWARD, MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_BOT_LEFT, true, false);
         }
@@ -537,7 +540,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedX[this],
                 MeshArrays.Z_TOP_LEFT, MeshArrays.Z_TOP_RIGHT, MeshArrays.X_TOP_BACK, MeshArrays.X_TOP_FORWARD,
-                 new Vector3(-localPos.x * 2f, 0, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
+                 new Vector3(-localPos.x * 2f, 0, -localPos.z * 2f) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
                 );
             return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
                 MeshArrays.X_TOP_BACK, MeshArrays.X_TOP_FORWARD, MeshArrays.Z_TOP_LEFT, MeshArrays.Z_TOP_RIGHT, true, false);
@@ -546,7 +549,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedY[this],
                 MeshArrays.Z_TOP_RIGHT, MeshArrays.Z_BOT_RIGHT, MeshArrays.Y_RIGHT_BACK, MeshArrays.Y_RIGHT_FORWARD,
-                new Vector3(0, -localPos.y * 2f, -localPos.z * 2f) + size / 2f, size, resolution, projectDirection
+                new Vector3(0, -localPos.y * 2f, -localPos.z * 2f) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
                 );
             return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
                 MeshArrays.Z_BOT_RIGHT, MeshArrays.Z_TOP_RIGHT, MeshArrays.Y_RIGHT_BACK, MeshArrays.Y_RIGHT_FORWARD, true, false);
@@ -555,7 +558,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedZ[this], ma.sharedY[this],
                 MeshArrays.Z_TOP_LEFT, MeshArrays.Z_BOT_LEFT, MeshArrays.Y_LEFT_BACK, MeshArrays.Y_LEFT_FORWARD,
-                new Vector3(0, -localPos.y * 2f, 0) + size / 2f, size, resolution, projectDirection
+                new Vector3(0, -localPos.y * 2f, 0) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
                 );
             return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
                 MeshArrays.Z_BOT_LEFT, MeshArrays.Z_TOP_LEFT, MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_LEFT_BACK, true, false);
@@ -564,7 +567,7 @@ public class ShaderTerrain : MonoBehaviour
 
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedY[this], ma.sharedX[this],
                 MeshArrays.Y_LEFT_BACK, MeshArrays.Y_RIGHT_BACK, MeshArrays.X_BOT_BACK, MeshArrays.X_TOP_BACK,
-                new Vector3(-localPos.x * 2f, 0, 0) + size / 2f, size, resolution, projectDirection
+                new Vector3(-localPos.x * 2f, 0, 0) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
                 );
             return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
                 MeshArrays.Y_LEFT_BACK, MeshArrays.Y_RIGHT_BACK, MeshArrays.X_TOP_BACK, MeshArrays.X_BOT_BACK, true, false);
@@ -573,7 +576,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedY[this], ma.sharedX[this],
                 MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_RIGHT_FORWARD, MeshArrays.X_BOT_FORWARD, MeshArrays.X_TOP_FORWARD,
-                new Vector3(-localPos.x * 2f, -localPos.y * 2f, 0) + size / 2f, size, resolution, projectDirection
+                new Vector3(-localPos.x * 2f, -localPos.y * 2f, 0) + size / 2f - parent.relativePos, size, resolution, projectDirection, debug
                 );
             return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
                 MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_RIGHT_FORWARD, MeshArrays.X_BOT_FORWARD, MeshArrays.X_TOP_FORWARD, true, false);
@@ -608,14 +611,21 @@ public class ShaderTerrain : MonoBehaviour
     private static VectorPair GetVectorPairForProjection(
         List<Vector3> vertices, int[,] firstShared, int[,] secondShared,
         int sharedFirstOne, int sharedFirstTwo, int sharedSecondOne, int sharedSecondTwo,
-        Vector3 offset, Vector3 size, int resolution, Vector3 projectionDirection
+        Vector3 offset, Vector3 size, int resolution, Vector3 projectionDirection, bool debug
         ) {
 
         VectorPair minmax = Scan(vertices, firstShared, sharedFirstOne, new VectorPair(Vector3.zero, Vector3.zero), true);
         minmax = Scan(vertices, firstShared, sharedFirstTwo, minmax, false);
         minmax = Scan(vertices, secondShared, sharedSecondOne, minmax, false);
         minmax = Scan(vertices, secondShared, sharedSecondTwo, minmax, false);
+        if (debug) {
+            minmax.DebugPrint();
+        }
         minmax.Add(offset);
+        if (debug)
+        {
+            minmax.DebugPrint();
+        }
         minmax.Divide(size);
         minmax.Clamp01();
         minmax.Multiply(size * resolution);
@@ -679,6 +689,10 @@ public class ShaderTerrain : MonoBehaviour
 
     public MeshArrays Generate(MeshArrays ma)
     {
+        relativePos = parent == null ? Vector3.zero : localPos + parent.relativePos;
+
+        SortChildren();
+
         int maxResolution = 1;
         foreach (int res in resolutions)
         {
@@ -867,27 +881,45 @@ public class ShaderTerrain : MonoBehaviour
             triIndexThree = temp;
         }
 
-        Vector3 newNormal = CalculateNormal(ma.vertices[triIndexOne], ma.vertices[triIndexTwo], ma.vertices[triIndexThree]);
-
-
-        if (!normalized.Contains(triIndexOne)) {
-            ma.normals[triIndexOne] = (ma.normals[triIndexOne] + newNormal) / 2f;
-            normalized.Add(triIndexOne);
-        }
-        if (!normalized.Contains(triIndexTwo))
+        if (triIndexOne < 0)
         {
-            ma.normals[triIndexTwo] = (ma.normals[triIndexTwo] + newNormal) / 2f;
-            normalized.Add(triIndexTwo);
+            Debug.Log("triIndexOne less than 0");
         }
-        if (!normalized.Contains(triIndexThree))
+        else if (triIndexTwo < 0)
         {
-            ma.normals[triIndexThree] = (ma.normals[triIndexThree] + newNormal) / 2f;
-            normalized.Add(triIndexThree);
+            Debug.Log("triIndexTwo less than 0");
+        }
+        else if (triIndexThree < 0)
+        {
+            Debug.Log("triIndexThree less than 0");
+        }
+        else {
+
+            Vector3 newNormal = CalculateNormal(ma.vertices[triIndexOne], ma.vertices[triIndexTwo], ma.vertices[triIndexThree]);
+
+
+            if (!normalized.Contains(triIndexOne))
+            {
+                ma.normals[triIndexOne] = (ma.normals[triIndexOne] + newNormal) / 2f;
+                normalized.Add(triIndexOne);
+            }
+            if (!normalized.Contains(triIndexTwo))
+            {
+                ma.normals[triIndexTwo] = (ma.normals[triIndexTwo] + newNormal) / 2f;
+                normalized.Add(triIndexTwo);
+            }
+            if (!normalized.Contains(triIndexThree))
+            {
+                ma.normals[triIndexThree] = (ma.normals[triIndexThree] + newNormal) / 2f;
+                normalized.Add(triIndexThree);
+            }
+
+            ma.triangles.Add(triIndexOne);
+            ma.triangles.Add(triIndexTwo);
+            ma.triangles.Add(triIndexThree);
+
         }
 
-        ma.triangles.Add(triIndexOne);
-        ma.triangles.Add(triIndexTwo);
-        ma.triangles.Add(triIndexThree);
 
     }
 
@@ -1045,7 +1077,7 @@ public class ShaderTerrain : MonoBehaviour
             float r = ((1f - noise) * 255f);
             float g = (noise * 255f);
 
-            Vector3 vert = (Vector3)center.point + (parent != null ? localPos : Vector3.zero);
+            Vector3 vert = (Vector3)center.point + relativePos; //(parent != null ? localPos : Vector3.zero);
             Color32 color = new Color32((byte)r, (byte)g, 0, 0);
 
             vertexPositions[x, y] = iplus;
@@ -1293,10 +1325,10 @@ public class ShaderTerrain : MonoBehaviour
             VectorPair proj = projections[i].bounds;
             //Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
 
-            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + b == r ? 0 : r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.first.y + b;(r + b+1)
-            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + b == r ? 0 : r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.first.x + b;
-            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + b == r ? 0 : r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
-            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + b == r ? 0 : r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.first.y + b;(r + b+1)
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
 
             for (int y = yFirst; y <= yLast; y += r)
             {
@@ -1616,7 +1648,7 @@ public class ShaderTerrain : MonoBehaviour
 
     public static int GetBreakpoint(float resolution, float b, float r) {
         if (b == r) {
-            return (int)(resolution - 1);
+            return (int)(resolution - 1 - b);
         }
         return (int)(Mathf.FloorToInt((resolution - b * 2 - 1) / r) * r + b);
     }
