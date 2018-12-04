@@ -93,7 +93,7 @@ public class ShaderTerrain : MonoBehaviour
         }
 
         public bool IsIn(Vector3 v, bool xAxis, bool yAxis, bool zAxis) {
-            return  ((v.x >= first.x && v.x < second.x) || !xAxis) &&
+            return ((v.x >= first.x && v.x < second.x) || !xAxis) &&
                     ((v.y >= first.y && v.y < second.y) || !yAxis) &&
                     ((v.z >= first.z && v.z < second.z) || !zAxis);
 
@@ -174,6 +174,47 @@ public class ShaderTerrain : MonoBehaviour
         }
     }
 
+    private struct AddedTriangle
+    {
+
+        public bool hasChildB;
+        public int childA;
+        public int childB;
+        public int parentCX;
+        public int parentCY;
+        public int parentBX;
+        public int parentBY;
+        public bool flipped;
+
+        public AddedTriangle(int childA, int childB, int parentCX, int parentCY, bool flipped)
+        {
+            this.childA = childA;
+            this.childB = childB;
+            this.parentCX = parentCX;
+            this.parentCY = parentCY;
+            this.parentBX = -1;
+            this.parentBY = -1;
+            this.hasChildB = true;
+            this.flipped = flipped;
+        }
+        public AddedTriangle(int childA, int parentBX, int parentBY, int parentCX, int parentCY, bool flipped)
+        {
+            this.childA = childA;
+            this.childB = -1;
+            this.parentCX = parentCX;
+            this.parentCY = parentCY;
+            this.parentBX = parentBX;
+            this.parentBY = parentBY;
+            this.hasChildB = false;
+            this.flipped = flipped;
+        }
+        public bool isntZero() {
+            return (hasChildB && childA > 0 && childB > 0) || (childA > 0 && !hasChildB);
+
+        }
+
+    }
+
     /*private static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
 
         public static Color32[] DEBUG_COLORS = new Color32[] {
@@ -195,6 +236,7 @@ public class ShaderTerrain : MonoBehaviour
     public static readonly int LINK_PROJECTION = 7;
     public static readonly int LINK_BORDER = 8;
     public static readonly int LINK_DOUBLE = 9;
+    public static readonly int LINK_MERGE = 10;
 
     public Material material;
     public ShaderTerrain parent;
@@ -236,7 +278,7 @@ public class ShaderTerrain : MonoBehaviour
     private new MeshRenderer renderer = null;
     private MeshFilter filter = null;
     private Mesh mesh;
-   // private Noise noise;
+    // private Noise noise;
     private Vector3 currentPos;
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
@@ -265,7 +307,7 @@ public class ShaderTerrain : MonoBehaviour
         //if (noise == null)
         //{
         //    noise = new Noise();
-       //}
+        //}
 
 
 
@@ -275,11 +317,11 @@ public class ShaderTerrain : MonoBehaviour
     public void OnDrawGizmosSelected()
     {
 
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireCube(transform.position, new Vector3(xSize, ySize, zSize));
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireCube(transform.position, new Vector3(xSize, ySize, zSize));
 
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireCube(transform.position, new Vector3(xSize + extents.x, ySize + extents.x, zSize + extents.x));
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireCube(transform.position, new Vector3(xSize + extents.x, ySize + extents.x, zSize + extents.x));
     }
 
 
@@ -314,8 +356,8 @@ public class ShaderTerrain : MonoBehaviour
     }
 
     //public MeshArrays GetMeshArray(Noise noise, MeshArrays ma) {
-   //     this.noise = noise;
-   //     SortChildren();
+    //     this.noise = noise;
+    //     SortChildren();
     //    SetPos();
     //    return Generate(ma);
     //}
@@ -503,7 +545,7 @@ public class ShaderTerrain : MonoBehaviour
             return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
                 MeshArrays.Z_BOT_LEFT, MeshArrays.Z_TOP_LEFT, MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_LEFT_BACK, true, false);
         }
-        else if (projectDirection == Vector3.back) { 
+        else if (projectDirection == Vector3.back) {
 
             VectorPair minmax = GetVectorPairForProjection(ma.vertices, ma.sharedY[this], ma.sharedX[this],
                 MeshArrays.Y_LEFT_BACK, MeshArrays.Y_RIGHT_BACK, MeshArrays.X_BOT_BACK, MeshArrays.X_TOP_BACK,
@@ -522,7 +564,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.Y_LEFT_FORWARD, MeshArrays.Y_RIGHT_FORWARD, MeshArrays.X_BOT_FORWARD, MeshArrays.X_TOP_FORWARD, true, false);
         }
 
-        return new Projection(new VectorPair(Vector3.zero, Vector3.zero), null, null, 0, 0, 0, 0,false,false);
+        return new Projection(new VectorPair(Vector3.zero, Vector3.zero), null, null, 0, 0, 0, 0, false, false);
 
         /*
          *         if (localUp == Vector3.left || localUp == Vector3.right)
@@ -549,7 +591,7 @@ public class ShaderTerrain : MonoBehaviour
     }
 
     private static VectorPair GetVectorPairForProjection(
-        List<Vector3> vertices, int[,] firstShared, int[,] secondShared, 
+        List<Vector3> vertices, int[,] firstShared, int[,] secondShared,
         int sharedFirstOne, int sharedFirstTwo, int sharedSecondOne, int sharedSecondTwo,
         Vector3 offset, Vector3 size, int resolution, Vector3 projectionDirection
         ) {
@@ -621,7 +663,7 @@ public class ShaderTerrain : MonoBehaviour
     }
 
     public MeshArrays Generate(MeshArrays ma)
-    {  
+    {
         int maxResolution = 1;
         foreach (int res in resolutions)
         {
@@ -631,7 +673,7 @@ public class ShaderTerrain : MonoBehaviour
         int[,] sharedX = ma.sharedX.AddGetValue(this, new int[4, (xSize * maxResolution) + 1]);
         int[,] sharedY = ma.sharedY.AddGetValue(this, new int[4, (ySize * maxResolution) + 1]);
         int[,] sharedZ = ma.sharedZ.AddGetValue(this, new int[4, (zSize * maxResolution) + 1]);
-        
+
         Dictionary<Vector3, int[,]> vertexFaces = new Dictionary<Vector3, int[,]>();
 
         for (int dir = 0; dir < directions.Length; dir++)
@@ -641,12 +683,13 @@ public class ShaderTerrain : MonoBehaviour
             Vector2 borderRes = GetResolution(maxResolution, mod);
             vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
         }
-        
+
         for (int dir = 0; dir < directions.Length; dir++)
         {
 
             List<ShaderTerrain> childlist = childrenPerFace == null ? null : childrenPerFace[dir];
             List<Projection> projections = new List<Projection>();
+            List<AddedTriangle> addedTriangles = new List<AddedTriangle>();
 
             Vector3 localUp = directions[dir];
             int resolution = Mathf.Max(resolutions[dir], 1);
@@ -674,15 +717,15 @@ public class ShaderTerrain : MonoBehaviour
                 for (int ca = 0; ca < childlist.Count; ca++) {
                     Debug.Log("Adding projection for: " + localUp);
                     childlist[ca].Generate(ma);
-                  
+
                     projections.Add(childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
-                    
+
                 }
             }
-            
+
             Vector3 borderRes = GetResolution(maxResolution, mod);
-            int[,] vertexPositions = vertexFaces[localUp];  
-            
+            int[,] vertexPositions = vertexFaces[localUp];
+
             xResolution = (int)borderRes.x;
             yResolution = (int)borderRes.y;
             zResolution = (int)borderRes.z;
@@ -690,6 +733,7 @@ public class ShaderTerrain : MonoBehaviour
             int[,] links = GetVertexLinks(
                 childlist,
                 projections,
+                addedTriangles,
                 borderRes,
                 maxResolution,
                 resolution,
@@ -708,7 +752,7 @@ public class ShaderTerrain : MonoBehaviour
                         if (links[j, 1] != 0 || links[j, 2] != 0)
                         {
                             if (links[j, 1] != 0)
-                            { 
+                            {
                                 bool isX = links[j, 6] == 0;
 
                                 AddTopTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
@@ -716,7 +760,7 @@ public class ShaderTerrain : MonoBehaviour
                                 vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
 
                                 if (links[j, 6] == 3)
-                                { 
+                                {
                                     AddTopTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                     halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                     vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
@@ -725,12 +769,12 @@ public class ShaderTerrain : MonoBehaviour
                             if (links[j, 2] != 0)
                             {
                                 bool isX = links[j, 6] == 0;
-                                
+
                                 AddBotTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                 halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
                                 vertexFaces, dir, sharedX, sharedY, sharedZ, childlist, projections);
 
-                                if (links[j, 6] == 3) 
+                                if (links[j, 6] == 3)
                                 {
                                     AddBotTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
                                     halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
@@ -740,7 +784,7 @@ public class ShaderTerrain : MonoBehaviour
                         }
                         else if (links[j, 3] != 0 || links[j, 4] != 0)
                         {
-                            bool isX = links[j, 6] == 0; 
+                            bool isX = links[j, 6] == 0;
 
                             int xAbove = (isX ? x : y) + links[j, 4];
                             int xBelow = (isX ? x : y) - links[j, 3];
@@ -775,9 +819,80 @@ public class ShaderTerrain : MonoBehaviour
                     }
                 }
             }
+
+            //Sometimes we need to add more triangles when a child has higher vert density than its parent
+            foreach (AddedTriangle tri in addedTriangles) {
+                 IncorporateTriangle(tri, vertexPositions, ma.triangles);
+            }
         }
         Debug.Log("Vert total: " + ma.vertices.Count + " triangle total: " + ma.triangles.Count / 3);
         return ma;
+    }
+
+    private void IncorporateTriangle(AddedTriangle at, int[,] vertexPositions, List<int> triangles) {
+
+        if (at.isntZero())
+        {
+            if (at.hasChildB)
+            {
+                if (vertexPositions[at.parentCX, at.parentCY] == 0)
+                {
+
+                    Debug.Log("Null at: " + at.parentCX + " " + at.parentCY);
+                }
+                else {
+
+                    triangles.Add(at.childA - 1);
+
+                    if (at.flipped)
+                    {
+                        triangles.Add(vertexPositions[at.parentCX, at.parentCY] - 1);
+                        triangles.Add(at.childB - 1);
+
+                    }
+                    else {
+                        triangles.Add(at.childB - 1);
+                        triangles.Add(vertexPositions[at.parentCX, at.parentCY] - 1);
+                    }
+
+                }
+
+            }
+            else
+            {
+                if (vertexPositions[at.parentCX, at.parentCY] == 0)
+                {
+
+                    Debug.Log("Null at: " + at.parentCX + " " + at.parentCY);
+                }else if (vertexPositions[at.parentBX, at.parentBY] == 0) {
+
+                    Debug.Log("Null at: " + at.parentBX + " " + at.parentBY);
+                }
+                else
+                {
+                    triangles.Add(at.childA - 1);
+
+                    if (at.flipped)
+                    {
+                        triangles.Add(vertexPositions[at.parentBX, at.parentBY] - 1);
+                        triangles.Add(vertexPositions[at.parentCX, at.parentCY] - 1);
+                    }
+                    else
+                    {
+                        triangles.Add(vertexPositions[at.parentCX, at.parentCY] - 1);
+                        triangles.Add(vertexPositions[at.parentBX, at.parentBY] - 1);
+                    }
+                }
+
+            }
+
+        }
+        else {
+
+            Debug.Log("Missing vertices for: " + at.childA + " " + at.childB + " " + at.parentCX + " " + at.parentCY);
+        }
+
+
     }
 
     public void AddTopTriangle(
@@ -790,7 +905,7 @@ public class ShaderTerrain : MonoBehaviour
 
         //Dictionary<Vector3, int[,]> vertexFaces, List<Color32> vertexColors, List<Vector3> vertices, List<Vector2> uvs,List<int> triangles, 
         //Vector3 uvCoordList<Vector3> normals,
-        , int dir,  int[,] sharedX, int[,] sharedY, int[,] sharedZ, 
+        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ,
         List<ShaderTerrain> childlist, List<Projection> projections
 
         )
@@ -804,14 +919,14 @@ public class ShaderTerrain : MonoBehaviour
 
         bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
-         AddTriangle(
-            isX ? leftX : yMinus, isX ? yMinus : leftX,
-            isX ? axis : yMinus, isX ? yMinus : axis,
-            isX ? selfX : ySelf, isX ? ySelf : selfX,
-            clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-            axisA, axisB, halfSize, halfSizeExtent, vertexPositions,vertexFaces, ma , dir,
-            sharedX, sharedY, sharedZ, childlist, projections, links
-            );
+        AddTriangle(
+           isX ? leftX : yMinus, isX ? yMinus : leftX,
+           isX ? axis : yMinus, isX ? yMinus : axis,
+           isX ? selfX : ySelf, isX ? ySelf : selfX,
+           clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+           axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+           sharedX, sharedY, sharedZ, childlist, projections, links
+           );
         /*, uvCoord vertexColors,vertexFacestriangles, vertices, uvs normals, */
     }
 
@@ -824,7 +939,7 @@ public class ShaderTerrain : MonoBehaviour
 
         //Dictionary<Vector3, int[,]> vertexFaces, List<Color32> vertexColors, List<Vector3> vertices, List<Vector2> uvs,List<int> triangles, 
         //Vector3 uvCoordList<Vector3> normals,
-        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ, 
+        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ,
         List<ShaderTerrain> childlist, List<Projection> projections
         )
     {
@@ -837,14 +952,14 @@ public class ShaderTerrain : MonoBehaviour
 
         bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
 
-         AddTriangle(
-                isX ? leftX : yMinus, isX ? yMinus : leftX,
-                isX ? selfX : ySelf, isX ? ySelf : selfX,
-                isX ? axis : yMinus, isX ? yMinus : axis,
-                clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-            axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-            sharedX, sharedY, sharedZ, childlist, projections, links
-            );
+        AddTriangle(
+               isX ? leftX : yMinus, isX ? yMinus : leftX,
+               isX ? selfX : ySelf, isX ? ySelf : selfX,
+               isX ? axis : yMinus, isX ? yMinus : axis,
+               clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+           axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+           sharedX, sharedY, sharedZ, childlist, projections, links
+           );
     }
 
     public void AddTriangle(
@@ -854,10 +969,10 @@ public class ShaderTerrain : MonoBehaviour
         bool clockwise,
         /*int i,*/ int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-         int[,] vertexPositions,  Dictionary<Vector3, int[,]> vertexFaces, MeshArrays ma
+         int[,] vertexPositions, Dictionary<Vector3, int[,]> vertexFaces, MeshArrays ma
 
         /*,Vector3 uvCoord*/ //List<Vector3> vertices, List<Vector2> uvs, List<int> triangles,List<Vector3> normals,List<Color32> vertexColors
-        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ, 
+        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ,
         List<ShaderTerrain> childlist, List<Projection> projections, int[,] links
         )
     {
@@ -895,17 +1010,17 @@ public class ShaderTerrain : MonoBehaviour
         }
 
 
-       // return i;
+        // return i;
     }
 
     public int AddVertex(
         int x, int y, /*int i,*/ int xResolution, int yResolution, int zResolution,
         Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
-        ,MeshArrays ma, int[,] vertexPositions,
+        , MeshArrays ma, int[,] vertexPositions,
         Dictionary<Vector3, int[,]> vertexFaces,
         // Vector3 uvCoord,  List<Vector3> normals, List<Color32> vertexColors,List<Vector3> vertices, List<Vector2> uvs
-        int dir, 
-        int[,] sharedX, int[,] sharedY, int[,] sharedZ,List<ShaderTerrain> childlist, List<Projection> projections,
+        int dir,
+        int[,] sharedX, int[,] sharedY, int[,] sharedZ, List<ShaderTerrain> childlist, List<Projection> projections,
         int[,] links
         //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
         )
@@ -923,37 +1038,26 @@ public class ShaderTerrain : MonoBehaviour
             Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
             Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
 
-            //Calculate the actual point
-
-
             VertexPoint center = Calculate(
                     ma.noise,
                     percent, onePercent, localUp, halfMod, halfModExtent,
                     axisA, axisB, halfSize, halfSizeExtent, childlist, projections);
-
-            /*if (links[linkPos, LINK_BORDER] == 0) {
-                center = Calculate(
-                    ma.noise,
-                    percent, onePercent, localUp, halfMod, halfModExtent,
-                    axisA, axisB, halfSize, halfSizeExtent, childlist, projections);
-            }
-            else {
-                Vector3 point = ma.vertices[links[linkPos, LINK_BORDER] - 1];
-                center = new VertexPoint(localUp, point, 0);
-                //  Debug.Log("Vert: " + (links[linkPos, LINK_BORDER] - 1) + " was linked");
-            }*/
 
             float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
             float r = ((1f - noise) * 255f);
             float g = (noise * 255f);
 
+            Vector3 vert = (Vector3)center.point + (parent != null ? localPos : Vector3.zero);
+            Color32 color = new Color32((byte)r, (byte)g, 0, 0);
 
             vertexPositions[x, y] = iplus;
             ma.uvs.Add(percent);
-            ma.vertexColors.Add(new Color32((byte)r, (byte)g, 0, 0));
-            ma.vertices.Add((Vector3)center.point + (parent != null ? localPos : Vector3.zero));
+            ma.vertexColors.Add(color);
+            ma.vertices.Add(vert);
             ma.normals.Add(center.normal); //JoinNormals(normalTop, normalLeft, normalDown, normalRight));
+
+
 
 
             // return iplus-1;
@@ -1125,7 +1229,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         return iplus - 1;
     }
-    
+
 
     public static Vector3 CalculateNormal(Vector3 a, Vector3 b, Vector3 c) {
         Vector3 sideOne = b - a;
@@ -1141,10 +1245,10 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
-
-    public static int[,] GetVertexLinks(
+    private static int[,] GetVertexLinks(
         List<ShaderTerrain> childlist,
         List<Projection> projections,
+        List<AddedTriangle> addedTriangles,
         Vector2 borderRes,
         int maxResolution,
         int resolution,
@@ -1163,12 +1267,7 @@ public class ShaderTerrain : MonoBehaviour
         int xResolution = (int)borderRes.x;
         int yResolution = (int)borderRes.y;
 
-        int[,] vertLinks = new int[xResolution * yResolution, 9];
-
-
-
-
-
+        int[,] vertLinks = new int[xResolution * yResolution, 10];
 
         float maxY = 0;
         int b = 1;
@@ -1197,14 +1296,14 @@ public class ShaderTerrain : MonoBehaviour
             VectorPair proj = projections[i].bounds;
             //Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
 
-            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, yResolution- (b)); //proj.first.y + b;(r + b+1)
-            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, xResolution-  (b)); //proj.first.x + b;
-            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, yResolution- (b)); //proj.second.y; 
-            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, xResolution- (b)); //proj.second.x;
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, yResolution - (b)); //proj.first.y + b;(r + b+1)
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, xResolution - (b)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) + r, b + r, yResolution - (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) + r, b + r, xResolution - (b)); //proj.second.x;
 
-            for (int y = yFirst; y <= yLast; y+=r)
+            for (int y = yFirst; y <= yLast; y += r)
             {
-                for (int x = xFirst; x <= xLast; x+=r)
+                for (int x = xFirst; x <= xLast; x += r)
                 {
                     int j = (y * xResolution) + x;
                     vertLinks[j, LINK_PROJECTION] = i + 1;
@@ -1213,8 +1312,8 @@ public class ShaderTerrain : MonoBehaviour
 
             //int xFirstBorder = Mathf.Max(xFirst, 0);
             //int yFirstBorder = Mathf.Max(yFirst, 0);
-            float xChildLength = projections[i].relativeX.GetLength(1)-1;
-            float yChildLength = projections[i].relativeY.GetLength(1)-1;
+            float xChildLength = projections[i].relativeX.GetLength(1) - 1;
+            float yChildLength = projections[i].relativeY.GetLength(1) - 1;
 
             float yLen = (yLast - (yFirst - r) - 0);///r;
             float xLen = (xLast - (xFirst - r) - 0);///r;
@@ -1225,18 +1324,12 @@ public class ShaderTerrain : MonoBehaviour
             //Debug.Log("yFirst: "+yFirst + " yLast " + yLast+ " proj.first.y " + proj.first.y+" proj.second.y: "+ proj.second.y);
             //Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " proj.first.x " + proj.first.x+ " proj.second.x " + proj.second.x);
 
-            if (xLen >= xChildLength)
-            {
-                LinkProjectionAxis(vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+            LinkProjectionAxis(addedTriangles, vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
                     projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond);
 
-            }
-            if (yLen >= yChildLength) {
+            LinkProjectionAxis(addedTriangles, vertLinks, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+                    projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond);
 
-                LinkProjectionAxis(vertLinks, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
-                   projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond);
-
-            }
         }
 
 
@@ -1408,108 +1501,153 @@ public class ShaderTerrain : MonoBehaviour
         return vertLinks;
     }
 
-    public static void LinkProjectionAxis(
-        int[,] vertLinks, bool isX, int yFirst, int yLast, int xFirst, int xLast, int r, 
+
+    private static void LinkProjectionAxis(
+        List<AddedTriangle> addedTriangles,
+        int[,] vertLinks, bool isX, int yFirst, int yLast, int xFirst, int xLast, int r,
         float axisLength, float axisChildLength, int xResolution, bool reverse,
         int[,] relative, int firstSlot, int secondSlot
 
         ) {
 
-        float dd = axisChildLength/ (axisLength);
         float sum = 0;
-        //int childPos = 0;
 
-        for (int i = (isX ? xFirst : yFirst)-r; i <= (isX ? xLast : yLast); i++) {
-            int p = isX ? ((yFirst - r) * xResolution) + i : (i * xResolution) + (xFirst - r);
-            int o = isX ? ((yLast) * xResolution) + i: ( i * xResolution) + xLast;
-
-            int val = (int)sum;
-
-            //Bugfix first and last pos
-            val = i == (isX ? xFirst : yFirst) - r ? 0 : val;
-            val = i == (isX ? xLast : yLast) ? (int) axisChildLength : val;
-
-            int thisChildPos = (reverse ? (int)(axisChildLength - val) : val);
-
-            vertLinks[o, LINK_BORDER] = relative[firstSlot, thisChildPos];
-            vertLinks[p, LINK_BORDER] = relative[secondSlot, thisChildPos];
-
-            sum += dd;
-        }
-
-        /*
-        int fixFirst = isX ? ((yFirst - r) * xResolution) + (xFirst - r) : ((yFirst-r) * xResolution) + (xFirst - r);
-        int fixFirstSecond = isX ? ((yFirst - r) * xResolution) + xLast : (yLast * xResolution) + (xFirst - r);
-
-        vertLinks[fixFirst, LINK_BORDER] = relative[firstSlot, (reverse ? (int)axisChildLength : 0)];
-        vertLinks[fixFirstSecond, LINK_BORDER] = relative[secondSlot, (reverse ? 0 : (int)axisChildLength)];
-
-
-        int fixLast = isX ? ((yLast - r) * xResolution) + (xFirst - r) : ((yFirst - r) * xResolution) + (xLast);
-        int fixLastSecond = isX ? ((yLast - r) * xResolution) + xLast : (yLast * xResolution) + (xLast);
-
-        vertLinks[fixLast, LINK_BORDER] = relative[firstSlot, (reverse ? (int)axisChildLength : 0)];
-        vertLinks[fixLastSecond, LINK_BORDER] = relative[secondSlot, (reverse ? 0 : (int)axisChildLength)];
-        */
-
-        //int fixLast = isX ? ((yLast) * xResolution) + i: ( i * xResolution) + xLast;
-
-        //Debug.Log((isX ? "X::" : "Y:: "));
-        //axisLength += 0.5f;
-        /*
-        float div = axisLength / axisChildLength;
-        int thisChildPos = reverse ? (int)axisChildLength : 0;
-        int lastChildPos = thisChildPos;
-        int lastPos = 0;
-        while (sum <= axisLength)
+        if (axisChildLength <= axisLength / (float)r)
         {
-            int thisPos = Mathf.FloorToInt(sum);
+            float dd = axisChildLength / (axisLength);
 
-            //int j = isX ? ((yFirst - r) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + (xFirst - r);
-            //int u = isX ? ((yLast) * xResolution) + thisPos * r + (xFirst - r) : ((yFirst - r + thisPos * r) * xResolution)  + xLast;
-
-            //int thisChildPos = //(reverse ? (int)(axisChildLength - pos) : pos);
-            //int lastChildPos = (int)Mathf.Clamp((reverse ? thisChildPos + 1 : thisChildPos - 1), 0, axisChildLength); //(int)Mathf.Clamp((reverse ? (int)(axisChildLength - (pos - 1)) : pos - 1), 0, axisChildLength);
-
-            int firstSide = relative[firstSlot, thisChildPos];
-            int secondSide = relative[secondSlot, thisChildPos];
-            int firstSideLastPos = relative[firstSlot, lastChildPos];
-            int secondSideLastPos = relative[secondSlot, lastChildPos];
-
-
-            //vertLinks[u, LINK_BORDER] = firstSide;
-            //vertLinks[j, LINK_BORDER] = secondSide;
-
-            int halfPos = lastPos + Mathf.FloorToInt(((float)(thisPos - lastPos)) / 2f);
-
-            for (int f = lastPos; f <= thisPos; f++)
+            for (int i = (isX ? xFirst : yFirst) - r; i <= (isX ? xLast : yLast); i++)
             {
-                int p = isX ? ((yFirst - r) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + (xFirst - r);
-                int o = isX ? ((yLast) * xResolution) + f * r + (xFirst - r) : ((yFirst - r + f * r) * xResolution) + xLast;
+                int p = isX ? ((yFirst - r) * xResolution) + i : (i * xResolution) + (xFirst - r);
+                int o = isX ? ((yLast) * xResolution) + i : (i * xResolution) + xLast;
 
-               // Debug.Log((isX ? "X: thisChild:" : "Y: thisChild: ") + thisChildPos + " lastChild: " + lastChildPos);
+                int val = (int)sum;
 
-                if (halfPos + 1 >= thisPos || f > halfPos) {
-                    vertLinks[o, LINK_BORDER] = firstSide;
-                    vertLinks[p, LINK_BORDER] = secondSide;
-                   // Debug.Log("linking: " + f +" (tp"+thisPos+",lp"+lastChildPos+") to "+thisChildPos);
+                //Bugfix first and last pos
+                val = i == (isX ? xFirst : yFirst) - r ? 0 : val;
+                val = i == (isX ? xLast : yLast) ? (int)axisChildLength : val;
 
-                }else
-                {
-                    vertLinks[o, LINK_BORDER] = firstSideLastPos;
-                    vertLinks[p, LINK_BORDER] = secondSideLastPos;
-                   // Debug.Log("linking: " + f + " (tp" + thisPos + ",lp" + lastChildPos + ") to " + lastChildPos);
-                }
+                int thisChildPos = (reverse ? (int)(axisChildLength - val) : val);
+
+                vertLinks[o, LINK_BORDER] = relative[firstSlot, thisChildPos];
+                vertLinks[p, LINK_BORDER] = relative[secondSlot, thisChildPos];
+
+                sum += dd;
             }
 
-            lastChildPos = thisChildPos;
-            thisChildPos+= reverse? -1 : 1;
-            sum += div;
-            lastPos = thisPos;
-        }*/
+        }
+        else {
+            //Need to add extra triangles
+            float dd = (axisLength) / axisChildLength;
+            //bool first = true;
+            int val = 0;
+            int lastval = val;
 
+            for (int i = 0; i <= axisChildLength; i++)
+            {
+
+                int thisChildPos = (reverse ? (int)(axisChildLength - i) : i);
+                int nextChildPos = (int)Mathf.Clamp((reverse ? (int)(axisChildLength - (i + 1)) : i + 1), 0, axisChildLength);
+
+                //int g = (int)sum;
+                val = (int)Mathf.Clamp(Mathf.RoundToInt(((float)i * dd) / (float)r) * r,0,axisLength);
+
+                /*int p = isX ? ((yFirst - r) * xResolution) + (xFirst - r) + val : (((yFirst - r) + val) * xResolution) + (xFirst - r);
+                int o = isX ? ((yLast) * xResolution) + (xFirst - r) + val : (((yFirst - r) + val) * xResolution) + xLast;
+
+                vertLinks[o, LINK_MERGE] = relative[firstSlot, thisChildPos];
+                vertLinks[p, LINK_MERGE] = relative[secondSlot, thisChildPos];
+
+                */
+
+                if (nextChildPos != thisChildPos) {
+
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[secondSlot, thisChildPos],
+                        relative[secondSlot, nextChildPos],
+                        (xFirst - r) + (isX ? val : 0),
+                        (yFirst - r) + (isX ? 0 : val),
+                        reverse
+                        ));
+
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[firstSlot, thisChildPos],
+                        relative[firstSlot, nextChildPos],
+                        isX ? (xFirst - r) + val : xLast,
+                        isX ? yLast : ((yFirst - r) + val),
+                        !reverse
+                        ));
+                }
+
+                if (lastval != val)
+                {
+
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[secondSlot, thisChildPos],
+                        (xFirst - r) + (isX ? lastval : 0),
+                        (yFirst - r) + (isX ? 0 : lastval),
+                        (xFirst - r) + (isX ? val : 0),
+                        (yFirst - r) + (isX ? 0 : val),
+                        reverse
+                        ));
+
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[firstSlot, thisChildPos],
+                        isX ? (xFirst - r) + lastval : xLast,
+                        isX ? yLast : ((yFirst - r) + lastval),
+                        isX ? (xFirst - r) + val : xLast,
+                        isX ? yLast : ((yFirst - r) + val),
+                        !reverse
+                        ));
+                }
+
+
+                /*else if (lastval != val) //(isX ? (xFirst - r) : (yFirst - r)) + val <  (isX ? xLast : yLast))
+                {
+                    Debug.Log("BUGFIXXXXED!");
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[secondSlot, thisChildPos],
+                        (xFirst - r) + (isX ? val : 0),
+                        (yFirst - r) + (isX ? 0 : val),
+                        (isX ? xLast : (xFirst - r)),
+                        (isX ? (yFirst - r) : yLast),
+                        reverse
+                        ));
+
+                    addedTriangles.Add(new AddedTriangle(
+                        relative[firstSlot, thisChildPos],
+                        isX ? (xFirst - r) + val : xLast,
+                        isX ? yLast : ((yFirst - r) + val),
+                        xLast, //isX ? (xFirst - r) + val : xLast,
+                        yLast, //isX ? yLast : ((yFirst - r) + val),
+                        !reverse
+                        ));
+                }*/
+
+                sum += dd;
+                lastval = val;
+
+                //Bugfix first and last pos
+                //val = i == (isX ? xFirst : yFirst) - r ? 0 : val;
+                //val = i == (isX ? xLast : yLast) ? (int)axisChildLength : val;
+
+
+
+                //vertLinks[o, LINK_BORDER] = relative[firstSlot, thisChildPos];
+                //vertLinks[p, LINK_BORDER] = relative[secondSlot, thisChildPos];
+
+
+                //first = false;
+
+            }
+
+            Debug.Log("Added triangles needed: r: " + r + " xStart: " + xFirst + " xLast: " + xLast + " mod: " + ((xFirst - 1) % r));
+
+        }
 
     }
+
+
 
 
     public static int GetVertexCountForResolution(
