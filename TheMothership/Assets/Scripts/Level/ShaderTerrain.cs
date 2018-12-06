@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-
+[RequireComponent(typeof(ShaderTerrainShape))]
 public class ShaderTerrain : MonoBehaviour
 {
     public struct MeshArrays
@@ -169,19 +169,19 @@ public class ShaderTerrain : MonoBehaviour
         }
 
     }
-    public struct VertexPoint {
+    /*public struct ShapePoint {
 
         public Vector3 normal;
         public Vector3 point;
         public float noise;
 
-        public VertexPoint(Vector3 normal, Vector3 point, float noise) {
+        public ShapePoint(Vector3 normal, Vector3 point, float noise) {
             this.normal = normal;
             this.point = point;
             this.noise = noise;
 
         }
-    }
+    }*/
     private struct AddedTriangle
     {
 
@@ -248,6 +248,7 @@ public class ShaderTerrain : MonoBehaviour
 
     public Material material;
     public ShaderTerrain parent;
+    public ShaderTerrainShape shape;
     public bool update = false;
     public bool debug = false;
 
@@ -255,18 +256,18 @@ public class ShaderTerrain : MonoBehaviour
     public int zSize = 2;
     public int xSize = 3;
     public int ySize = 1;
-    public Vector3 extents = new Vector3(1, 0.5f, 2);
+    public Vector3 extents = new Vector3(0.5f, 0.5f, 0.5f);
     public bool flipTriangles = false;
 
     [Header("Child settings")]
     public Vector3 projectionDirection = Vector3.zero;
-    public bool roundInProjectionDirection = false;
+    //public bool roundInProjectionDirection = false;
     public bool reverseProjectionSide = false;
     public bool doubleProject = false;
     // public float spreadHeightToParent = 0;
 
-    [Header("Roundness")]
-    public float roundness = 1f;
+    //[Header("Roundness")]
+    //public float roundness = 1f;
     [Header("Faces")]
 
     public Vector3[] directions = new Vector3[] { Vector3.up, Vector3.forward, Vector3.left, Vector3.right, Vector3.down };
@@ -282,14 +283,14 @@ public class ShaderTerrain : MonoBehaviour
     public float bumpScale = 1;
     public Material[] splatTextures = new Material[] { };
 
-    [Header("Noise")]
+    /*[Header("Noise")]
     public float noiseBaseRoughness = 1f;
     public float noiseRoughness = 1f;
     public float noisePersistance = 0.5f;
     public float noiseStrength = 1f;
     public int noiseLayers = 5;
     public bool noiseRigid = true;
-
+    */
 
     private new MeshRenderer renderer = null;
     private MeshFilter filter = null;
@@ -300,6 +301,7 @@ public class ShaderTerrain : MonoBehaviour
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
     private bool generated = false;
+
 
     // private MeshArrays lastGeneratedMesh;
 
@@ -350,7 +352,7 @@ public class ShaderTerrain : MonoBehaviour
     {
         if (update)
         {
-            SetPos();
+            
             ExecuteUpdate();
         }
 
@@ -364,15 +366,33 @@ public class ShaderTerrain : MonoBehaviour
         }
         else
         {
+            
+            PrepareChildren();
             Initialize();
             ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
         }
     }
 
-    public void SetPos() {
+    public void SetDefs() {
 
         currentPos = transform.position;
         localPos = transform.localPosition;
+
+        if (shape == null) {
+            shape = GetComponent<ShaderTerrainShape>();
+        }
+    }
+
+    public void PrepareChildren() {
+
+        SetDefs();
+
+        if (children != null) {
+            foreach (ShaderTerrain st in children)
+            {
+                st.PrepareChildren();
+            }
+        }
     }
 
     //public MeshArrays GetMeshArray(Noise noise, MeshArrays ma) {
@@ -578,6 +598,15 @@ public class ShaderTerrain : MonoBehaviour
         Vector3 offset = GetLocalProjectionOffset(projectDirection, size);
         VectorPair minmax = GetVectorPairForProjection(offset, size, resolution, projectDirection, debug);
 
+        bool flipX = reverseProjectionSide;
+        bool flipY = false;
+
+        //The parent has flipped triangles inside out but we have not
+        if (projectOn.flipTriangles && !flipTriangles) {
+            flipX = !flipX;
+            flipY = !flipY;
+        }
+
 
         if ((projectDirection == Vector3.down && !reverseProjectionSide) || (projectDirection == Vector3.up && reverseProjectionSide)) //Child is above
         {
@@ -586,7 +615,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.X_BOT_FORWARD,
                 reverseProjectionSide ? MeshArrays.Z_BOT_LEFT : MeshArrays.Z_BOT_RIGHT,
                 reverseProjectionSide ? MeshArrays.Z_BOT_RIGHT : MeshArrays.Z_BOT_LEFT,
-                !reverseProjectionSide, false, reverseProjectionSide, false);
+                !reverseProjectionSide, false, flipX, flipY);
         }
         else if ((projectDirection == Vector3.up && !reverseProjectionSide) || (projectDirection == Vector3.down && reverseProjectionSide)) //Child is below
         {
@@ -595,7 +624,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.X_TOP_FORWARD,
                 reverseProjectionSide ? MeshArrays.Z_TOP_RIGHT : MeshArrays.Z_TOP_LEFT,
                 reverseProjectionSide ? MeshArrays.Z_TOP_LEFT : MeshArrays.Z_TOP_RIGHT
-                , !reverseProjectionSide, false, reverseProjectionSide, false);
+                , !reverseProjectionSide, false, flipX, flipY);
         }
         else if ((projectDirection == Vector3.right && !reverseProjectionSide) || (projectDirection == Vector3.left && reverseProjectionSide)) //Child is to the right (swapped)
         {
@@ -604,7 +633,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.Z_TOP_RIGHT,
                 reverseProjectionSide ? MeshArrays.Y_RIGHT_FORWARD : MeshArrays.Y_RIGHT_BACK,
                 reverseProjectionSide ? MeshArrays.Y_RIGHT_BACK : MeshArrays.Y_RIGHT_FORWARD
-                , !reverseProjectionSide, false, reverseProjectionSide, false);
+                , !reverseProjectionSide, false, flipX, flipY);
         }
         else if ((projectDirection == Vector3.left && !reverseProjectionSide) || (projectDirection == Vector3.right && reverseProjectionSide)) //Child is to the left (swapped)
         {
@@ -613,7 +642,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.Z_TOP_LEFT,
                 reverseProjectionSide ? MeshArrays.Y_LEFT_BACK : MeshArrays.Y_LEFT_FORWARD,
                 reverseProjectionSide ? MeshArrays.Y_LEFT_FORWARD : MeshArrays.Y_LEFT_BACK,
-                !reverseProjectionSide, false, reverseProjectionSide, false);
+                !reverseProjectionSide, false, flipX, flipY);
         }
         else if ((projectDirection == Vector3.back && !reverseProjectionSide) || (projectDirection == Vector3.forward && reverseProjectionSide)) {
 
@@ -622,7 +651,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.Y_RIGHT_BACK,
                 reverseProjectionSide ? MeshArrays.X_BOT_BACK : MeshArrays.X_TOP_BACK,
                 reverseProjectionSide ? MeshArrays.X_TOP_BACK : MeshArrays.X_BOT_BACK,
-                !reverseProjectionSide, false, reverseProjectionSide, false);
+                !reverseProjectionSide, false, flipX, flipY);
         }
         else if ((projectDirection == Vector3.forward && !reverseProjectionSide) || (projectDirection == Vector3.back && reverseProjectionSide)) //Child is at the back (swapped)
         {
@@ -631,7 +660,7 @@ public class ShaderTerrain : MonoBehaviour
                 MeshArrays.Y_RIGHT_FORWARD,
                 reverseProjectionSide ? MeshArrays.X_TOP_FORWARD : MeshArrays.X_BOT_FORWARD,
                 reverseProjectionSide ? MeshArrays.X_BOT_FORWARD : MeshArrays.X_TOP_FORWARD,
-                !reverseProjectionSide, false, reverseProjectionSide, false);
+                !reverseProjectionSide, false, flipX, flipY);
         }
 
         return new Projection(new VectorPair(Vector3.zero, Vector3.zero), null, null, 0, 0, 0, 0, false, false, false, false);
@@ -963,7 +992,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         else {
 
-            Vector3 newNormal = CalculateNormal(ma.vertices[triIndexOne], ma.vertices[triIndexTwo], ma.vertices[triIndexThree]);
+            Vector3 newNormal = ShaderTerrainShape.CalculateNormal(ma.vertices[triIndexOne], ma.vertices[triIndexTwo], ma.vertices[triIndexThree]);
 
 
             if (!normalized.Contains(triIndexOne))
@@ -1138,12 +1167,15 @@ public class ShaderTerrain : MonoBehaviour
             Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
             Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
 
-            VertexPoint center = Calculate(
+            ShapePoint center = shape.Calculate(ma.noise, currentPos, extents, projectionDirection, reverseProjectionSide,
+                percent, onePercent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                /*Calculate(
                     ma.noise,
                     percent, onePercent, localUp, halfMod, halfModExtent,
                     axisA, axisB, halfSize, halfSizeExtent // childlist, projections
                     );
-
+                    */
             float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
             float r = ((1f - noise) * 255f);
@@ -1332,7 +1364,7 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
-    public static Vector3 CalculateNormal(Vector3 a, Vector3 b, Vector3 c) {
+    /*public static Vector3 CalculateNormal(Vector3 a, Vector3 b, Vector3 c) {
         Vector3 sideOne = b - a;
         Vector3 sideTwo = c - a;
 
@@ -1343,7 +1375,7 @@ public class ShaderTerrain : MonoBehaviour
     public static Vector3 GetPointOnCube(Vector3 localUp, Vector3 percent, Vector3 halfMod, Vector3 axisA, Vector3 axisB) {
 
         return localUp * (halfMod.z) + (percent.x - .5f) * 2 * axisA * halfMod.x + (percent.y - .5f) * 2 * axisB * halfMod.y;
-    }
+    }*/
 
 
     private static int[,] GetVertexLinks(
@@ -1424,6 +1456,7 @@ public class ShaderTerrain : MonoBehaviour
 
             //Debug.Log("yFirst: "+yFirst + " yLast " + yLast+ " proj.first.y " + proj.first.y+" proj.second.y: "+ proj.second.y);
             //Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " proj.first.x " + proj.first.x+ " proj.second.x " + proj.second.x);
+
 
             LinkProjectionAxis(addedTriangles, vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
                     projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
@@ -1795,7 +1828,7 @@ public class ShaderTerrain : MonoBehaviour
     // {
     //     return Calculate(new Vector2(x / (float)(xResolution - 1), (float)y / (float)(yResolution - 1)), localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
     // }
-    public VertexPoint Calculate(
+    /*public VertexPoint Calculate(
         Noise noise,
         Vector3 percent, Vector3 onePercent, Vector3 localUp, Vector3 mod, Vector3 extentMod,
         Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
@@ -1837,6 +1870,7 @@ public class ShaderTerrain : MonoBehaviour
         return new Vector4(final.x, final.y, final.z, noi);
 
     }
+    */
 
     /*public static bool AbsCheck(Vector3 check, Vector3 original) {
 
@@ -1845,7 +1879,7 @@ public class ShaderTerrain : MonoBehaviour
             && Mathf.Abs(check.z + original.z) <= Mathf.Abs(check.z);
     }*/
 
-    private static bool RoundnessProjectionCheck(
+    /*private static bool RoundnessProjectionCheck(
         Vector3 projectionDirection,
         Vector3 checkEqualOrZero,
         bool roundInProjectionDirection,
@@ -1853,7 +1887,7 @@ public class ShaderTerrain : MonoBehaviour
        // bool reversedRoundProjection
        ) {
 
-        return  ((!roundInProjectionDirection && CheckVectorDifferentOrZero(projectionDirection, checkEqualOrZero) /*projectionDirection.x != -1*/) 
+        return  ((!roundInProjectionDirection && CheckVectorDifferentOrZero(projectionDirection, checkEqualOrZero)) 
             || roundInProjectionDirection);
 
       //  if (reversedRoundProjection)
@@ -1868,9 +1902,9 @@ public class ShaderTerrain : MonoBehaviour
                 (v.y != equalOrZero.y || equalOrZero.y == 0)
                 &&
                 (v.z != equalOrZero.z || equalOrZero.z == 0);
-    }
+    }*/
 
-    private static Vector3 GetRounded(
+    /*private static Vector3 GetRounded(
         Vector3 cube, Vector3 halfSizes, float roundness,
         Vector3 projectionDirection, 
         bool roundInProjectionDirection, 
@@ -1931,8 +1965,8 @@ public class ShaderTerrain : MonoBehaviour
         return inner + normal * roundness;
 
     }
-
-    public float EvaluateNoise(
+    */
+    /*public float EvaluateNoise(
         Noise noise,
         Vector3 parentPosition,
         Vector3 point,
@@ -1978,6 +2012,7 @@ public class ShaderTerrain : MonoBehaviour
 
         return (noiseValue * strength) / maximum;
     }
+    */
 
     public static VectorPair GetMod(Vector3 localup, VectorPair minmax)
     {
