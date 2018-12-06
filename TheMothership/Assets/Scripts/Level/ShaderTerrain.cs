@@ -150,7 +150,7 @@ public class ShaderTerrain : MonoBehaviour
         public bool flipYTriangles;
 
         public Projection(
-            VectorPair bounds, int[,] relativeX, int[,] relativeY, int xFirst, 
+            VectorPair bounds, int[,] relativeX, int[,] relativeY, int xFirst,
             int xSecond, int yFirst, int ySecond, bool xReverse, bool yReverse
             , bool flipXTriangles
             , bool flipYTriangles
@@ -299,6 +299,8 @@ public class ShaderTerrain : MonoBehaviour
     private Vector3 currentPos;
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
+    private bool generated = false;
+
     // private MeshArrays lastGeneratedMesh;
 
 
@@ -306,6 +308,8 @@ public class ShaderTerrain : MonoBehaviour
 
     public void Initialize()
     {
+        generated = false;
+
         if (renderer == null)
         {
             renderer = transform.GetComponent<MeshRenderer>();
@@ -434,7 +438,12 @@ public class ShaderTerrain : MonoBehaviour
         {
             if (st.projectionDirection != Vector3.zero)
             {
+                st.generated = false;
                 AddIfDirection(st, -st.projectionDirection);
+
+                if (st.doubleProject) {
+                    AddIfDirection(st, st.projectionDirection);
+                }
             }
             else
             {
@@ -566,14 +575,14 @@ public class ShaderTerrain : MonoBehaviour
     {
         Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
         Vector3 mod = GetMod(-projectDirection, size);
-        Vector3 offset = GetLocalProjectionOffset(projectionDirection, size);
+        Vector3 offset = GetLocalProjectionOffset(projectDirection, size);
         VectorPair minmax = GetVectorPairForProjection(offset, size, resolution, projectDirection, debug);
 
 
         if ((projectDirection == Vector3.down && !reverseProjectionSide) || (projectDirection == Vector3.up && reverseProjectionSide)) //Child is above
         {
             return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
-                MeshArrays.X_BOT_BACK, 
+                MeshArrays.X_BOT_BACK,
                 MeshArrays.X_BOT_FORWARD,
                 reverseProjectionSide ? MeshArrays.Z_BOT_LEFT : MeshArrays.Z_BOT_RIGHT,
                 reverseProjectionSide ? MeshArrays.Z_BOT_RIGHT : MeshArrays.Z_BOT_LEFT,
@@ -582,16 +591,16 @@ public class ShaderTerrain : MonoBehaviour
         else if ((projectDirection == Vector3.up && !reverseProjectionSide) || (projectDirection == Vector3.down && reverseProjectionSide)) //Child is below
         {
             return new Projection(minmax, ma.sharedX[this], ma.sharedZ[this],
-                MeshArrays.X_TOP_BACK, 
+                MeshArrays.X_TOP_BACK,
                 MeshArrays.X_TOP_FORWARD,
                 reverseProjectionSide ? MeshArrays.Z_TOP_RIGHT : MeshArrays.Z_TOP_LEFT,
-                reverseProjectionSide ? MeshArrays.Z_TOP_LEFT :  MeshArrays.Z_TOP_RIGHT
+                reverseProjectionSide ? MeshArrays.Z_TOP_LEFT : MeshArrays.Z_TOP_RIGHT
                 , !reverseProjectionSide, false, reverseProjectionSide, false);
         }
         else if ((projectDirection == Vector3.right && !reverseProjectionSide) || (projectDirection == Vector3.left && reverseProjectionSide)) //Child is to the right (swapped)
         {
             return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
-                MeshArrays.Z_BOT_RIGHT, 
+                MeshArrays.Z_BOT_RIGHT,
                 MeshArrays.Z_TOP_RIGHT,
                 reverseProjectionSide ? MeshArrays.Y_RIGHT_FORWARD : MeshArrays.Y_RIGHT_BACK,
                 reverseProjectionSide ? MeshArrays.Y_RIGHT_BACK : MeshArrays.Y_RIGHT_FORWARD
@@ -600,7 +609,7 @@ public class ShaderTerrain : MonoBehaviour
         else if ((projectDirection == Vector3.left && !reverseProjectionSide) || (projectDirection == Vector3.right && reverseProjectionSide)) //Child is to the left (swapped)
         {
             return new Projection(minmax, ma.sharedZ[this], ma.sharedY[this],
-                MeshArrays.Z_BOT_LEFT, 
+                MeshArrays.Z_BOT_LEFT,
                 MeshArrays.Z_TOP_LEFT,
                 reverseProjectionSide ? MeshArrays.Y_LEFT_BACK : MeshArrays.Y_LEFT_FORWARD,
                 reverseProjectionSide ? MeshArrays.Y_LEFT_FORWARD : MeshArrays.Y_LEFT_BACK,
@@ -609,7 +618,7 @@ public class ShaderTerrain : MonoBehaviour
         else if ((projectDirection == Vector3.back && !reverseProjectionSide) || (projectDirection == Vector3.forward && reverseProjectionSide)) {
 
             return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
-                MeshArrays.Y_LEFT_BACK, 
+                MeshArrays.Y_LEFT_BACK,
                 MeshArrays.Y_RIGHT_BACK,
                 reverseProjectionSide ? MeshArrays.X_BOT_BACK : MeshArrays.X_TOP_BACK,
                 reverseProjectionSide ? MeshArrays.X_TOP_BACK : MeshArrays.X_BOT_BACK,
@@ -618,7 +627,7 @@ public class ShaderTerrain : MonoBehaviour
         else if ((projectDirection == Vector3.forward && !reverseProjectionSide) || (projectDirection == Vector3.back && reverseProjectionSide)) //Child is at the back (swapped)
         {
             return new Projection(minmax, ma.sharedY[this], ma.sharedX[this],
-                MeshArrays.Y_LEFT_FORWARD, 
+                MeshArrays.Y_LEFT_FORWARD,
                 MeshArrays.Y_RIGHT_FORWARD,
                 reverseProjectionSide ? MeshArrays.X_TOP_FORWARD : MeshArrays.X_BOT_FORWARD,
                 reverseProjectionSide ? MeshArrays.X_BOT_FORWARD : MeshArrays.X_TOP_FORWARD,
@@ -744,6 +753,8 @@ public class ShaderTerrain : MonoBehaviour
 
     public MeshArrays Generate(MeshArrays ma)
     {
+        generated = true;
+
         relativePos = parent == null ? Vector3.zero : localPos + parent.relativePos;
 
         SortChildren();
@@ -800,7 +811,9 @@ public class ShaderTerrain : MonoBehaviour
             if (childlist != null) {
                 for (int ca = 0; ca < childlist.Count; ca++) {
                     //Debug.Log("Adding projection for: " + localUp);
-                    childlist[ca].Generate(ma);
+                    if (!childlist[ca].generated) {
+                        childlist[ca].Generate(ma);
+                    }
                     projections.Add(childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
                 }
             }
@@ -1386,8 +1399,8 @@ public class ShaderTerrain : MonoBehaviour
 
             int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.first.y + b;(r + b+1)
             int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.first.x + b;
-            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r) , b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
-            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r) , b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r), b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r), b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
 
             for (int y = yFirst; y <= yLast; y += r)
             {
@@ -1809,8 +1822,8 @@ public class ShaderTerrain : MonoBehaviour
         Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
         Vector3 pointOnSmallerUnitCube = GetPointOnCube(localUp, percent, mod * 0.9999f, axisA, axisB);
 
-        Vector3 roundedCube = GetRounded(pointOnUnitCube, halfSize, roundness, projectionDirection, roundInProjectionDirection, reverseProjectionSide);
-        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, halfSize * 0.9999f, roundness * 0.9999f, projectionDirection, roundInProjectionDirection, reverseProjectionSide);
+        Vector3 roundedCube = GetRounded(pointOnUnitCube, halfSize, roundness, projectionDirection, roundInProjectionDirection, reverseProjectionSide); //, reverseRoundProjection);
+        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, halfSize * 0.9999f, roundness * 0.9999f, projectionDirection, roundInProjectionDirection, reverseProjectionSide); //, reverseRoundProjection);
 
         Vector3 roundedNormal = (roundedCube - pointOnSmallerRoundedCube).normalized;
 
@@ -1832,9 +1845,38 @@ public class ShaderTerrain : MonoBehaviour
             && Mathf.Abs(check.z + original.z) <= Mathf.Abs(check.z);
     }*/
 
+    private static bool RoundnessProjectionCheck(
+        Vector3 projectionDirection,
+        Vector3 checkEqualOrZero,
+        bool roundInProjectionDirection,
+        bool reversedProjectionDirection//,
+       // bool reversedRoundProjection
+       ) {
+
+        return  ((!roundInProjectionDirection && CheckVectorDifferentOrZero(projectionDirection, checkEqualOrZero) /*projectionDirection.x != -1*/) 
+            || roundInProjectionDirection);
+
+      //  if (reversedRoundProjection)
+        //{
+       //     doRound = !doRound;
+      // }
+    }
+    public static bool CheckVectorDifferentOrZero(Vector3 v, Vector3 equalOrZero) {
+
+        return (v.x != equalOrZero.x || equalOrZero.x == 0)
+                &&
+                (v.y != equalOrZero.y || equalOrZero.y == 0)
+                &&
+                (v.z != equalOrZero.z || equalOrZero.z == 0);
+    }
+
     private static Vector3 GetRounded(
         Vector3 cube, Vector3 halfSizes, float roundness,
-        Vector3 projectionDirection, bool roundInProjectionDirection, bool reversedProjectionDirection)
+        Vector3 projectionDirection, 
+        bool roundInProjectionDirection, 
+        bool reversedProjectionDirection//, 
+      //  bool reversedRoundProjection
+        )
     {
         Vector3 inner = cube;
 
@@ -1845,31 +1887,40 @@ public class ShaderTerrain : MonoBehaviour
         if (reversedProjectionDirection) {
             projectionDirection = projectionDirection * -1;
         }
+
+
         // if (roundInProjectionDirection || AbsCheck(inner, projectionDirection)) {
 
-        if (inner.x < -halfX + roundness && ((!roundInProjectionDirection && projectionDirection.x != -1) || roundInProjectionDirection))
+        if (inner.x < -halfX + roundness && 
+            RoundnessProjectionCheck(projectionDirection, Vector3.left, roundInProjectionDirection, reversedProjectionDirection))
         {
-            inner.x = -halfX + roundness;
+                inner.x = -halfX + roundness;
         }
-        else if (inner.x > halfX - roundness && ((!roundInProjectionDirection && projectionDirection.x != 1) || roundInProjectionDirection))
+        else if (inner.x > halfX - roundness &&
+                 RoundnessProjectionCheck(projectionDirection, Vector3.right, roundInProjectionDirection, reversedProjectionDirection))
         {
             inner.x = halfX - roundness;
         }
 
-        if (inner.y < -halfY + roundness && ((!roundInProjectionDirection && projectionDirection.y != -1) || roundInProjectionDirection))
+        if (inner.y < -halfY + roundness &&
+                 RoundnessProjectionCheck(projectionDirection, Vector3.down, roundInProjectionDirection, reversedProjectionDirection))
         {
             inner.y = -halfY + roundness;
         }
-        else if (inner.y > halfY - roundness && ((!roundInProjectionDirection && projectionDirection.y != 1) || roundInProjectionDirection))
+        else if (inner.y > halfY - roundness &&
+                 RoundnessProjectionCheck(projectionDirection, Vector3.up, roundInProjectionDirection, reversedProjectionDirection))
         {
             inner.y = halfY - roundness;
         }
 
-        if (inner.z < -halfZ + roundness && ((!roundInProjectionDirection && projectionDirection.z != -1) || roundInProjectionDirection))
+        if (inner.z < -halfZ + roundness &&
+                 RoundnessProjectionCheck(projectionDirection, Vector3.back, roundInProjectionDirection, reversedProjectionDirection))
+
         {
             inner.z = -halfZ + roundness;
         }
-        else if (inner.z > halfZ - roundness && ((!roundInProjectionDirection && projectionDirection.z != 1) || roundInProjectionDirection))
+        else if (inner.z > halfZ - roundness &&
+                RoundnessProjectionCheck(projectionDirection, Vector3.forward, roundInProjectionDirection, reversedProjectionDirection))
         {
             inner.z = halfZ - roundness;
         }
