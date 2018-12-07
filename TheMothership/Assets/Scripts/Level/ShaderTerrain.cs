@@ -279,7 +279,9 @@ public class ShaderTerrain : MonoBehaviour
 
     [Header("Texture")]
     // public float splatBorderWidth = 2f;
+    [Range(1, 100)]
     public float textureScale = 100;
+    [Range(-2, 2)]
     public float bumpScale = 1;
     public Material[] splatTextures = new Material[] { };
 
@@ -349,12 +351,14 @@ public class ShaderTerrain : MonoBehaviour
 
 
     public void OnValidate()
+
     {
         if (update)
         {
             
             ExecuteUpdate();
         }
+
 
     }
     public void ExecuteUpdate() {
@@ -381,6 +385,8 @@ public class ShaderTerrain : MonoBehaviour
         if (shape == null) {
             shape = GetComponent<ShaderTerrainShape>();
         }
+
+        shape.parent = this;
     }
 
     public void PrepareChildren() {
@@ -413,7 +419,7 @@ public class ShaderTerrain : MonoBehaviour
         m.colors32 = ms.vertexColors.ToArray();
         m.triangles = ms.triangles.ToArray();
 
-        //m.RecalculateNormals();
+        m.RecalculateNormals();
 
 
         //Debug.Log(" Colors: " + ms.vertexColors.Length);
@@ -1176,13 +1182,14 @@ public class ShaderTerrain : MonoBehaviour
                     axisA, axisB, halfSize, halfSizeExtent // childlist, projections
                     );
                     */
-            float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
-            float r = ((1f - noise) * 255f);
-            float g = (noise * 255f);
+            //float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
+
+            //float r = ((1f - noise) * 255f);
+            //float g = (noise * 255f);
 
             Vector3 vert = (Vector3)center.point + relativePos; //(parent != null ? localPos : Vector3.zero);
-            Color32 color = new Color32((byte)r, (byte)g, 0, 0);
+            Color32 color = new Color32((byte)center.r, (byte)center.g, (byte)center.b, (byte)center.a);
 
             vertexPositions[x, y] = iplus;
             ma.uvs.Add(percent);
