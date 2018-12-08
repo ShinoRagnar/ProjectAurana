@@ -3,32 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public enum NoiseTarget
-{
-    BaseShape = 0,
-    Continent = 1
-}
 public struct ShapePoint
 {
 
     public Vector3 normal;
     public Vector3 point;
     //Vertex colors
-    public float r;
-    public float g;
-    public float b;
-    public float a;
+    public float texOne;
+    public float texTwo;
+    public float texThree;
+    public float texFour;
 
+    public float alpha;
+    public Color32 color;
 
-    public ShapePoint(Vector3 normal, Vector3 point, float r, float g, float b, float a)
+    public ShapePoint(Vector3 normal, Vector3 point, float texOne, float texTwo, float texThree, float texFour, Color32 col, float alpha)
     {
         this.normal = normal;
         this.point = point;
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-
+        this.texOne = texOne;
+        this.texTwo = texTwo;
+        this.texThree = texThree;
+        this.texFour = texFour;
+        this.color = col;
+        this.alpha = alpha;
     }
 }
 [Serializable]
@@ -58,14 +56,20 @@ public struct NoiseSettings {
     public bool afterAlterations;
 
     [Header("Color Settings")]
-    public bool r;
-    public bool g;
-    public bool b;
-    public bool a;
+    public Color highColor;
+    public Color lowColor;
+    public bool texOne;
+    public bool texTwo;
+    public bool texThree;
+    public bool texFour;
+    public bool useColor;
+
     [Range(0, 3)]
     public float colorMultiplier;
     [Range(0, 1)]
     public float colorCutOff;
+    [Range(0, 2)]
+    public float colorIncompatability;
 
     public bool removeColor;
     
@@ -150,7 +154,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         bool[] used = new bool[noises.Length];
 
         //Noise before alterations
-        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0), noise, currentPos, extents, used, false);
+        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0), noise, currentPos, extents, used, false);
 
         //Alterations
         if (projectionMiddleSlimmedBy != 0 && projectionDirection != Vector3.zero)
@@ -192,29 +196,33 @@ public class ShaderTerrainShape : MonoBehaviour {
     private static ShapePoint NormalizeColors(ShapePoint sp) {
 
         //Ignore negative colors
-        sp.r = Mathf.Max(sp.r, 0);
-        sp.g = Mathf.Max(sp.g, 0);
-        sp.b = Mathf.Max(sp.b, 0);
-        sp.a = Mathf.Max(sp.a, 0);
+        sp.texOne = Mathf.Max(sp.texOne, 0);
+        sp.texTwo = Mathf.Max(sp.texTwo, 0);
+        sp.texThree = Mathf.Max(sp.texThree, 0);
+        sp.texFour = Mathf.Max(sp.texFour, 0);
+        sp.alpha = Mathf.Max(sp.alpha, 0);
 
-        float total = (sp.r + sp.g + sp.b + sp.a);
+        float total = (sp.texOne + sp.texTwo + sp.texThree + sp.texFour+sp.alpha);
 
-        //R is the default color
+        //TexOne is the default texture
         if (total < 1f)
         {
-            sp.r += 1f - total;
+            sp.texOne += 1f - total;
         }
         else {
-            sp.r = sp.r / (total);
-            sp.g = sp.g / (total);
-            sp.b = sp.b / (total);
-            sp.a = sp.a / (total);
+            sp.texOne = sp.texOne / (total);
+            sp.texTwo = sp.texTwo / (total);
+            sp.texThree = sp.texThree / (total);
+            sp.texFour = sp.texFour / (total);
+            sp.alpha = sp.alpha / (total);
         }
 
-        sp.r *= 255f;
-        sp.g *= 255f;
-        sp.b *= 255f;
-        sp.a *= 255f;
+        sp.color = new Color32(sp.color.r, sp.color.g, sp.color.b, (byte)(sp.alpha * 255f));
+
+        //sp.texOne *= 255f;
+        //sp.texTwo *= 255f;
+        //sp.texThree *= 255f;
+        //sp.texFour *= 255f;
 
         return sp;
     }
@@ -248,11 +256,64 @@ public class ShaderTerrainShape : MonoBehaviour {
 
                         noi = UpdateNoise(noi, eval, ns.negative, ns.multiply, ns.cutoff);
 
-                        sp.r = ns.r ? UpdateNoise(sp.r, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.r;
-                        sp.g = ns.g ? UpdateNoise(sp.g, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.g;
-                        sp.b = ns.b ? UpdateNoise(sp.b, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.b;
-                        sp.a = ns.a ? UpdateNoise(sp.a, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.a;
+                        float spPrevTexOne = sp.texOne;
+                        float spPrevTexTwo = sp.texTwo;
+                        float spPrevTexThree = sp.texThree;
+                        float spPrevTexFour = sp.texFour;
+                        float spPrevAlpha = sp.alpha;
 
+                        sp.texOne = ns.texOne ? UpdateNoise(sp.texOne, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texOne;
+                        sp.texTwo = ns.texTwo ? UpdateNoise(sp.texTwo, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texTwo;
+                        sp.texThree = ns.texThree ? UpdateNoise(sp.texThree, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texThree;
+                        sp.texFour = ns.texFour ? UpdateNoise(sp.texFour, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texFour;
+                        sp.alpha = ns.useColor ? UpdateNoise(sp.alpha, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.alpha;
+
+                        //Removes other colors based on this color
+                        if (ns.useColor) {
+                            if (sp.color.r == 0 && sp.color.g == 0 && sp.color.b == 0)
+                            {
+                                sp.color = Color32.Lerp(ns.lowColor, ns.highColor, sp.alpha);
+                            }
+                            else {
+                                sp.color = Color.Lerp(sp.color, Color32.Lerp(ns.lowColor, ns.highColor, sp.alpha),0.5f);
+                            }
+                        }
+                        if (ns.texOne && ns.colorIncompatability > 0) {
+                            sp.texTwo = ReduceColor(sp.texTwo, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                            sp.texThree = ReduceColor(sp.texThree, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                            sp.texFour = ReduceColor(sp.texFour, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                            sp.alpha = ReduceColor(sp.alpha, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                        }
+                        else if (ns.texTwo && ns.colorIncompatability > 0)
+                        {
+                            sp.texOne = ReduceColor(sp.texOne, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                            sp.texThree = ReduceColor(sp.texThree, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                            sp.texFour = ReduceColor(sp.texFour, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                            sp.alpha = ReduceColor(sp.alpha, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+
+                        }
+                        else if (ns.texThree && ns.colorIncompatability > 0)
+                        {
+                            sp.texOne = ReduceColor(sp.texOne, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                            sp.texTwo = ReduceColor(sp.texTwo, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                            sp.texFour = ReduceColor(sp.texFour, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                            sp.alpha = ReduceColor(sp.alpha, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+
+                        }
+                        else if (ns.texFour && ns.colorIncompatability > 0)
+                        {
+                            sp.texOne = ReduceColor(sp.texOne, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                            sp.texTwo = ReduceColor(sp.texTwo, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                            sp.texThree = ReduceColor(sp.texThree, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                            sp.alpha = ReduceColor(sp.alpha, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                        }
+                        else if (ns.useColor && ns.colorIncompatability > 0)
+                        {
+                            sp.texOne = ReduceColor(sp.texOne, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                            sp.texTwo = ReduceColor(sp.texTwo, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                            sp.texThree = ReduceColor(sp.texThree, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                            sp.texFour = ReduceColor(sp.texFour, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                        }
                     }
                 }
 
@@ -272,6 +333,12 @@ public class ShaderTerrainShape : MonoBehaviour {
         }
         return sp;
     }
+
+    private static float ReduceColor(float toReduce, float reducor, float incompatability) {
+        return toReduce - reducor * incompatability;
+
+    }
+        
 
 
     private static float UpdateNoise(float noi, float eval, bool negative, bool multiply, float cutoff = 0, float multiplier = 1f) {

@@ -26,6 +26,7 @@ public class ShaderTerrain : MonoBehaviour
 
         public List<Vector3> vertices;
         public List<Vector2> uvs;
+        public List<Vector2> uv2;
         public List<Vector3> normals;
         public List<int> triangles;
         public List<Color32> vertexColors;
@@ -67,6 +68,7 @@ public class ShaderTerrain : MonoBehaviour
 
             this.vertices = new List<Vector3>();
             this.uvs = new List<Vector2>();
+            this.uv2 = new List<Vector2>();
             this.normals = new List<Vector3>();
             this.triangles = new List<int>();
             //this.splat = colors;
@@ -279,11 +281,31 @@ public class ShaderTerrain : MonoBehaviour
 
     [Header("Texture")]
     // public float splatBorderWidth = 2f;
-    [Range(1, 100)]
-    public float textureScale = 100;
+    
+    //public float textureScale = 100;
+    [Range(0, 2)]
+    public float textureScale = 1;
+    [Range(0, 2)]
+    public float detailScale = 1;
+    //[Range(0.005f, 0.08f)]
+    //public float heightScale = 0.02f;
+    //[Range(0, 1f)]
+    //public float smoothness = 0.3f;
+    //[Range(0, 1f)]
+    //public float metallic = 0.2f;
+
+
     [Range(-2, 2)]
     public float bumpScale = 1;
+    [Range(0.05f, 1)]
+    public float textureHeightTexOne = 0.5f;
+    [Range(0.05f, 1)]
+    public float textureHeightTexTwo = 0.5f;
+
+
     public Material[] splatTextures = new Material[] { };
+    public Material colorUsage;
+
 
     /*[Header("Noise")]
     public float noiseBaseRoughness = 1f;
@@ -415,6 +437,7 @@ public class ShaderTerrain : MonoBehaviour
         m.Clear();
         m.vertices = ms.vertices.ToArray();
         m.uv = ms.uvs.ToArray();
+        m.uv2 = ms.uv2.ToArray();
         m.normals = ms.normals.ToArray();
         m.colors32 = ms.vertexColors.ToArray();
         m.triangles = ms.triangles.ToArray();
@@ -443,11 +466,19 @@ public class ShaderTerrain : MonoBehaviour
         Material newMat = new Material(material);
         SetTexture(0, splatTextures[0], newMat);
         SetTexture(1, splatTextures[1], newMat);
-        SetTexture(2, splatTextures[2], newMat);
-        SetTexture(3, splatTextures[3], newMat);
+        //SetTexture(1, splatTextures[1], newMat);
+        //SetTexture(2, splatTextures[2], newMat);
+        //SetTexture(3, splatTextures[3], newMat);
 
-        newMat.SetFloat("_UVScale", textureScale);
-        newMat.SetFloat("_BumpScale", bumpScale);
+
+        newMat.SetFloat("_ParallaxTextureHeight", textureHeightTexOne);
+        newMat.SetFloat("_ParallaxTextureHeight1", textureHeightTexTwo);
+
+        newMat.SetTexture("_BumpMapColor", colorUsage.GetTexture("_BumpMap"));
+        newMat.SetTextureScale("_BumpMapColor", colorUsage.mainTextureScale);
+
+        newMat.SetFloat("_ColorMetallic", colorUsage.GetFloat("_Metallic"));
+        newMat.SetFloat("_ColorGlossiness", colorUsage.GetFloat("_Glossiness"));
 
         // newMat.SetTexture("_Control", splatmap);
 
@@ -562,11 +593,38 @@ public class ShaderTerrain : MonoBehaviour
 
     public void SetTexture(int num, Material from, Material to)
     {
+        string n = num == 0 ? "" : num + "";
 
-        to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
-        to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
-        to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
-        to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
+        to.SetTexture("_MainTex"+ n, from.mainTexture);
+        to.SetTextureScale("_MainTex" + n, new Vector2(textureScale, textureScale));
+
+        to.SetTexture("_BumpMap" + n, from.GetTexture("_BumpMap"));
+        to.SetTextureScale("_BumpMap" + n, new Vector2(textureScale, textureScale));
+
+        to.SetTexture("_ParallaxMap" + n, from.GetTexture("_ParallaxMap"));
+        to.SetTextureScale("_ParallaxMap" + n, new Vector2(textureScale, textureScale));
+
+        to.SetTexture("_OcclusionMap" + n, from.GetTexture("_OcclusionMap"));
+        to.SetTextureScale("_OcclusionMap" + n, new Vector2(textureScale, textureScale));
+
+        to.SetTexture("_MetallicGlossMap" + n, from.GetTexture("_MetallicGlossMap"));
+        to.SetTextureScale("_MetallicGlossMap" + n, new Vector2(textureScale, textureScale));
+
+        to.SetTexture("_DetailAlbedoMap" + n, from.GetTexture("_DetailAlbedoMap"));
+        to.SetTextureScale("_DetailAlbedoMap" + n, new Vector2(detailScale, detailScale));
+
+        to.SetTexture("_DetailNormalMap" + n, from.GetTexture("_DetailNormalMap"));
+        to.SetTextureScale("_DetailNormalMap" + n, new Vector2(detailScale, detailScale));
+
+        to.SetFloat("_Parallax" + n, from.GetFloat("_Parallax"));
+        to.SetFloat("_Metallic" + n, from.GetFloat("_Metallic"));
+        to.SetFloat("_Glossiness" + n, from.GetFloat("_Glossiness"));
+        to.SetFloat("_BumpScale" + n, from.GetFloat("_BumpScale"));
+
+        //to.SetTexture("_Splat" + num.ToString(), from.mainTexture);
+        //to.SetTexture("_Normal" + num.ToString(), from.GetTexture("_BumpMap"));
+        //to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
+        //to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
     }
 
     public Vector3 GetLocalProjectionOffset(Vector3 projectionDirection, Vector3 projectOnSize)
@@ -1189,11 +1247,12 @@ public class ShaderTerrain : MonoBehaviour
             //float g = (noise * 255f);
 
             Vector3 vert = (Vector3)center.point + relativePos; //(parent != null ? localPos : Vector3.zero);
-            Color32 color = new Color32((byte)center.r, (byte)center.g, (byte)center.b, (byte)center.a);
+            //Color32 color = new Color32((byte)center.texOne, (byte)center.texTwo, (byte)center.texThree, (byte)center.texFour);
 
             vertexPositions[x, y] = iplus;
             ma.uvs.Add(percent);
-            ma.vertexColors.Add(color);
+            ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
+            ma.vertexColors.Add(center.color);
             ma.vertices.Add(vert);
             ma.normals.Add(center.normal); //JoinNormals(normalTop, normalLeft, normalDown, normalRight));
 
