@@ -32,6 +32,7 @@ Shader "MixTerrain/VertexHeightSplat" {
 		//[ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
 		//[ToggleOff] _GlossyReflections("Glossy Reflections", Float) = 1.0
 
+		_ColorGlow ("Color glow", Range(0.0,1.0)) = 0.2
 		[Gamma] _ColorMetallic ("Metallic", Range(0.0,1.0)) = 0.0
 		_ColorGlossiness ("Smoothness", Range(0.0,1.0)) = 0.5
 		_BumpMapColor("Normal Map Color", 2D) = "bump" {}
@@ -131,6 +132,7 @@ Shader "MixTerrain/VertexHeightSplat" {
 		fixed _Glossiness;
 		fixed _ColorMetallic;
 		fixed _ColorGlossiness;
+		fixed _ColorGlow;
 
 		//#ifdef _DETAIL
 			sampler2D _DetailAlbedoMap;
@@ -567,6 +569,9 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#endif
 			o.Metallic = colorPercent*_ColorMetallic+(firstPercent+secondPercent)*_Metallic; //mg.x;
 			o.Smoothness = colorPercent*_ColorGlossiness+(firstPercent+secondPercent)*_Glossiness; //_Glossiness; //mg.y;
+
+
+			o.Emission = colorPercent * IN.color.rgb * _ColorGlow;
 
 			// EMISSION
 			//

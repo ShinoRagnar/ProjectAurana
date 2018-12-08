@@ -301,6 +301,8 @@ public class ShaderTerrain : MonoBehaviour
     public float textureHeightTexOne = 0.5f;
     [Range(0.05f, 1)]
     public float textureHeightTexTwo = 0.5f;
+    [Range(0.0f, 1)]
+    public float colorGlow = 0.2f;
 
 
     public Material[] splatTextures = new Material[] { };
@@ -479,6 +481,8 @@ public class ShaderTerrain : MonoBehaviour
 
         newMat.SetFloat("_ColorMetallic", colorUsage.GetFloat("_Metallic"));
         newMat.SetFloat("_ColorGlossiness", colorUsage.GetFloat("_Glossiness"));
+
+        newMat.SetFloat("_ColorGlow", colorGlow);
 
         // newMat.SetTexture("_Control", splatmap);
 

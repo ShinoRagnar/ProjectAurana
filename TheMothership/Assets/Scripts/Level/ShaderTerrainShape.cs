@@ -46,6 +46,8 @@ public struct NoiseSettings {
     public int layers;
     [Range(0, 1)]
     public float cutoff;
+    [Range(0, 50)]
+    public float overExtent;
     public bool rigid;
 
 
@@ -246,6 +248,7 @@ public class ShaderTerrainShape : MonoBehaviour {
                         && ns.normalRelativeTarget == o.normalRelativeTarget
                         && ns.strength > 0
                         && ns.layers > 0
+                        && ns.overExtent == o.overExtent
                         )
                     {
 
@@ -321,9 +324,9 @@ public class ShaderTerrainShape : MonoBehaviour {
                 {
 
                     Vector3 noiseVector = new Vector3(
-                        (sp.normal.x + o.normalRelativeTarget.x) * extents.x,
-                        (sp.normal.y + o.normalRelativeTarget.x) * extents.y,
-                        (sp.normal.z + o.normalRelativeTarget.z) * extents.z
+                        (sp.normal.x + o.normalRelativeTarget.x) * extents.x * (1f+ o.overExtent),
+                        (sp.normal.y + o.normalRelativeTarget.y) * extents.y * (1f + o.overExtent),
+                        (sp.normal.z + o.normalRelativeTarget.z) * extents.z * (1f + o.overExtent)
                         );
                     
 
