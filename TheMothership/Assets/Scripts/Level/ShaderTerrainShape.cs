@@ -5,6 +5,7 @@ using System;
 
 public struct ShapePoint
 {
+    public bool initiated;
 
     public Vector3 normal;
     public Vector3 point;
@@ -27,6 +28,7 @@ public struct ShapePoint
         this.texFour = texFour;
         this.color = col;
         this.alpha = alpha;
+        this.initiated = true;
     }
 }
 [Serializable]
@@ -126,7 +128,7 @@ public class ShaderTerrainShape : MonoBehaviour {
 
     public ShapePoint Calculate(
         Noise noise, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
-        Vector3 percent, Vector3 onePercent, Vector3 localUp, Vector3 mod, Vector3 extentMod,
+        Vector3 percent, /* Vector3 onePercent,*/ Vector3 localUp, Vector3 mod, Vector3 extentMod,
         Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
         )
     {

@@ -224,6 +224,21 @@ public class ShaderTerrain : MonoBehaviour
         }
 
     }
+    private struct CombinedQuads {
+
+        public int startX;
+        public int startY;
+        public int endX;
+        public int endY;
+
+        public CombinedQuads(int startX, int startY, int endX, int endY) {
+
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+        }
+    }
 
     /*private static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
 
@@ -248,6 +263,30 @@ public class ShaderTerrain : MonoBehaviour
     // public static readonly int LINK_DOUBLE = 9;
     // public static readonly int LINK_MERGE = 10;
 
+
+    public static readonly int TOP = 1;
+    public static readonly int MIDDLE_UD = 2;
+    public static readonly int BOT = 3;
+
+    public static readonly int LEFT = 10;
+    public static readonly int MIDDLE_LR = 20;
+    public static readonly int RIGHT = 30;
+
+    public static readonly int LEFT_TOP = LEFT + TOP;
+    public static readonly int LEFT_MIDDLE = LEFT + MIDDLE_UD;
+    public static readonly int LEFT_BOT = LEFT + BOT;
+
+    public static readonly int MIDDLE_TOP = MIDDLE_LR + TOP;
+    public static readonly int MIDDLE_MIDDLE = MIDDLE_LR + MIDDLE_UD;
+    public static readonly int MIDDLE_BOT = MIDDLE_LR + BOT;
+
+    public static readonly int RIGHT_TOP = RIGHT + TOP;
+    public static readonly int RIGHT_MIDDLE = RIGHT + MIDDLE_UD;
+    public static readonly int RIGHT_BOT = RIGHT + BOT;
+
+
+
+
     public Material material;
     public ShaderTerrain parent;
     public ShaderTerrainShape shape;
@@ -260,6 +299,10 @@ public class ShaderTerrain : MonoBehaviour
     public int ySize = 1;
     public Vector3 extents = new Vector3(0.5f, 0.5f, 0.5f);
     public bool flipTriangles = false;
+
+    [Header("Error % allowed")]
+    [Range(0, 1)]
+    public float errorTolerance = 0.1f;
 
     [Header("Child settings")]
     public Vector3 projectionDirection = Vector3.zero;
@@ -281,7 +324,7 @@ public class ShaderTerrain : MonoBehaviour
 
     [Header("Texture")]
     // public float splatBorderWidth = 2f;
-    
+
     //public float textureScale = 100;
     [Range(0, 2)]
     public float textureScale = 1;
@@ -379,7 +422,7 @@ public class ShaderTerrain : MonoBehaviour
     {
         if (update)
         {
-            
+
             ExecuteUpdate();
         }
 
@@ -394,7 +437,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         else
         {
-            
+
             PrepareChildren();
             Initialize();
             ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
@@ -599,7 +642,7 @@ public class ShaderTerrain : MonoBehaviour
     {
         string n = num == 0 ? "" : num + "";
 
-        to.SetTexture("_MainTex"+ n, from.mainTexture);
+        to.SetTexture("_MainTex" + n, from.mainTexture);
         to.SetTextureScale("_MainTex" + n, new Vector2(textureScale, textureScale));
 
         to.SetTexture("_BumpMap" + n, from.GetTexture("_BumpMap"));
@@ -900,9 +943,9 @@ public class ShaderTerrain : MonoBehaviour
             Vector3 halfSizeExtent = new Vector3(xSize + extents.x, ySize + extents.y, zSize + extents.z) / 2f;
             Vector3 halfSize = new Vector3(((float)xSize) / 2f, ((float)ySize) / 2f, ((float)zSize) / 2f);
 
-            int xResolution = (int)res.x;
-            int yResolution = (int)res.y;
-            int zResolution = (int)res.z;
+            //= (int)res.x;
+            //int yResolution = (int)res.y;
+            //int zResolution = (int)res.z;
 
             //Project child vertices down on this surface
             if (childlist != null) {
@@ -918,108 +961,122 @@ public class ShaderTerrain : MonoBehaviour
             Vector3 borderRes = GetResolution(maxResolution, mod);
             int[,] vertexPositions = vertexFaces[localUp];
 
-            xResolution = (int)borderRes.x;
-            yResolution = (int)borderRes.y;
-            zResolution = (int)borderRes.z;
+            int xResolution = (int)borderRes.x;
+            int yResolution = (int)borderRes.y;
+            int zResolution = (int)borderRes.z;
 
-            int[,] links = GetVertexLinks(
-                childlist,
-                projections,
-                addedTriangles,
-                borderRes,
-                maxResolution,
-                resolution,
-                localUp == Vector3.up);
 
-            for (int y = 1; y < yResolution; y++)
-            {
-                for (int x = 1; x < xResolution; x++)
-                {
-                    int j = (int)(y * xResolution) + x;
-
-                    if (links[j, 0] != 0 && links[j, LINK_REMOVE_VERT] == 0)
-                    {
-                        bool hasBorder = links[j, LINK_BORDER] != 0;
-
-                        if (links[j, 1] != 0 || links[j, 2] != 0)
-                        {
-                            if (links[j, 1] != 0)
-                            {
-                                bool isX = links[j, 6] == 0;
-
-                                AddTopTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
-                                halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
-                                vertexFaces, dir, sharedX, sharedY, sharedZ);
-
-                                if (links[j, 6] == 3)
-                                {
-                                    AddTopTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
-                                    halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
-                                    vertexFaces, dir, sharedX, sharedY, sharedZ);
-                                }
-                            }
-                            if (links[j, 2] != 0)
-                            {
-                                bool isX = links[j, 6] == 0;
-
-                                AddBotTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
-                                halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
-                                vertexFaces, dir, sharedX, sharedY, sharedZ);
-
-                                if (links[j, 6] == 3)
-                                {
-                                    AddBotTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
-                                    halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
-                                    vertexFaces, dir, sharedX, sharedY, sharedZ);
-                                }
-                            }
-                        }
-                        else if (links[j, 3] != 0 || links[j, 4] != 0)
-                        {
-                            bool isX = links[j, 6] == 0;
-
-                            int xAbove = (isX ? x : y) + links[j, 4];
-                            int xBelow = (isX ? x : y) - links[j, 3];
-                            int yMinus = (isX ? y : x) - 1 + links[j, 5];
-                            int ySelf = (isX ? y : x) - links[j, 5];
-                            int axis = (isX ? x : y);
-
-                            bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
-
-                            AddTriangle(
-                                    isX ? xAbove : ySelf, isX ? ySelf : xAbove,
-                                    isX ? xBelow : ySelf, isX ? ySelf : xBelow,
-                                    isX ? axis : yMinus, isX ? yMinus : axis,
-                                    clockwise, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-                                    axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                    sharedX, sharedY, sharedZ, links);
-
-                        }
-                        else //Simple quad case
-                        {
-                            int xPos = (x - links[j, 0]);
-                            int yPos = (y - links[j, 0]);
-
-                            AddTriangle(x, y, xPos, yPos, x, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-                                axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                sharedX, sharedY, sharedZ, links);
-
-                            AddTriangle(x, y, xPos, y, xPos, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
-                                axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                sharedX, sharedY, sharedZ, links);
-                        }
-                    }
-                }
-            }
-
-            //Sometimes we need to add more triangles when a child has higher vert density than its parent
-            HashSet<int> normalized = new HashSet<int>();
-            foreach (AddedTriangle tri in addedTriangles) {
-                IncorporateTriangle(tri, vertexPositions, ma, normalized);
-            }
+            CreateVerticesAndTriangles(childlist, projections, addedTriangles, borderRes, maxResolution, resolution,
+                xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize,
+                halfSizeExtent, vertexPositions, ma, vertexFaces, dir, sharedX, sharedY, sharedZ);
         }
         Debug.Log("Vert total: " + ma.vertices.Count + " triangle total: " + ma.triangles.Count / 3);
         return ma;
+    }
+
+    private void CreateVerticesAndTriangles(
+            List<ShaderTerrain> childlist,
+            List<Projection> projections,
+            List<AddedTriangle> addedTriangles,
+            Vector3 borderRes,
+            int maxResolution, int resolution,
+            int xResolution, int yResolution, int zResolution,
+            Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
+            int[,] vertexPositions, MeshArrays ma, Dictionary<Vector3, int[,]> vertexFaces
+            , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ
+
+        ) {
+
+        int[,] links = GetVertexLinks(childlist, projections, addedTriangles, borderRes, maxResolution, resolution);
+
+        for (int y = 1; y < yResolution; y++)
+        {
+            for (int x = 1; x < xResolution; x++)
+            {
+                int j = (int)(y * xResolution) + x;
+
+                if (links[j, 0] != 0 && links[j, LINK_REMOVE_VERT] == 0)
+                {
+                    bool hasBorder = links[j, LINK_BORDER] != 0;
+
+                    if (links[j, 1] != 0 || links[j, 2] != 0)
+                    {
+                        if (links[j, 1] != 0)
+                        {
+                            bool isX = links[j, 6] == 0;
+
+                            AddTopTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                            halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
+                            vertexFaces, dir, sharedX, sharedY, sharedZ);
+
+                            if (links[j, 6] == 3)
+                            {
+                                AddTopTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
+                                vertexFaces, dir, sharedX, sharedY, sharedZ);
+                            }
+                        }
+                        if (links[j, 2] != 0)
+                        {
+                            bool isX = links[j, 6] == 0;
+
+                            AddBotTriangle(x, y, isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                            halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
+                            vertexFaces, dir, sharedX, sharedY, sharedZ);
+
+                            if (links[j, 6] == 3)
+                            {
+                                AddBotTriangle(x, y, !isX, links, j, xResolution, yResolution, zResolution, localUp, halfMod,
+                                halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, ma,
+                                vertexFaces, dir, sharedX, sharedY, sharedZ);
+                            }
+                        }
+                    }
+                    else if (links[j, 3] != 0 || links[j, 4] != 0)
+                    {
+                        bool isX = links[j, 6] == 0;
+
+                        int xAbove = (isX ? x : y) + links[j, 4];
+                        int xBelow = (isX ? x : y) - links[j, 3];
+                        int yMinus = (isX ? y : x) - 1 + links[j, 5];
+                        int ySelf = (isX ? y : x) - links[j, 5];
+                        int axis = (isX ? x : y);
+
+                        bool clockwise = isX ? links[j, 5] == 0 : links[j, 6] == 1;
+
+                        AddTriangle(
+                                isX ? xAbove : ySelf, isX ? ySelf : xAbove,
+                                isX ? xBelow : ySelf, isX ? ySelf : xBelow,
+                                isX ? axis : yMinus, isX ? yMinus : axis,
+                                clockwise, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                                axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                sharedX, sharedY, sharedZ /*, links*/);
+
+                    }
+                    else //Simple quad case
+                    {
+                        int xPos = (x - links[j, 0]);
+                        int yPos = (y - links[j, 0]);
+
+                        AddTriangle(x, y, xPos, yPos, x, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                            axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                            sharedX, sharedY, sharedZ /*, links*/);
+
+                        AddTriangle(x, y, xPos, y, xPos, yPos, true, xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
+                            axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                            sharedX, sharedY, sharedZ /*, links*/);
+                    }
+                }
+            }
+        }
+
+        //Sometimes we need to add more triangles when a child has higher vert density than its parent
+        HashSet<int> normalized = new HashSet<int>();
+        foreach (AddedTriangle tri in addedTriangles)
+        {
+            IncorporateTriangle(tri, vertexPositions, ma, normalized);
+        }
+
     }
 
     private void IncorporateTriangle(AddedTriangle at, int[,] vertexPositions, MeshArrays ma, HashSet<int> normalized) {
@@ -1118,7 +1175,7 @@ public class ShaderTerrain : MonoBehaviour
            isX ? selfX : ySelf, isX ? ySelf : selfX,
            clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
            axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-           sharedX, sharedY, sharedZ, /*childlist, projections,*/ links
+           sharedX, sharedY, sharedZ/*, childlist, projections,links*/
            );
         /*, uvCoord vertexColors,vertexFacestriangles, vertices, uvs normals, */
     }
@@ -1151,7 +1208,7 @@ public class ShaderTerrain : MonoBehaviour
                isX ? axis : yMinus, isX ? yMinus : axis,
                clockwise, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
            axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-           sharedX, sharedY, sharedZ, /*childlist, projections,*/ links
+           sharedX, sharedY, sharedZ/*, childlist, projections,links*/
            );
     }
 
@@ -1165,8 +1222,8 @@ public class ShaderTerrain : MonoBehaviour
          int[,] vertexPositions, Dictionary<Vector3, int[,]> vertexFaces, MeshArrays ma
 
         /*,Vector3 uvCoord*/ //List<Vector3> vertices, List<Vector2> uvs, List<int> triangles,List<Vector3> normals,List<Color32> vertexColors
-        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ,
-        /*List<ShaderTerrain> childlist, List<Projection> projections,*/ int[,] links
+        , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ//,
+                                                                 /*List<ShaderTerrain> childlist, List<Projection> projections, int[,] links*/
         )
     {
 
@@ -1177,16 +1234,16 @@ public class ShaderTerrain : MonoBehaviour
 
         int onePos = AddVertex(xOne, yOne, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, /*childlist, projections, */ links);
+            sharedX, sharedY, sharedZ/*, childlist, projections,  links*/);
 
         //vertexPositions[xOne, yOne] - 1; vertexPositions[xTwo, yTwo] - 1; vertexPositions[xThree, yThree] - 1;
         int twoPos = AddVertex(xTwo, yTwo, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, /*childlist, projections, */ links);
+            sharedX, sharedY, sharedZ/*, childlist, projections,  links*/);
 
         int threePos = AddVertex(xThree, yThree, /*i,*/ xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent,
             axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, vertexFaces, dir,
-            sharedX, sharedY, sharedZ, /*childlist, projections, */ links);
+            sharedX, sharedY, sharedZ/*, childlist, projections,  links*/);
 
 
         ma.triangles.Add(onePos);
@@ -1217,33 +1274,33 @@ public class ShaderTerrain : MonoBehaviour
         Dictionary<Vector3, int[,]> vertexFaces,
         // Vector3 uvCoord,  List<Vector3> normals, List<Color32> vertexColors,List<Vector3> vertices, List<Vector2> uvs
         int dir,
-        int[,] sharedX, int[,] sharedY, int[,] sharedZ, //List<ShaderTerrain> childlist, List<Projection> projections,
-        int[,] links
-        //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
+        int[,] sharedX, int[,] sharedY, int[,] sharedZ //, //List<ShaderTerrain> childlist, List<Projection> projections,
+                                                       //int[,] links
+                                                       //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
         )
     {
         int linkPos = (y * xResolution) + x;
         int iplus = ma.vertices.Count + 1;
         int val = 0;
 
-        if (links[linkPos, LINK_BORDER] != 0) {
+        //if (links[linkPos, LINK_BORDER] != 0) {
 
-            iplus = links[linkPos, LINK_BORDER];
-        }
-        else if (vertexPositions[x, y] == 0)
+        //  iplus = links[linkPos, LINK_BORDER];
+        //}
+        if (vertexPositions[x, y] == 0)
         {
             Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
-            Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
+            //Vector2 onePercent = new Vector2(1f / (float)(xResolution - 1f), (float)1f / (float)(yResolution - 1f));
 
             ShapePoint center = shape.Calculate(ma.noise, currentPos, extents, projectionDirection, reverseProjectionSide,
-                percent, onePercent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+                percent, /*onePercent,*/ localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
-                /*Calculate(
-                    ma.noise,
-                    percent, onePercent, localUp, halfMod, halfModExtent,
-                    axisA, axisB, halfSize, halfSizeExtent // childlist, projections
-                    );
-                    */
+            /*Calculate(
+                ma.noise,
+                percent, onePercent, localUp, halfMod, halfModExtent,
+                axisA, axisB, halfSize, halfSizeExtent // childlist, projections
+                );
+                */
 
             //float noise = Mathf.Clamp01(Mathf.Clamp01(center.noise - 0.3f) * 2f);
 
@@ -1447,12 +1504,579 @@ public class ShaderTerrain : MonoBehaviour
         return localUp * (halfMod.z) + (percent.x - .5f) * 2 * axisA * halfMod.x + (percent.y - .5f) * 2 * axisB * halfMod.y;
     }*/
 
+    public static bool IsQuadmapCompatible(int self, int map) {
 
-    private static int[,] GetVertexLinks(
+        if (map == 0) {
+            return true;
+        }
+
+        if (self == LEFT_TOP) { // Beats R and bot
+            if (map == RIGHT_BOT || map == RIGHT_TOP || map == RIGHT_MIDDLE || map == LEFT_BOT || map == MIDDLE_BOT)
+            {
+                return true;
+            }
+        }
+        else if (self == RIGHT_TOP) // Beats left and bot
+        {
+            if (map == LEFT_BOT || map == LEFT_TOP || map == LEFT_MIDDLE || map == RIGHT_BOT || map == MIDDLE_BOT)
+            {
+                return true;
+            }
+        }
+        else if (self == MIDDLE_TOP) // beats bot
+        {
+            if (map == LEFT_BOT || map == RIGHT_BOT || map == MIDDLE_BOT)
+            {
+                return true;
+            }
+        }
+        else if (self == LEFT_MIDDLE || self == LEFT_BOT) // beats right
+        {
+            if (map == RIGHT_BOT || map == RIGHT_TOP || map == RIGHT_MIDDLE)
+            {
+                return true;
+            }
+        }
+        else if (self == RIGHT_MIDDLE || self == RIGHT_BOT) // beats left
+        {
+            if (map == LEFT_BOT || map == LEFT_TOP || map == LEFT_MIDDLE)
+            {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
+    private static bool CheckMap(
+        ShapePoint[,] atlas,
+        bool[,] ignoreMap,
+        ShapePoint self,
+        ShaderTerrainShape shape,
+        MeshArrays ma,
+        int xResolution,
+        int yResolution,
+        int b,
+        int r,
+        int x,
+        int y,
+        int nextX,
+        int nextY,
+        int[,] cquadMap,
+
+        bool reverseProjectionSide,
+
+        Vector3 currentPos,
+        Vector3 projectionDirection,
+        Vector3 localUp,
+        Vector3 extents,
+
+        Vector3 halfMod,
+        Vector3 halfModExtent,
+        Vector3 axisA,
+        Vector3 axisB,
+        Vector3 halfSize,
+        Vector3 halfSizeExtent,
+        float errorTolerance
+        ) {
+
+        if (nextX >= xResolution || nextY >= yResolution)
+        {
+
+            return false;
+
+        }
+        else
+        {
+            // int j = (y * xResolution) + x;
+            //vertLinks[j, LINK_REMOVE_VERT] = i + 1;
+            for (int iy = y; iy <= nextY; iy++)
+            {
+                for (int ix = x; ix <= nextX; ix++)
+                {
+                    if (ignoreMap[ix, iy]) {
+                        return false;
+                    }
+                    if (ix == x || iy == y || iy == nextY || ix == nextX) {
+
+                        int selfpos = ix == x ? LEFT : ix == nextX ? RIGHT : MIDDLE_LR
+                                        +
+                                       iy == y ? TOP : iy == nextY ? BOT : MIDDLE_UD;
+
+                        if (!IsQuadmapCompatible(selfpos, cquadMap[ix, iy]))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+
+            if (x + r >= nextX && y + r >= nextY)
+            {
+                return true;
+            }
+
+            ShapePoint botLeftCorner = self;
+            ShapePoint botRight = GetAtlasPoint(atlas, shape, ma, nextX, y, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            ShapePoint topRight = GetAtlasPoint(atlas, shape, ma, nextX, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            ShapePoint topLeft = GetAtlasPoint(atlas, shape, ma, x, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            //Plane bot = new Plane(botLeftCorner.point, topRight.point, topLeft.point);
+
+            float area = Mathf.Sqrt(
+                         Vector3.Cross(botLeftCorner.point - topLeft.point, botLeftCorner.point - botRight.point).magnitude * 0.5f
+                         +
+                         Vector3.Cross(topRight.point - botRight.point, topRight.point - topLeft.point).magnitude * 0.5f
+                        );
+
+            Vector3 topP = new Vector3(nextX, nextY);
+            Plane div = new Plane(new Vector3(x, nextY), new Vector3(nextX, y), new Vector3(x, nextY, 1));
+
+            float errSum = 0;
+
+            for (int iy = y; iy <= nextY; iy += r)
+            { //iterY) {
+                for (int ix = x; ix <= nextX; ix += r)
+                { //iterX)
+                    {
+                        //Ignore corners
+                        if (!((ix == x || ix == nextX) && (iy == y && iy == nextY)))
+                        {
+
+                            float xProg = (float)(ix - x) / (float)(nextX - x);
+                            float yProg = (float)(iy - y) / (float)(nextY - y);
+
+
+                            ShapePoint comparePos = GetAtlasPoint(atlas, shape, ma, ix, iy, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                            localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                            //Top
+                            if (div.SameSide(new Vector3(ix, iy), topP))
+                            {
+                                Vector3 selfpos = botRight.point
+                                    + yProg * (topRight.point - botRight.point)
+                                    - (1f - xProg) * (topRight.point - topLeft.point);
+
+                                errSum += Vector3.Distance(selfpos, comparePos.point) / area;
+                            }
+                            //Bot
+                            else
+                            {
+                                Vector3 selfpos = botLeftCorner.point
+                                        + yProg * (topLeft.point - botLeftCorner.point)
+                                        + xProg * (topRight.point - topLeft.point);
+
+                                errSum += Vector3.Distance(selfpos, comparePos.point) / area;
+                            }
+                            if (errSum > errorTolerance) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static ShapePoint GetAtlasPoint(
+        ShapePoint[,] atlas,
+        ShaderTerrainShape shape,
+        MeshArrays ma,
+        int x,
+        int y,
+        float xResolution,
+        float yResolution,
+        bool reverseProjectionSide,
+
+        Vector3 currentPos,
+        Vector3 projectionDirection,
+        Vector3 localUp,
+        Vector3 extents,
+
+        Vector3 halfMod,
+        Vector3 halfModExtent,
+        Vector3 axisA,
+        Vector3 axisB,
+        Vector3 halfSize,
+        Vector3 halfSizeExtent
+        ) {
+
+        Vector2 percent = new Vector2(x / (xResolution - 1f), (float)y / (yResolution - 1f));
+
+        ShapePoint searchPos = atlas[x, y].initiated ? atlas[x, y] : shape.Calculate(ma.noise, currentPos,
+        extents, projectionDirection, reverseProjectionSide,
+        percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+        atlas[x, y] = searchPos;
+
+        return searchPos;
+
+    }
+
+
+
+    private void FindVertexLinks(
         List<ShaderTerrain> childlist,
         List<Projection> projections,
         List<AddedTriangle> addedTriangles,
+        Dictionary<Vector3, int[,]> vertexFaces,
+
         Vector2 borderRes,
+
+        int maxResolution,
+        int resolution,
+        int dir,
+
+        int xResolution,
+        int yResolution,
+        int zResolution,
+
+        int[,] sharedX,
+        int[,] sharedY,
+        int[,] sharedZ,
+
+        int[,] vertexPositions,
+
+
+        //ShapePoint[,] atlas,
+        MeshArrays ma,
+        ShaderTerrainShape shape,
+
+        Vector3 localUp,
+        Vector3 halfMod,
+        Vector3 halfModExtent,
+        Vector3 axisA,
+        Vector3 axisB,
+        Vector3 halfSize,
+        Vector3 halfSizeExtent
+        )
+    {
+        //int xResolution = (int)borderRes.x;
+        //int yResolution = (int)borderRes.y;
+        //int zResolution = 
+
+        List<CombinedQuads> cquads = new List<CombinedQuads>();
+        int[,] cquadMap = new int[xResolution, yResolution];
+        bool[,] cornerMap = new bool[xResolution, yResolution];
+        bool[,] ignoreMap = new bool[xResolution, yResolution];
+        ShapePoint[,] atlas = new ShapePoint[xResolution, yResolution];
+
+        // int[,] vertLinks = new int[xResolution * yResolution, 9];
+
+
+        float maxY = 0;
+        int b = 1;
+        int r = (int)(maxResolution / resolution);
+
+        //Find the optimal resolution that does not exceed r to start at
+        int vertCount = -1;
+        for (int n = r; n > 0; n--)
+        {
+
+            int vtt = GetVertexCountForResolution(borderRes, n, b);
+
+            if (vertCount == -1 || vtt < vertCount)
+            {
+                vertCount = vtt;
+                r = n;
+            }
+        }
+        r = Mathf.Max(r, 1);
+
+
+        for (int i = 0; i < projections.Count; i++)
+        {
+            VectorPair proj = projections[i].bounds;
+            //Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
+
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.first.y + b;(r + b+1)
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r), b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r), b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
+
+            for (int y = yFirst; y <= yLast; y += 1)
+            {
+                for (int x = xFirst; x <= xLast; x += 1)
+                {
+                    ignoreMap[x, y] = true;
+                    //int j = (y * xResolution) + x;
+                    //vertLinks[j, LINK_REMOVE_VERT] = i + 1;
+                }
+            }
+
+            float xChildLength = projections[i].relativeX.GetLength(1) - 1;
+            float yChildLength = projections[i].relativeY.GetLength(1) - 1;
+
+            float yLen = (yLast - (yFirst - r) - 0);///r;
+            float xLen = (xLast - (xFirst - r) - 0);///r;
+
+            for (int iy = yFirst - r; iy <= yLast; iy += r) {
+                for (int ix = xFirst - r; ix <= xLast; ix += r)
+                {
+                    cornerMap[ix, iy] = true;
+                }
+            }
+
+            LinkProjectionAxis(addedTriangles, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+                    projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
+
+            LinkProjectionAxis(addedTriangles, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+                    projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond, projections[i].flipYTriangles);
+
+        }
+
+
+        //Find all combined quads needed for form this side
+        for (int y = 0; y < yResolution - b; y += r)
+        {
+            for (int x = 0; x < xResolution - b; x += r)
+            {
+                Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
+
+                ShapePoint selfpos = atlas[x, y].initiated ? atlas[x, y] : shape.Calculate(ma.noise, currentPos, extents, projectionDirection, reverseProjectionSide,
+                percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                atlas[x, y] = selfpos;
+
+                int nextX = x + r >= xResolution ? xResolution - 1 : x + r;
+                int nextY = y + r >= yResolution ? yResolution - 1 : y + r;
+
+                if (CheckMap(atlas, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, nextY, cquadMap, reverseProjectionSide, currentPos,
+                            projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance))
+                {
+                    bool xBlocked = false;
+                    bool yBlocked = false;
+
+                    int foundX = nextX;
+                    int foundY = nextY;
+
+                    bool first = true;
+
+                    while (!xBlocked && !yBlocked)
+                    {
+                        //First time we need to grow in both directions
+                        if (first)
+                        {
+                            nextX += r;
+                            nextY += r;
+                            first = false;
+                            //x,y,nextX, nextY
+                            if (!CheckMap(atlas, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, nextY, cquadMap, reverseProjectionSide, currentPos,
+                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance))
+                            {
+                                xBlocked = true;
+                                yBlocked = true;
+                            } else {
+                                foundX = nextX;
+                                foundY = nextY;
+                            }
+                        }
+                        else
+                        {
+
+                            if (!xBlocked)
+                            {
+                                nextX += r;
+
+                                xBlocked = CheckMap(atlas, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, foundY, cquadMap, reverseProjectionSide, currentPos,
+                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+
+                                if (!xBlocked)
+                                {
+                                    foundX = nextX;
+                                }
+                            }
+
+                            if (!yBlocked)
+                            {
+                                nextY += r;
+
+                                yBlocked = CheckMap(atlas, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, foundX, nextY, cquadMap, reverseProjectionSide, currentPos,
+                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+
+                                if (!yBlocked)
+                                {
+                                    foundY = nextY;
+                                }
+                            }
+                        }
+                    }
+
+                    int pos = cquads.Count;
+                    cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+
+                    for (int iy = y; iy <= foundY; iy++)
+                    {
+                        for (int ix = x; ix <= foundX; ix++)
+                        {
+                            cquadMap[ix, iy] = ix == x ? LEFT : ix == foundX ? RIGHT : MIDDLE_LR
+                                                +
+                                               iy == y ? TOP : iy == foundY ? BOT : MIDDLE_UD;
+
+                            //Mark borders
+                            if ((iy == y && y == 0) || (iy == nextY && nextY == yResolution - 1)) {
+                                cornerMap[ix, iy] = true;
+                            } else if ((ix == x && x == 0) || (ix == nextX && nextX == yResolution - 1))
+                            {
+                                cornerMap[ix, iy] = true;
+                            }
+                        }
+                    }
+                    //Mark corners
+                    cornerMap[x, y] = true;
+                    cornerMap[nextX, y] = true;
+                    cornerMap[x, nextY] = true;
+                    cornerMap[nextX, nextY] = true;
+
+
+                    x = foundX - r;
+
+                }
+            }
+        }
+
+        foreach (CombinedQuads cq in cquads) {
+
+            //bool aEnabled = true; //Top left
+            bool bEnabled = true; //Top right
+            bool cEnabled = true; //Bottom right
+            //bool dEnabled = true; //Bottom left
+
+            int apX = cq.startX + 1;
+            int apY = cq.startY;
+
+            //Find the least top right point
+            for (; apX <= cq.endX; apX++) {
+                if (cornerMap[apX, apY]) {
+                    break;
+                }
+            }
+            if (apX == cq.endX) { bEnabled = false; }
+
+            // Link top to left side
+            int lastY = cq.startY;
+
+            for (int toY = cq.startY + 1; toY <= cq.endY; toY++) {
+                if (cornerMap[cq.startX, toY])
+                {
+
+                    AddTriangle(cq.startX, lastY, apX, apY, cq.startX, toY, flipTriangles, xResolution, yResolution, zResolution, localUp,
+                        halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
+                        sharedZ);
+
+                    lastY = toY;
+                }
+            }
+
+            int bpX = cq.endX;
+            int bpY = cq.startY + 1;
+            int lastX = cq.endX;
+
+            //Top right
+            if (bEnabled)
+            {
+
+                //Find bot right point
+                for (; bpY <= cq.endY; bpY++)
+                {
+                    if (cornerMap[bpX, bpY])
+                    {
+                        break;
+                    }
+                }
+                if (bpY == cq.endY) { cEnabled = false; }
+
+                for (int toX = cq.endX - 1; toX >= apX; toX--)
+                {
+                    if (cornerMap[toX, cq.startY])
+                    {
+                        AddTriangle(lastX, cq.startY, bpX, bpY, toX, cq.startY, flipTriangles, xResolution, yResolution, zResolution, localUp,
+                            halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
+                            sharedZ);
+
+                        lastX = toX;
+                    }
+                }
+
+            }
+            else {
+                bpX = apX;
+                bpY = apY;
+            }
+
+            int cpX = cq.endX - 1;
+            int cpY = cq.endY;
+            lastY = cq.endY;
+
+            //Bot right
+            for (; cpX >= cq.startX; cpX--)
+            {
+                if (cornerMap[cpX, cpY])
+                {
+                    break;
+                }
+            }
+            if (cEnabled)
+            {
+                for (int toY = cq.endY - 1; toY >= bpY; toY--)
+                {
+                    if (cornerMap[cq.endX, toY])
+                    {
+                        AddTriangle(cq.endX, lastY, bpX, bpY, cq.endX, toY, flipTriangles, xResolution, yResolution, zResolution, localUp,
+                            halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
+                            sharedZ);
+
+                        lastY = toY;
+                    }
+                }
+
+            }else{
+
+                bpX = apX;
+                bpY = apY;
+                cpX = cq.endX;
+            }
+
+            for (int toX = cpX - 1; toX >= cq.startX; toX--)
+            {
+                if (cornerMap[toX, cq.endY])
+                {
+                    AddTriangle(toX, cq.endY, bpX, bpY, cpX, cq.endY, flipTriangles, xResolution, yResolution, zResolution, localUp,
+                        halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
+                        sharedZ);
+
+                    cpX = toX;
+                }
+            }
+
+
+            if ((apX != bpX || apY != bpY) && (cpX != bpX || cpY != bpY) && (cpX != apX || cpY != apY)) {
+
+                AddTriangle(apX, apY, bpX, bpY, cpX, cpY, flipTriangles, xResolution, yResolution, zResolution, localUp,
+                    halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
+                    sharedZ);
+
+            }
+        }
+
+    }
+
+    private int[,] GetVertexLinks(
+        List<ShaderTerrain> childlist,
+        List<Projection> projections,
+        List<AddedTriangle> addedTriangles,
+
+        Vector2 borderRes,
+
         int maxResolution,
         int resolution,
         bool debug = false
@@ -1528,10 +2152,10 @@ public class ShaderTerrain : MonoBehaviour
             //Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " proj.first.x " + proj.first.x+ " proj.second.x " + proj.second.x);
 
 
-            LinkProjectionAxis(addedTriangles, vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+            LinkProjectionAxis(addedTriangles, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
                     projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
 
-            LinkProjectionAxis(addedTriangles, vertLinks, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+            LinkProjectionAxis(addedTriangles, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
                     projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond, projections[i].flipYTriangles);
 
         }
@@ -1708,7 +2332,8 @@ public class ShaderTerrain : MonoBehaviour
 
     private static void LinkProjectionAxis(
         List<AddedTriangle> addedTriangles,
-        int[,] vertLinks, bool isX, int yFirst, int yLast, int xFirst, int xLast, int r,
+        //int[,] vertLinks,
+        bool isX, int yFirst, int yLast, int xFirst, int xLast, int r,
         float axisLength, float axisChildLength, int xResolution, bool reverse,
         int[,] relative, int firstSlot, int secondSlot, bool flipTriangles
 
@@ -1725,34 +2350,13 @@ public class ShaderTerrain : MonoBehaviour
             flip = !flip;
         }
 
+
         if (axisChildLength <= axisLength / (float)r)
         {
-            /*float dd = axisChildLength / (axisLength);
-
-            for (int i = (isX ? xFirst : yFirst) - r; i <= (isX ? xLast : yLast); i++)
-            {
-                int p = isX ? ((yFirst - r) * xResolution) + i : (i * xResolution) + (xFirst - r);
-                int o = isX ? ((yLast) * xResolution) + i : (i * xResolution) + xLast;
-
-                int val = (int)sum;
-
-                val = i == (isX ? xFirst : yFirst) - r ? 0 : val;
-                val = i == (isX ? xLast : yLast) ? (int)axisChildLength : val;
-
-                int thisChildPos = (reverse ? (int)(axisChildLength - val) : val);
-
-                vertLinks[o, LINK_BORDER] = relative[firstSlot, thisChildPos];
-                vertLinks[p, LINK_BORDER] = relative[secondSlot, thisChildPos];
-
-                sum += dd;
-            }
-            */
             float dd = axisChildLength / axis;
 
             for (int i = 0; i <= axis; i++)
             {
-
-
                 val = (int)((float)i * dd);
 
                 int thisChildPos = (reverse ? (int)(axisChildLength - val) : val);
@@ -1816,6 +2420,9 @@ public class ShaderTerrain : MonoBehaviour
                 int nextChildPos = (int)Mathf.Clamp((reverse ? (int)(axisChildLength - (i + 1)) : i + 1), 0, axisChildLength);
 
                 val = (int)Mathf.Clamp(Mathf.RoundToInt(((float)i * dd) / (float)r) * r, 0, axisLength);
+
+                //vertLinks[firstI, LINK_BORDER] = 1;
+                //vertLinks[secondI, LINK_BORDER] = 1;
 
                 if (nextChildPos != thisChildPos) {
 
@@ -2194,3 +2801,263 @@ minmax.Multiply(size * resolution);
 minmax.FloorFirstCeilSecond();
 minmax = GetMod(-projectDirection, minmax);
 */
+/*
+ * 
+    private static int[,] GetVertexLinks(
+        ShapePoint[,] atlas,
+        List<ShaderTerrain> childlist,
+        List<Projection> projections,
+        List<AddedTriangle> addedTriangles,
+        Vector2 borderRes,
+        int maxResolution,
+        int resolution,
+        bool debug = false
+        )
+    {
+        //0 == where to step back to
+        //1 == override left x pos top
+        //2 == override left x pos bottom
+        //3 == override self x pos top
+        //4 == override self x pos bottom
+        //5 == swap Y
+        //6 == swap X
+        //7 == projection
+
+        int xResolution = (int)borderRes.x;
+        int yResolution = (int)borderRes.y;
+
+        int[,] vertLinks = new int[xResolution * yResolution, 9];
+
+        float maxY = 0;
+        int b = 1;
+        int r = (int)(maxResolution / resolution);
+
+        //Find the optimal resolution that does not exceed r to start at
+        int vertCount = -1;
+        for (int n = r; n > 0; n--)
+        {
+
+            int vtt = GetVertexCountForResolution(borderRes, n, b);
+
+            if (vertCount == -1 || vtt < vertCount)
+            {
+                vertCount = vtt;
+                r = n;
+            }
+        }
+        r = Mathf.Max(r, 1);
+
+
+        int rh = (int)(((float)r) / 2f);
+
+        for (int i = 0; i < projections.Count; i++)
+        {
+            VectorPair proj = projections[i].bounds;
+            //Debug.Log("Min pos: " + proj.first + " Max pos: " + proj.second);
+
+            int yFirst = (int)Mathf.Clamp(proj.first.y - ((proj.first.y - b) % r) + r, b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.first.y + b;(r + b+1)
+            int xFirst = (int)Mathf.Clamp(proj.first.x - ((proj.first.x - b) % r) + r, b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.first.x + b;
+            int yLast = (int)Mathf.Clamp(proj.second.y - ((proj.second.y - b) % r), b + r, GetBreakpoint(yResolution, b, r)); //yResolution - (b)); //proj.second.y; 
+            int xLast = (int)Mathf.Clamp(proj.second.x - ((proj.second.x - b) % r), b + r, GetBreakpoint(xResolution, b, r)); //xResolution - (b)); //proj.second.x;
+
+            for (int y = yFirst; y <= yLast; y += r)
+            {
+                for (int x = xFirst; x <= xLast; x += r)
+                {
+                    int j = (y * xResolution) + x;
+                    vertLinks[j, LINK_REMOVE_VERT] = i + 1;
+                }
+            }
+
+            //int xFirstBorder = Mathf.Max(xFirst, 0);
+            //int yFirstBorder = Mathf.Max(yFirst, 0);
+            float xChildLength = projections[i].relativeX.GetLength(1) - 1;
+            float yChildLength = projections[i].relativeY.GetLength(1) - 1;
+
+            float yLen = (yLast - (yFirst - r) - 0);///r;
+            float xLen = (xLast - (xFirst - r) - 0);///r;
+
+            //Debug.Log(xChildLength + " xlen " + xLen);
+            //Debug.Log(yChildLength + " ylen " + yLen);
+
+            //Debug.Log("yFirst: "+yFirst + " yLast " + yLast+ " proj.first.y " + proj.first.y+" proj.second.y: "+ proj.second.y);
+            //Debug.Log("xFirst: " + xFirst + " xLast " + xLast + " proj.first.x " + proj.first.x+ " proj.second.x " + proj.second.x);
+
+
+            LinkProjectionAxis(addedTriangles, vertLinks, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+                    projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
+
+            LinkProjectionAxis(addedTriangles, vertLinks, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+                    projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond, projections[i].flipYTriangles);
+
+        }
+
+
+        int vert = 0;
+
+        for (int y = b + 1; y < (yResolution - b); y++)
+        {
+            int j = (y * xResolution) + b;
+            int k = (y * xResolution) + (xResolution - 1);
+
+            vertLinks[j, LINK_STEP_TO] = b;
+            vertLinks[k, LINK_STEP_TO] = b;
+            vert += 2;
+        }
+        //Mark left and right as border
+        for (int x = b + 1; x < (xResolution - b); x++)
+        {
+            int j = (b * xResolution) + x;
+            int k = ((yResolution - 1) * xResolution) + x;
+
+            vertLinks[j, LINK_STEP_TO] = b;
+            vertLinks[k, LINK_STEP_TO] = b;
+            vert += 2;
+        }
+
+        //Corners
+        vertLinks[((yResolution - 1) * xResolution + (xResolution - 1)), LINK_STEP_TO] = b;
+        vertLinks[((yResolution - 1) * xResolution + b), LINK_STEP_TO] = b;
+        vertLinks[(b * xResolution + (xResolution - 1)), LINK_STEP_TO] = b;
+        vertLinks[(b * xResolution + b), LINK_STEP_TO] = b;
+        vert += 4;
+
+        //Mark as regular res
+        for (int y = b + r; y < yResolution - b; y += r)
+        {
+            for (int x = b + r; x < (xResolution - b); x += r)
+            {
+                int j = (int)(y * xResolution) + x;
+                vertLinks[j, 0] = r;
+                vert++;
+
+                // Alter the smaller triangles connected to this quad
+                if (b != r && y == b + r)
+                {
+                    for (int rx = r; rx >= 0; rx--)
+                    {
+                        int g = (b * xResolution) + x - rx;
+
+vertLinks[g, LINK_LEFT_TOP] = rx<rh? 1 : vertLinks[g, LINK_LEFT_TOP];
+                        vertLinks[g, LINK_LEFT_BOT] = rx > rh || (x + r >= (xResolution - b) && rx == 0) ? 1 : vertLinks[g, LINK_LEFT_BOT];
+                        vertLinks[g, LINK_SELF_TOP] = rx >= rh? (r - rx) : vertLinks[g, LINK_SELF_TOP];
+                        vertLinks[g, LINK_SELF_BOT] = rx <= rh? rx : vertLinks[g, LINK_SELF_BOT];
+                        vertLinks[g, LINK_SWAP_Y] = 0; //Original
+                    }
+
+                }
+
+                if (b != r && y + r >= (yResolution - b))
+                {
+
+                    for (int rx = r; rx >= 0; rx--)
+                    {
+                        int g = ((y + b) * xResolution) + x - rx;
+
+vertLinks[g, LINK_LEFT_TOP] = rx<rh || (x == b + r && rx == r) ? 1 : vertLinks[g, LINK_LEFT_TOP];
+                        vertLinks[g, LINK_LEFT_BOT] = rx > rh? 1 : vertLinks[g, LINK_LEFT_BOT];
+                        vertLinks[g, LINK_SELF_TOP] = rx >= rh? (r - rx) : vertLinks[g, LINK_SELF_TOP];
+                        vertLinks[g, LINK_SELF_BOT] = rx <= rh? rx : vertLinks[g, LINK_SELF_BOT];
+                        vertLinks[g, LINK_SWAP_Y] = 1; // Swap y
+
+                    }
+
+                }
+
+                //Same for x
+                if (b != r && x == b + r)
+                {
+
+                    for (int ry = r; ry >= 0; ry--)
+                    {
+                        int g = ((y - ry) * xResolution) + b;
+
+vertLinks[g, LINK_LEFT_TOP] = ry<rh || (y == b + r && ry == r) ? 1 : vertLinks[g, LINK_LEFT_TOP];
+                        vertLinks[g, LINK_LEFT_BOT] = ry > rh || (y + r >= (yResolution - b) && ry == 0) ? 1 : vertLinks[g, LINK_LEFT_BOT];
+                        vertLinks[g, LINK_SELF_TOP] = ry >= rh? (r - ry) : vertLinks[g, LINK_SELF_TOP];
+                        vertLinks[g, LINK_SELF_BOT] = ry <= rh? ry : vertLinks[g, LINK_SELF_BOT];
+
+                        if (y == b + r && ry == r)
+                        {
+                            vertLinks[g, LINK_SWAP_X] = 3; // Corner
+                        }
+                        else
+                        {
+                            vertLinks[g, LINK_SWAP_X] = 2; // Use x
+                        }
+                    }
+
+                }
+
+                //Same for this x but swapped axis
+                if (b != r && x + r >= (xResolution - b))
+                {
+
+                    for (int ry = r; ry >= 0; ry--)
+                    {
+                        int g = ((y - ry) * xResolution) + x + b;
+
+vertLinks[g, LINK_LEFT_TOP] = ry<rh || (y == b + r && ry == r) ? 1 : vertLinks[g, LINK_LEFT_TOP];
+                        vertLinks[g, LINK_LEFT_BOT] = ry > rh? 1 : vertLinks[g, LINK_LEFT_BOT];
+                        vertLinks[g, LINK_SELF_TOP] = ry >= rh? (r - ry) : vertLinks[g, LINK_SELF_TOP];
+                        vertLinks[g, LINK_SELF_BOT] = ry <= rh? ry : vertLinks[g, LINK_SELF_BOT];
+                        vertLinks[g, LINK_SWAP_Y] = 1; // Swap x
+
+                        vertLinks[g, LINK_SWAP_X] = 1; // Use x
+
+                    }
+
+                }
+
+                //Fix not meeting borders
+                if (x + r > (xResolution - b) - 1)
+                {
+                    for (int ix = x + b; ix<(xResolution - b); ix += b)
+                    {
+                        maxY = Mathf.Min(y + r, yResolution - b);
+
+                        for (int iy = y - r; iy<maxY; iy += b)
+                        {
+                            int jx = (int)(iy * xResolution) + ix;
+                            if (vertLinks[jx, LINK_STEP_TO] == 0)
+                            {
+                                vert++;
+                            }
+                            vertLinks[jx, LINK_STEP_TO] = b;
+
+                        }
+                    }
+                }
+            }
+
+            //Fix not meeting borders
+            if (y + r > (yResolution - b) - 1)
+            {
+                for (int ix = b; ix<(xResolution - b); ix += b)
+                {
+                    maxY = Mathf.Min(y + r, yResolution - b);
+
+                    for (int iy = y + b; iy<maxY; iy += b)
+                    {
+                        int jy = (int)(iy * xResolution) + ix;
+                        if (vertLinks[jy, LINK_STEP_TO] == 0)
+                        {
+                            vert++;
+                        }
+                        vertLinks[jy, LINK_STEP_TO] = b;
+                    }
+                }
+            }
+        }
+
+        if (debug)
+        {
+            int debugRes = GetVertexCountForResolution(borderRes, r, b);
+            //Debug.Log("DebugRes: " + debugRes + " actual res: " + vert);
+
+        }
+
+
+        return vertLinks;
+    }
+    */
