@@ -127,7 +127,7 @@ public class ShaderTerrainShape : MonoBehaviour {
     }
 
     public ShapePoint Calculate(
-        Noise noise, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
+        Noise noise, Vector3 drawnTo, float force, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
         Vector3 percent, /* Vector3 onePercent,*/ Vector3 localUp, Vector3 mod, Vector3 extentMod,
         Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
         )
@@ -149,8 +149,9 @@ public class ShaderTerrainShape : MonoBehaviour {
             roundInProjectionDirection, reverseProjectionSide, roundX, roundY, roundZ); //, reverseRoundProjection);
 
 
-        Vector3 shape = pointOnRoundedCube;
-        Vector3 smallShape = pointOnSmallerRoundedCube;
+        Vector3 shape = pointOnRoundedCube; // Vector3.Lerp(pointOnRoundedCube, drawnTo, force);
+
+        Vector3 smallShape = pointOnSmallerRoundedCube;// Vector3.Lerp(pointOnSmallerRoundedCube, drawnTo, force);
 
         //Find the normal
         Vector3 shapeNormal = (shape - smallShape).normalized;
@@ -158,7 +159,8 @@ public class ShaderTerrainShape : MonoBehaviour {
         bool[] used = new bool[noises.Length];
 
         //Noise before alterations
-        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0), noise, currentPos, extents, used, false);
+        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0), 
+            noise, currentPos, extents, used, false);
 
         //Alterations
         if (projectionMiddleSlimmedBy != 0 && projectionDirection != Vector3.zero)
@@ -182,6 +184,11 @@ public class ShaderTerrainShape : MonoBehaviour {
         //Noise after alterations
 
         ret = CombineNoiseWithShapePoint(ret, noise, currentPos, extents, used, true);
+
+        //if (force > 0.5) {
+            ret.point = Vector3.Lerp(ret.point, drawnTo, force);
+        //}
+        //
 
         return NormalizeColors(ret);
     }
@@ -231,7 +238,8 @@ public class ShaderTerrainShape : MonoBehaviour {
         return sp;
     }
 
-    public ShapePoint CombineNoiseWithShapePoint(ShapePoint sp, Noise noise, Vector3 currentPos, Vector3 extents, bool[] used, bool afterAlterations) {
+    public ShapePoint CombineNoiseWithShapePoint(
+        ShapePoint sp, Noise noise, Vector3 currentPos, Vector3 extents, bool[] used, bool afterAlterations) {
         
 
         if (noises != null && noises.Length > 0)
