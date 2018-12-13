@@ -238,6 +238,12 @@ public class ShaderTerrain : MonoBehaviour
             this.endY = endY;
         }
     }
+    /*private struct MapCheck {
+
+        public bool valid;
+        public int resolution;
+    }*/
+    
 
     /*private static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
 
@@ -910,6 +916,13 @@ public class ShaderTerrain : MonoBehaviour
         {
             if (res > maxResolution) { maxResolution = res; }
         }
+        if (shape.noises != null && shape.noises.Length > 0) {
+            foreach (NoiseSettings ns in shape.noises)
+            {
+                if (ns.resolution > maxResolution) { maxResolution = ns.resolution; }
+            }
+        }
+        
 
         int[,] sharedX = ma.sharedX.AddGetValue(this, new int[4, (xSize * maxResolution) + 1]);
         int[,] sharedY = ma.sharedY.AddGetValue(this, new int[4, (ySize * maxResolution) + 1]);
@@ -1306,7 +1319,7 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
-    private static bool CheckMap(
+    private static int CheckMap(
         ShapePoint[,] atlas,
         Vector3[,] drawnTowards,
         float[,] force,
@@ -1316,6 +1329,7 @@ public class ShaderTerrain : MonoBehaviour
         MeshArrays ma,
         int xResolution,
         int yResolution,
+        int maxResolution,
         int b,
         int r,
         int x,
@@ -1343,7 +1357,7 @@ public class ShaderTerrain : MonoBehaviour
         if (nextX >= xResolution || nextY >= yResolution)
         {
 
-            return false;
+            return -1;
 
         }
         else
@@ -1355,7 +1369,7 @@ public class ShaderTerrain : MonoBehaviour
                 for (int ix = x; ix <= nextX; ix++)
                 {
                     if (ignoreMap[ix, iy]) {
-                        return false;
+                        return -1;
                     }
                 }
             }
@@ -1365,26 +1379,48 @@ public class ShaderTerrain : MonoBehaviour
                 {
                     if (occupiedMap[ix, iy])
                     {
-                        return false;
+                        return -1;
                     }
                 }
             }
 
+            int returnRes = Mathf.Min(r, (int)(maxResolution / Math.Max(self.resolution,1)));
 
             if (x + r >= nextX && y + r >= nextY)
             {
-                return true;
+                ShapePoint br = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, y, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                returnRes = Mathf.Min(returnRes, (int)(maxResolution / Math.Max(br.resolution, 1)));
+
+                ShapePoint tr = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                    localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                returnRes = Mathf.Min(returnRes, (int)(maxResolution / Math.Max(tr.resolution, 1)));
+
+                ShapePoint tl = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, x, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
+                    localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+                returnRes = Mathf.Min(returnRes, (int)(maxResolution / Math.Max(tl.resolution, 1)));
+
+                return returnRes;
             }
 
             ShapePoint botLeftCorner = self;
             ShapePoint botRight = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, y, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
                 localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
+            if (returnRes > Mathf.Min(r, (int)(maxResolution / Math.Max(botRight.resolution, 1)))) { return -1; }
+
             ShapePoint topRight = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
                 localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
+            if (returnRes > Mathf.Min(r, (int)(maxResolution / Math.Max(topRight.resolution, 1)))) { return -1; }
+
             ShapePoint topLeft = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, x, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
                 localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
+
+            if (returnRes > Mathf.Min(r, (int)(maxResolution / Math.Max(topLeft.resolution, 1)))) { return -1; }
 
 
             //Plane bot = new Plane(botLeftCorner.point, topRight.point, topLeft.point);
@@ -1416,6 +1452,8 @@ public class ShaderTerrain : MonoBehaviour
                             ShapePoint comparePos = GetAtlasPoint(atlas, drawnTowards, force, shape, ma, ix, iy, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
                             localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
+                            if (returnRes > Mathf.Min(r, (int)(maxResolution / Math.Max(comparePos.resolution, 1)))) { return -1; }
+
                             //Top
                             if (div.SameSide(new Vector3(ix, iy), topP))
                             {
@@ -1435,15 +1473,16 @@ public class ShaderTerrain : MonoBehaviour
                                 errSum += Vector3.Distance(selfpos, comparePos.point) / area;
                             }
                             if (errSum > errorTolerance) {
-                                return false;
+                                return -1;
                             }
                         }
                     }
                 }
             }
+            return returnRes;
         }
 
-        return true;
+
     }
 
     public static ShapePoint GetAtlasPoint(
@@ -1584,17 +1623,18 @@ public class ShaderTerrain : MonoBehaviour
             float yLen = ((yLast ) - (yFirst - r) - 0);///r;
             float xLen = ((xLast ) - (xFirst - r) - 0);///r;
 
-            for (int iy = yFirst - r; iy <= yLast; iy += r) {//
-                for (int ix = xFirst - r; ix <= xLast; ix += r)
+            for (int iy = yFirst - r; iy <= yLast; iy += 1) {//r
+                for (int ix = xFirst - r; ix <= xLast; ix += 1)
                 {
                     cornerMap[ix, iy] = true;
                 }
             }
 
-            LinkProjectionAxis(addedTriangles,ma,drawnTowards, drawnForce, childlist[i].radiusHeightSpread, true, yFirst, yLast, xFirst, xLast, r, xLen, xChildLength, xResolution,
+            //TODO/ fix R
+            LinkProjectionAxis(addedTriangles,ma,drawnTowards, drawnForce, childlist[i].radiusHeightSpread, true, yFirst-r, yLast, xFirst-r, xLast, 1, xLen, xChildLength, xResolution,
                     yResolution, projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
 
-            LinkProjectionAxis(addedTriangles,ma, drawnTowards, drawnForce, childlist[i].radiusHeightSpread, false, yFirst, yLast, xFirst, xLast, r, yLen, yChildLength, xResolution,
+            LinkProjectionAxis(addedTriangles,ma, drawnTowards, drawnForce, childlist[i].radiusHeightSpread, false, yFirst-r, yLast, xFirst-r, xLast, 1, yLen, yChildLength, xResolution,
                     yResolution, projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond, projections[i].flipYTriangles);
 
         }
@@ -1622,25 +1662,28 @@ public class ShaderTerrain : MonoBehaviour
                 int nextX = x + r >= xResolution ? xResolution - 1 : x + r;
                 int nextY = y + r >= yResolution ? yResolution - 1 : y + r;
 
-                if (CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                            projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance))
+                int res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                            projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+                
+                if (res != -1)
                 {
                     bool xBlocked = false;
                     bool yBlocked = false;
 
                     int foundX = nextX;
                     int foundY = nextY;
+                    int foundRes = res;
 
                     bool first = true;
-                    //int count = 0;
+                    int count = 0;
                     while (!(xBlocked && yBlocked))
                     {
-                        /*count++;
+                        count++;
                         if (count > 100) {
                             Debug.Log("Emergency eject: nextX:" + nextX + " xres:" + xResolution + " nexty: " + nextY 
                                 + " yres: "+yResolution+" xBlocked: "+xBlocked+" yblocked: "+yBlocked );
                             break;
-                        }*/
+                        }
                         //First time we need to grow in both directions
                         if (first)
                         {
@@ -1648,8 +1691,10 @@ public class ShaderTerrain : MonoBehaviour
                             nextY += r;
                             first = false;
                             //x,y,nextX, nextY
-                            if (!CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance))
+                            res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+                            
+                            if (res == -1)
                             {
                                 xBlocked = true;
                                 yBlocked = true;
@@ -1665,8 +1710,10 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextX += r;
 
-                                xBlocked = !CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
+                                res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution,maxResolution,  b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
                                 projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+
+                                xBlocked = res == -1;
 
                                 if (!xBlocked)
                                 {
@@ -1678,8 +1725,10 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextY += r;
 
-                                yBlocked = !CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                                res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                                 projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+
+                                yBlocked = res == -1;
 
                                 if (!yBlocked)
                                 {
@@ -1689,19 +1738,59 @@ public class ShaderTerrain : MonoBehaviour
                         }
                     }
 
-                    int pos = cquads.Count;
-                    cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+                    //int pos = cquads.Count;
 
-
-                    
-                    for (int iy = y; iy <= foundY-1; iy++)
+                    for (int iy = y; iy <= foundY - 1; iy++)
                     {
-                        for (int ix = x; ix <= foundX-1; ix++)
+                        for (int ix = x; ix <= foundX - 1; ix++)
                         {
                             occupiedMap[ix, iy] = true;
                         }
                     }
 
+                    if (foundRes == r)
+                    {
+                        cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+
+                        cornerMap[x, y] = true;
+                        cornerMap[foundX, y] = true;
+                        cornerMap[x, foundY] = true;
+                        cornerMap[foundX, foundY] = true;
+
+                    }
+                    else {
+
+                        for (int iy = y; iy <= foundY; iy +=foundRes)
+                        {
+                            for (int ix = x; ix <= foundX; ix += foundRes)
+                            {
+                                cornerMap[ix, iy] = true;
+
+                                if (iy - foundRes >= y && ix - foundRes >= x) {
+
+                                    int xPrev = ix - foundRes;
+                                    int yPrev = iy - foundRes;
+                                    
+
+                                    AddTriangle(
+                                        ix, iy, xPrev, yPrev, xPrev, iy, flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
+                                        localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                        sharedX, sharedY, sharedZ
+                                        );
+
+                                    AddTriangle(
+                                        ix, iy, xPrev, yPrev, ix, yPrev, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
+                                        localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
+                                        sharedX, sharedY, sharedZ
+                                        );
+
+                                }
+                                //occupiedMap[ix, iy] = true;
+                            }
+                        }
+
+
+                    }
                     /*for (int iy = y; iy <= foundY; iy++)
                     {
                         for (int ix = x; ix <= foundX; ix++)
@@ -1717,10 +1806,6 @@ public class ShaderTerrain : MonoBehaviour
                     }*/
 
                     //Mark corners
-                    cornerMap[x, y] = true;
-                    cornerMap[foundX, y] = true;
-                    cornerMap[x, foundY] = true;
-                    cornerMap[foundX, foundY] = true;
 
 
                     x = foundX - r;
@@ -1941,7 +2026,7 @@ public class ShaderTerrain : MonoBehaviour
                 if ((first || val != lastval) && spread > 0) {
                     if (isX)
                     {
-                        int thisXPos = (xFirst - r) + thisPos;
+                        int thisXPos = xFirst/*(xFirst - r)*/ + thisPos;
                         for (int s = 0; s <= spread; s++)
                         {
                             float f = 1f - (float)(s) / (float)spread;
@@ -1950,8 +2035,8 @@ public class ShaderTerrain : MonoBehaviour
                             drawnTo[thisXPos, Mathf.Min(yLast + s, yResolution - 1)] = ma.vertices[relative[firstSlot, thisChildPos] - 1];
                             force[thisXPos, Mathf.Min(yLast + s, yResolution - 1)] = f;
 
-                            drawnTo[thisXPos, Mathf.Max((yFirst - r) - s, 0)] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            force[thisXPos, Mathf.Max((yFirst - r) - s, 0)] = f;
+                            drawnTo[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
+                            force[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/- s, 0)] = f;
                         }
                         //Cover corners
                         if (first)
@@ -1964,8 +2049,8 @@ public class ShaderTerrain : MonoBehaviour
                                     float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
                                     f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
 
-                                    int xp = Mathf.Max((xFirst - r) - xs, 0);
-                                    int yp = Mathf.Max((yFirst - r) - ys, 0);
+                                    int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
+                                    int yp = Mathf.Max(yFirst/*(yFirst - r)*/ - ys, 0);
                                     int xpPlus = Mathf.Min(xLast + xs, xResolution - 1);
                                     int ypPlus = Mathf.Min(yLast + ys, yResolution - 1);
 
@@ -1986,7 +2071,7 @@ public class ShaderTerrain : MonoBehaviour
                         }
                     }
                     else {
-                        int thisYPos = (yFirst - r) + val;
+                        int thisYPos = (yFirst - r) + thisPos;
                         for (int s = 0; s <= spread; s++)
                         {
                             float f = 1f - (float)(s) / (float)spread;
@@ -1995,8 +2080,8 @@ public class ShaderTerrain : MonoBehaviour
                             drawnTo[Mathf.Min(xLast + s, xResolution - 1), thisYPos] = ma.vertices[relative[firstSlot, thisChildPos] - 1];
                             force[Mathf.Min(xLast + s, xResolution - 1), thisYPos] = f;
 
-                            drawnTo[Mathf.Max((xFirst - r) - s, 0), thisYPos] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            force[Mathf.Max((xFirst - r) - s, 0), thisYPos] = f;
+                            drawnTo[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
+                            force[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = f;
                         }
                     }
                 }
@@ -2005,19 +2090,19 @@ public class ShaderTerrain : MonoBehaviour
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[secondSlot, thisChildPos],
-                        (xFirst - r) + (isX ? thisPos : 0),
-                        (yFirst - r) + (isX ? 0 : thisPos),
-                        (xFirst - r) + (isX ? nextPos : 0),
-                        (yFirst - r) + (isX ? 0 : nextPos),
+                        xFirst/*(xFirst - r)*/ + (isX ? thisPos : 0),
+                        yFirst/*(xFirst - r)*/ + (isX ? 0 : thisPos),
+                        xFirst/*(xFirst - r)*/ + (isX ? nextPos : 0),
+                        yFirst/*(xFirst - r)*/ + (isX ? 0 : nextPos),
                         flip
                         ));
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[firstSlot, thisChildPos],
-                        isX ? (xFirst - r) + thisPos : xLast,
-                        isX ? yLast : ((yFirst - r) + thisPos),
-                        isX ? (xFirst - r) + nextPos : xLast,
-                        isX ? yLast : ((yFirst - r) + nextPos),
+                        isX ? xFirst/*(xFirst - r)*/ + thisPos : xLast,
+                        isX ? yLast : (yFirst/*(yFirst - r)*/ + thisPos),
+                        isX ? xFirst/*(xFirst - r)*/ + nextPos : xLast,
+                        isX ? yLast : (yFirst/*(yFirst - r)*/ + nextPos),
                         !flip
                         ));
                 }
@@ -2026,16 +2111,16 @@ public class ShaderTerrain : MonoBehaviour
                     addedTriangles.Add(new AddedTriangle(
                         relative[secondSlot, thisChildPos],
                         relative[secondSlot, lastChildPos],
-                        (xFirst - r) + (isX ? thisPos : 0),
-                        (yFirst - r) + (isX ? 0 : thisPos),
+                        xFirst/*(xFirst - r)*/ + (isX ? thisPos : 0),
+                        yFirst/*(yFirst - r)*/ + (isX ? 0 : thisPos),
                         !flip
                         ));
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[firstSlot, thisChildPos],
                         relative[firstSlot, lastChildPos],
-                        isX ? (xFirst - r) + thisPos : xLast,
-                        isX ? yLast : ((yFirst - r) + thisPos),
+                        isX ? xFirst/*(xFirst - r)*/ + thisPos : xLast,
+                        isX ? yLast : (yFirst/*(xFirst - r)*/+ thisPos),
                         flip
                         ));
                 }
@@ -2075,8 +2160,8 @@ public class ShaderTerrain : MonoBehaviour
                             drawnTo[thisXPos, Mathf.Min(yLast + s, yResolution - 1)] = ma.vertices[relative[firstSlot, thisChildPos] - 1];
                             force[thisXPos, Mathf.Min(yLast + s, yResolution - 1)] = f;
 
-                            drawnTo[thisXPos, Mathf.Max((yFirst - r) - s, 0)] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            force[thisXPos, Mathf.Max((yFirst - r) - s, 0)] = f;
+                            drawnTo[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
+                            force[thisXPos, Mathf.Max(yFirst/*(xFirst - r)*/ - s, 0)] = f;
                         }
                         if (first)
                         {
@@ -2088,8 +2173,8 @@ public class ShaderTerrain : MonoBehaviour
                                     float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
                                     f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
 
-                                    int xp = Mathf.Max((xFirst - r) - xs, 0);
-                                    int yp = Mathf.Max((yFirst - r) - ys, 0);
+                                    int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
+                                    int yp = Mathf.Max(yFirst/*(xFirst - r)*/ - ys, 0);
                                     int xpPlus = Mathf.Min(xLast + xs, xResolution - 1);
                                     int ypPlus = Mathf.Min(yLast + ys, yResolution - 1);
 
@@ -2119,8 +2204,8 @@ public class ShaderTerrain : MonoBehaviour
                             drawnTo[Mathf.Min(xLast + s, xResolution - 1), thisYPos] = ma.vertices[relative[firstSlot, thisChildPos] - 1];
                             force[Mathf.Min(xLast + s, xResolution - 1), thisYPos] = f;
 
-                            drawnTo[Mathf.Max((xFirst - r) - s, 0), thisYPos] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            force[Mathf.Max((xFirst - r) - s, 0), thisYPos] = f;
+                            drawnTo[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = ma.vertices[relative[secondSlot, thisChildPos] - 1];
+                            force[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = f;
                         }
                     }
                 }
@@ -2130,16 +2215,16 @@ public class ShaderTerrain : MonoBehaviour
                     addedTriangles.Add(new AddedTriangle(
                         relative[secondSlot, thisChildPos],
                         relative[secondSlot, nextChildPos],
-                        (xFirst - r) + (isX ? val : 0),
-                        (yFirst - r) + (isX ? 0 : val),
+                        xFirst/*(xFirst - r)*/ + (isX ? val : 0),
+                        yFirst/*(yFirst - r)*/ + (isX ? 0 : val),
                         flip
                         ));
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[firstSlot, thisChildPos],
                         relative[firstSlot, nextChildPos],
-                        isX ? (xFirst - r) + val : xLast,
-                        isX ? yLast : ((yFirst - r) + val),
+                        isX ? xFirst/*(xFirst - r)*/ + val : xLast,
+                        isX ? yLast : (yFirst/*(yFirst - r)*/ + val),
                         !flip
                         ));
                 }
@@ -2149,19 +2234,19 @@ public class ShaderTerrain : MonoBehaviour
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[secondSlot, thisChildPos],
-                        (xFirst - r) + (isX ? lastval : 0),
-                        (yFirst - r) + (isX ? 0 : lastval),
-                        (xFirst - r) + (isX ? val : 0),
-                        (yFirst - r) + (isX ? 0 : val),
+                        xFirst/*(xFirst - r)*/ + (isX ? lastval : 0),
+                        yFirst/*(yFirst - r)*/+ (isX ? 0 : lastval),
+                        xFirst/*(xFirst - r)*/ + (isX ? val : 0),
+                        yFirst/*(yFirst - r)*/+ (isX ? 0 : val),
                         flip
                         ));
 
                     addedTriangles.Add(new AddedTriangle(
                         relative[firstSlot, thisChildPos],
-                        isX ? (xFirst - r) + lastval : xLast,
-                        isX ? yLast : ((yFirst - r) + lastval),
-                        isX ? (xFirst - r) + val : xLast,
-                        isX ? yLast : ((yFirst - r) + val),
+                        isX ? xFirst/*(xFirst - r)*/+ lastval : xLast,
+                        isX ? yLast : (yFirst/*(yFirst - r)*/+ lastval),
+                        isX ? xFirst/*(xFirst - r)*/ + val : xLast,
+                        isX ? yLast : (yFirst/*(yFirst - r)*/ + val),
                         !flip
                         ));
                 }

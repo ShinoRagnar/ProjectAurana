@@ -18,7 +18,10 @@ public struct ShapePoint
     public float alpha;
     public Color32 color;
 
-    public ShapePoint(Vector3 normal, Vector3 point, float texOne, float texTwo, float texThree, float texFour, Color32 col, float alpha)
+    public int resolution;
+
+
+    public ShapePoint(Vector3 normal, Vector3 point, float texOne, float texTwo, float texThree, float texFour, Color32 col, float alpha, int resolution)
     {
         this.normal = normal;
         this.point = point;
@@ -29,6 +32,7 @@ public struct ShapePoint
         this.color = col;
         this.alpha = alpha;
         this.initiated = true;
+        this.resolution = resolution;
     }
 }
 [Serializable]
@@ -58,6 +62,12 @@ public struct NoiseSettings {
     public bool multiply;
     public bool negative;
     public bool afterAlterations;
+
+    [Header("Resolution Settings")]
+    [Range(1, 16)]
+    public int resolution;
+    [Range(0, 1)]
+    public float resolutionCutoff;
 
     [Header("Color Settings")]
     public Color highColor;
@@ -159,7 +169,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         bool[] used = new bool[noises.Length];
 
         //Noise before alterations
-        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0), 
+        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0,1), 
             noise, currentPos, extents, used, false);
 
         //Alterations
@@ -268,6 +278,10 @@ public class ShaderTerrainShape : MonoBehaviour {
                         float eval = EvaluateNoise(noise, currentPos, sp.point + ns.offset, ns);
 
                         noi = UpdateNoise(noi, eval, ns.negative, ns.multiply, ns.cutoff);
+
+                        if (noi > ns.resolutionCutoff && ns.resolution > 1) {
+                            sp.resolution = Mathf.Max(sp.resolution, ns.resolution);
+                        }
 
                         float spPrevTexOne = sp.texOne;
                         float spPrevTexTwo = sp.texTwo;
