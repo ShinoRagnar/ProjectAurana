@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public struct ShapePoint
+public class ShapePoint
 {
-    public bool initiated;
-
     public Vector3 normal;
     public Vector3 point;
     //Vertex colors
@@ -31,7 +29,7 @@ public struct ShapePoint
         this.texFour = texFour;
         this.color = col;
         this.alpha = alpha;
-        this.initiated = true;
+        //this.initiated = true;
         this.resolution = resolution;
     }
 }
@@ -137,9 +135,20 @@ public class ShaderTerrainShape : MonoBehaviour {
     }
 
     public ShapePoint Calculate(
-        Noise noise, Vector3 drawnTo, float force, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
-        Vector3 percent, /* Vector3 onePercent,*/ Vector3 localUp, Vector3 mod, Vector3 extentMod,
+        ShaderTerrain st,
+        WorkingFaceSet wfs,
+        WorkingTerrainSet wts,
+        Vector3 percent,
+        Vector3 currentPos,
+        Vector3 drawnTo,
+        float force
+        
+        //int x,
+        //int y
+        /*Noise noise, Vector3 drawnTo, float force, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
+        Vector3 percent, Vector3 localUp, Vector3 mod, Vector3 extentMod,
         Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
+        */
         )
     {
         //Vector4 calc = CalculateAtPercent(noise, currentPos, extents, projectionDirection, reverseProjectionSide, percent, 
@@ -147,16 +156,16 @@ public class ShaderTerrainShape : MonoBehaviour {
 
         //Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
 
-        Vector3 normal = localUp;
+        Vector3 normal = wfs.localUp;
 
         //Create the shape
-        Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
-        Vector3 pointOnSmallerUnitCube = GetPointOnCube(localUp, percent, mod * 0.9999f, axisA, axisB);
+        Vector3 pointOnUnitCube = GetPointOnCube(wfs.localUp, percent, wfs.halfMod, wfs.axisA, wfs.axisB);
+        Vector3 pointOnSmallerUnitCube = GetPointOnCube(wfs.localUp, percent, wfs.halfMod * 0.9999f, wfs.axisA, wfs.axisB);
 
-        Vector3 pointOnRoundedCube = GetRounded(pointOnUnitCube, halfSize, roundness, projectionDirection, roundInProjectionDirection,
-            reverseProjectionSide, roundX, roundY, roundZ);
-        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, halfSize * 0.9999f, roundness * 0.9999f, projectionDirection,
-            roundInProjectionDirection, reverseProjectionSide, roundX, roundY, roundZ); //, reverseRoundProjection);
+        Vector3 pointOnRoundedCube = GetRounded(pointOnUnitCube, wfs.halfSize, roundness, st.projectionDirection, roundInProjectionDirection,
+            st.reverseProjectionSide, roundX, roundY, roundZ);
+        Vector3 pointOnSmallerRoundedCube = GetRounded(pointOnSmallerUnitCube, wfs.halfSize * 0.9999f, roundness * 0.9999f, st.projectionDirection,
+            roundInProjectionDirection, st.reverseProjectionSide, roundX, roundY, roundZ); //, reverseRoundProjection);
 
 
         Vector3 shape = pointOnRoundedCube; // Vector3.Lerp(pointOnRoundedCube, drawnTo, force);
@@ -170,30 +179,30 @@ public class ShaderTerrainShape : MonoBehaviour {
 
         //Noise before alterations
         ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0,1), 
-            noise, currentPos, extents, used, false);
+            wts.ma.noise, currentPos, st.extents, used, false);
 
         //Alterations
-        if (projectionMiddleSlimmedBy != 0 && projectionDirection != Vector3.zero)
+        if (projectionMiddleSlimmedBy != 0 && st.projectionDirection != Vector3.zero)
         {
             Vector3 progress = new Vector3(
-            (halfSize.x + ret.point.x) / (halfSize.x * 2f),
-            (halfSize.y + ret.point.y) / (halfSize.y * 2f),
-             (halfSize.z + ret.point.z) / (halfSize.z * 2f)
+            (wfs.halfSize.x + ret.point.x) / (wfs.halfSize.x * 2f),
+            (wfs.halfSize.y + ret.point.y) / (wfs.halfSize.y * 2f),
+             (wfs.halfSize.z + ret.point.z) / (wfs.halfSize.z * 2f)
             );
 
             Vector3 sinProgress = Sine(progress * Mathf.PI);
 
-            Vector3 midpoint = new Vector3(projectionDirection.x != 0 ? pointOnUnitCube.x : 0,
-                projectionDirection.y != 0 ? pointOnUnitCube.y : 0,
-                projectionDirection.z != 0 ? pointOnUnitCube.z : 0
+            Vector3 midpoint = new Vector3(st.projectionDirection.x != 0 ? pointOnUnitCube.x : 0,
+                st.projectionDirection.y != 0 ? pointOnUnitCube.y : 0,
+                st.projectionDirection.z != 0 ? pointOnUnitCube.z : 0
                 );
 
-            ret.point = Vector3.Lerp(ret.point, midpoint, projectionMiddleSlimmedBy * SameAsProjectionVector(sinProgress, projectionDirection));
+            ret.point = Vector3.Lerp(ret.point, midpoint, projectionMiddleSlimmedBy * SameAsProjectionVector(sinProgress, st.projectionDirection));
         }
 
         //Noise after alterations
 
-        ret = CombineNoiseWithShapePoint(ret, noise, currentPos, extents, used, true);
+        ret = CombineNoiseWithShapePoint(ret, wts.ma.noise, currentPos, st.extents, used, true);
 
         //if (force > 0.5) {
             ret.point = Vector3.Lerp(ret.point, drawnTo, force);
