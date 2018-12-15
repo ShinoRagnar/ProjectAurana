@@ -327,61 +327,6 @@ public struct CombinedQuads
 public class ShaderTerrain : MonoBehaviour
 {
    
-
-    /*private struct MapCheck {
-
-        public bool valid;
-        public int resolution;
-    }*/
-    
-
-    /*private static int[] TEXTURE_SIZES = new int[] { 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 };
-
-        public static Color32[] DEBUG_COLORS = new Color32[] {
-            new Color32(255,0,0,0), new Color32(0,255, 0, 0), new Color32(0, 0, 255, 0),
-            new Color32(0, 0, 0, 255), new Color32(255, 0, 0, 0), new Color32(255, 0, 0, 0) };
-
-        private static Dictionary<Vector3, bool> isUpGroup = new Dictionary<Vector3, bool> {
-            { Vector3.left, true}, { Vector3.forward, true }, { Vector3.right, true },
-            { Vector3.up, false }, { Vector3.down, false }, { Vector3.back, false }
-        };*/
-
-    /*public static readonly int LINK_STEP_TO = 0;
-    public static readonly int LINK_LEFT_TOP = 1;
-    public static readonly int LINK_LEFT_BOT = 2;
-    public static readonly int LINK_SELF_TOP = 3;
-    public static readonly int LINK_SELF_BOT = 4;
-    public static readonly int LINK_SWAP_Y = 5;
-    public static readonly int LINK_SWAP_X = 6;
-    public static readonly int LINK_REMOVE_VERT = 7;
-    public static readonly int LINK_BORDER = 8;*/
-    // public static readonly int LINK_DOUBLE = 9;
-    // public static readonly int LINK_MERGE = 10;
-
-
-    /*public static readonly int TOP = 1;
-    public static readonly int MIDDLE_UD = 2;
-    public static readonly int BOT = 3;
-
-    public static readonly int LEFT = 10;
-    public static readonly int MIDDLE_LR = 20;
-    public static readonly int RIGHT = 30;
-
-    public static readonly int LEFT_TOP = LEFT + TOP;
-    public static readonly int LEFT_MIDDLE = LEFT + MIDDLE_UD;
-    public static readonly int LEFT_BOT = LEFT + BOT;
-
-    public static readonly int MIDDLE_TOP = MIDDLE_LR + TOP;
-    public static readonly int MIDDLE_MIDDLE = MIDDLE_LR + MIDDLE_UD;
-    public static readonly int MIDDLE_BOT = MIDDLE_LR + BOT;
-
-    public static readonly int RIGHT_TOP = RIGHT + TOP;
-    public static readonly int RIGHT_MIDDLE = RIGHT + MIDDLE_UD;
-    public static readonly int RIGHT_BOT = RIGHT + BOT;
-    */
-
-
-
     public Material material;
     public ShaderTerrain parent;
     public ShaderTerrainShape shape;
@@ -419,21 +364,10 @@ public class ShaderTerrain : MonoBehaviour
     public ShaderTerrain[] children;
 
     [Header("Texture")]
-    // public float splatBorderWidth = 2f;
-
-    //public float textureScale = 100;
     [Range(0, 2)]
     public float textureScale = 1;
     [Range(0, 2)]
     public float detailScale = 1;
-    //[Range(0.005f, 0.08f)]
-    //public float heightScale = 0.02f;
-    //[Range(0, 1f)]
-    //public float smoothness = 0.3f;
-    //[Range(0, 1f)]
-    //public float metallic = 0.2f;
-
-
     [Range(-2, 2)]
     public float bumpScale = 1;
     [Range(0.05f, 1)]
@@ -447,16 +381,6 @@ public class ShaderTerrain : MonoBehaviour
     public Material[] splatTextures = new Material[] { };
     public Material colorUsage;
 
-
-    /*[Header("Noise")]
-    public float noiseBaseRoughness = 1f;
-    public float noiseRoughness = 1f;
-    public float noisePersistance = 0.5f;
-    public float noiseStrength = 1f;
-    public int noiseLayers = 5;
-    public bool noiseRigid = true;
-    */
-
     private new MeshRenderer renderer = null;
     private MeshFilter filter = null;
     private Mesh mesh;
@@ -466,11 +390,6 @@ public class ShaderTerrain : MonoBehaviour
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
     private bool generated = false;
-
-
-    // private MeshArrays lastGeneratedMesh;
-
-
 
 
     public void Initialize()
@@ -491,22 +410,11 @@ public class ShaderTerrain : MonoBehaviour
         {
             mesh = filter.sharedMesh = new Mesh();
         }
-
-        //if (noise == null)
-        //{
-        //    noise = new Noise();
-        //}
-
-
-
     }
-
     public void Start()
     {
         transform.gameObject.isStatic = true;
     }
-
-
     public void OnDrawGizmosSelected()
     {
 
@@ -516,8 +424,6 @@ public class ShaderTerrain : MonoBehaviour
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireCube(transform.position, new Vector3(xSize + extents.x, ySize + extents.y, zSize + extents.z));
     }
-
-
     public void OnValidate()
 
     {
@@ -544,7 +450,6 @@ public class ShaderTerrain : MonoBehaviour
             ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
         }
     }
-
     public void SetDefs() {
 
         currentPos = transform.position;
@@ -556,7 +461,6 @@ public class ShaderTerrain : MonoBehaviour
 
         shape.parent = this;
     }
-
     public void PrepareChildren() {
 
         SetDefs();
@@ -568,14 +472,6 @@ public class ShaderTerrain : MonoBehaviour
             }
         }
     }
-
-    //public MeshArrays GetMeshArray(Noise noise, MeshArrays ma) {
-    //     this.noise = noise;
-    //     SortChildren();
-    //    SetPos();
-    //    return Generate(ma);
-    //}
-
 
     public void ApplyMeshArrays(MeshArrays ms, Mesh m)
     {
@@ -589,25 +485,6 @@ public class ShaderTerrain : MonoBehaviour
         m.triangles = ms.triangles.ToArray();
 
         m.RecalculateNormals();
-
-
-        //Debug.Log(" Colors: " + ms.vertexColors.Length);
-
-        //int xlen = ms.splat.GetLength(0);
-        //int ylen = ms.splat.GetLength(1);
-
-        /*Texture2D splatmap = new Texture2D(xlen, ylen, TextureFormat.ARGB32, false);
-
-        for (int y = 0; y < ylen; y++)
-        {
-            for (int x = 0; x < xlen; x++)
-            {
-                splatmap.SetPixel(x, y, ms.splat[x, y]);
-            }
-        }
-
-        splatmap.Apply();
-        */
 
         Material newMat = new Material(material);
         SetTexture(0, splatTextures[0], newMat);
@@ -654,48 +531,9 @@ public class ShaderTerrain : MonoBehaviour
             {
                 Debug.Log("Could not combine with child <" + st.xSize + "," + st.ySize + "," + st.zSize + "> " + st.currentPos);
             }
-            /*
-            else {
-                if (st.GetCorner(Vector3.down).y > GetCorner(Vector3.up).y)
-                {
-                    AddIfDirection(st, Vector3.up);
-
-                }
-                else if (st.GetCorner(Vector3.up).y < GetCorner(Vector3.down).y)
-                {
-                    AddIfDirection(st, Vector3.down);
-
-                }
-                else if (st.GetCorner(Vector3.right).x < GetCorner(Vector3.left).x)
-                {
-                    AddIfDirection(st, Vector3.left); //swapped
-
-                }
-                else if (st.GetCorner(Vector3.left).x > GetCorner(Vector3.right).x)
-                {
-                    AddIfDirection(st, Vector3.right);
-                }
-                else if (st.GetCorner(Vector3.back).z > GetCorner(Vector3.forward).z)
-                {
-                    AddIfDirection(st, Vector3.forward);
-                }
-                else if (st.GetCorner(Vector3.forward).z < GetCorner(Vector3.back).z)
-                {
-                    AddIfDirection(st, Vector3.back);
-                }
-                else
-                {
-                    Debug.Log("Could not combine with child <" + st.xSize + "," + st.ySize + "," + st.zSize + "> " + st.currentPos);
-                }
-
-            }
-            */
-
-
         }
 
     }
-
     private void AddIfDirection(ShaderTerrain st, Vector3 dir)
     {
         for (int i = 0; i < directions.Length; i++)
@@ -707,15 +545,12 @@ public class ShaderTerrain : MonoBehaviour
                     childrenPerFace[i] = new List<ShaderTerrain>();
                 }
                 st.parent = this;
-                // st.projectionDirection = dir;
                 childrenPerFace[i].Add(st);
-                //Debug.Log("Added child to: " + dir);
                 return;
             }
         }
         Debug.Log("Missing direction: " + dir);
     }
-
     public Vector3 GetCorner(Vector3 orientation)
     {
         return currentPos + new Vector3(orientation.x * xSize / 2f, orientation.y * ySize / 2f, orientation.z * zSize / 2f);
@@ -734,7 +569,6 @@ public class ShaderTerrain : MonoBehaviour
 
         return (int)(res.x * 2 - 4 + res.y * 2);
     }
-
     public void SetTexture(int num, Material from, Material to)
     {
         string n = num == 0 ? "" : num + "";
@@ -770,7 +604,6 @@ public class ShaderTerrain : MonoBehaviour
         //to.SetFloat("_Metallic" + num.ToString(), from.GetFloat("_Metallic"));
         //to.SetFloat("_Smoothness" + num.ToString(), from.GetFloat("_Glossiness"));
     }
-
     public Vector3 GetLocalProjectionOffset(Vector3 projectionDirection, Vector3 projectOnSize)
     {
         if (projectionDirection == Vector3.down) //Child is above
@@ -798,7 +631,6 @@ public class ShaderTerrain : MonoBehaviour
             return new Vector3(-localPos.x, -localPos.y) + projectOnSize / 2f;
         }
     }
-
     public Projection GetProjectionOn(ShaderTerrain projectOn, MeshArrays ma, Vector3 projectDirection, int resolution)
     {
         Vector3 size = new Vector3(projectOn.xSize, projectOn.ySize, projectOn.zSize);
@@ -896,10 +728,7 @@ public class ShaderTerrain : MonoBehaviour
             zMod = ySize;
         }*/
     }
-
     private VectorPair GetVectorPairForProjection(
-        //List<Vector3> vertices, int[,] firstShared, int[,] secondShared,
-        //int sharedFirstOne, int sharedFirstTwo, int sharedSecondOne, int sharedSecondTwo,
         Vector3 offset, Vector3 size, int resolution, Vector3 projectionDirection, bool debug
         ) {
 
@@ -936,63 +765,9 @@ public class ShaderTerrain : MonoBehaviour
         return minmax;
     }
 
-    /*private static VectorPair Scan(List<Vector3> vertices, int[,] scan, int pos, VectorPair minmax, bool first)
-    {
-
-        Vector3 min = minmax.first;
-        Vector3 max = minmax.second;
-
-        int len = scan.GetLength(1);
-        for (int i = 0; i < len; i++)
-        {
-
-            int val = scan[pos, i];
-            if (val != 0)
-            {
-                val -= 1;
-
-                Vector3 check = vertices[val];
-
-                if (first)
-                {
-                    max = check;
-                    min = check;
-                    first = false;
-                }
-                if (check.x > max.x)
-                {
-                    max.x = check.x;
-                }
-                else if (check.x < min.x)
-                {
-                    min.x = check.x;
-                }
-                if (check.y > max.y)
-                {
-                    max.y = check.y;
-                }
-                else if (check.y < min.y)
-                {
-                    min.y = check.y;
-                }
-                if (check.z > max.z)
-                {
-                    max.z = check.z;
-                }
-                else if (check.z < min.z)
-                {
-                    min.z = check.z;
-                }
-            }
-        }
-        return new VectorPair(min, max);
-    }*/
-
     public MeshArrays Generate(MeshArrays ma)
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-        // Begin timing.
         stopwatch.Start();
 
         generated = true;
@@ -1020,14 +795,8 @@ public class ShaderTerrain : MonoBehaviour
                 maxResolution,
                 ma,
                 shape,
-
                 new Dictionary<Vector3, int[,]>()
             );
-        //int[,] sharedX = ma.sharedX.AddGetValue(this, new int[4, (xSize * maxResolution) + 1]);
-        //int[,] sharedY = ma.sharedY.AddGetValue(this, new int[4, (ySize * maxResolution) + 1]);
-        //int[,] sharedZ = ma.sharedZ.AddGetValue(this, new int[4, (zSize * maxResolution) + 1]);
-
-        //Dictionary<Vector3, int[,]> vertexFaces = new Dictionary<Vector3, int[,]>();
 
         for (int dir = 0; dir < directions.Length; dir++)
         {
@@ -1039,11 +808,6 @@ public class ShaderTerrain : MonoBehaviour
 
         for (int dir = 0; dir < directions.Length; dir++)
         {
-
-            //List<ShaderTerrain> childlist = childrenPerFace == null ? null : childrenPerFace[dir];
-            //List<Projection> projections = new List<Projection>();
-            //List<AddedTriangle> addedTriangles = new List<AddedTriangle>();
-
             Vector3 localUp = directions[dir];
             int resolution = Mathf.Max(resolutions[dir], 1);
 
@@ -1080,14 +844,10 @@ public class ShaderTerrain : MonoBehaviour
                 halfSizeExtent,
                 borderRes
                 );
-            //= (int)res.x;
-            //int yResolution = (int)res.y;
-            //int zResolution = (int)res.z;
 
-            //Project child vertices down on this surface
             if (wfs.childlist != null) {
                 for (int ca = 0; ca < wfs.childlist.Count; ca++) {
-                    //Debug.Log("Adding projection for: " + localUp);
+
                     if (!wfs.childlist[ca].generated) {
                         wfs.childlist[ca].Generate(ma);
                     }
@@ -1095,28 +855,7 @@ public class ShaderTerrain : MonoBehaviour
                 }
             }
 
-
-            //int[,] vertexPositions = vertexFaces[localUp];
-
-            //int xResolution = (int)borderRes.x;
-            //int yResolution = (int)borderRes.y;
-            //int zResolution = (int)borderRes.z;
-
-
-            //Vert total: 24270 triangle total: 48302
-            /*
-            CreateVerticesAndTriangles(childlist, projections, addedTriangles, borderRes, maxResolution, resolution,
-               xResolution, yResolution, zResolution, localUp, halfMod, halfModExtent, axisA, axisB, halfSize,
-               halfSizeExtent, vertexPositions, ma, vertexFaces, dir, sharedX, sharedY, sharedZ);
-                */
-
-            CreateVerticesAndTriangles(wfs, wts);
-
-            /*CreateVerticesAndTriangles(childlist, projections, addedTriangles, vertexFaces, borderRes, maxResolution, resolution,
-             dir, xResolution, yResolution, zResolution, sharedX, sharedY, sharedZ, vertexPositions, ma, shape, localUp,
-             halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-        */
-            //
+            CreateVerticesAndTriangles(wfs, wts); 
 
         }
         stopwatch.Stop();
@@ -1201,17 +940,6 @@ public class ShaderTerrain : MonoBehaviour
         int xTwo, int yTwo,
         int xThree, int yThree,
         bool clockwise
-    /*ShapePoint[,] atlas,
-    Vector3[,] drawnToward, float[,] force,
-     int xResolution, int yResolution, int zResolution,
-    Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent,
-     int[,] vertexPositions, Dictionary<Vector3, int[,]> vertexFaces, MeshArrays ma
-
-    , int dir, int[,] sharedX, int[,] sharedY, int[,] sharedZ
-        */
-        
-        //,
-                                                             /*List<ShaderTerrain> childlist, List<Projection> projections, int[,] links*/
     )
     {
         int onePos = AddVertex(wfs, wts, xOne, yOne);
@@ -1245,20 +973,7 @@ public class ShaderTerrain : MonoBehaviour
     public int AddVertex(
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
-    int x, int y//, 
-    
-    /*int xResolution, int yResolution, int zResolution,
-    Vector3[,] drawnToward, float[,] force,
-    Vector3 localUp, Vector3 halfMod, Vector3 halfModExtent, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
-    , MeshArrays ma, int[,] vertexPositions, ShapePoint[,] atlas,
-    Dictionary<Vector3, int[,]> vertexFaces,
-   
-    // Vector3 uvCoord,  List<Vector3> normals, List<Color32> vertexColors,List<Vector3> vertices, List<Vector2> uvs
-    int dir,
-    int[,] sharedX, int[,] sharedY, int[,] sharedZ //, //List<ShaderTerrain> childlist, List<Projection> projections,
-                                                   //int[,] links
-                                                   //, Color[,] splat, int dir, Vector2 topTextureCoord, Vector2 bottomTextureCoord
-                                                   */
+    int x, int y
     )
     {
         int linkPos = (y * wfs.xResolution) + x;
@@ -1456,49 +1171,18 @@ public class ShaderTerrain : MonoBehaviour
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
         ShapePoint self,
+        int xEnd,
+        int yEnd,
         int b,
         int r,
         int x,
         int y,
         int nextX,
         int nextY,
-        /*
-        ShapePoint[,] atlas,
-        Vector3[,] drawnTowards,
-        float[,] force,
-        bool[,] ignoreMap,
-        ShapePoint self,
-        ShaderTerrainShape shape,
-        MeshArrays ma,
-        int xResolution,
-        int yResolution,
-        int maxResolution,
-        int b,
-        int r,
-        int x,
-        int y,
-        int nextX,
-        int nextY,
-        bool[,] occupiedMap,
-
-        bool reverseProjectionSide,
-
-        Vector3 currentPos,
-        Vector3 projectionDirection,
-        Vector3 localUp,
-        Vector3 extents,
-
-        Vector3 halfMod,
-        Vector3 halfModExtent,
-        Vector3 axisA,
-        Vector3 axisB,
-        Vector3 halfSize,
-        Vector3 halfSizeExtent,
-        */
         float errorTolerance
         ) {
 
-        if (nextX >= wfs.xResolution || nextY >= wfs.yResolution)
+        if (nextX >= xEnd || nextY >= yEnd) //wfs.xResolution || nextY >= wfs.yResolution)
         {
 
             return -1;
@@ -1533,23 +1217,12 @@ public class ShaderTerrain : MonoBehaviour
             if (x + r >= nextX && y + r >= nextY)
             {
                 ShapePoint br = GetAtlasPoint(wfs, wts, nextX, y);
-                    
-                    //atlas, drawnTowards, force, shape, ma, nextX, y, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-                //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
                 returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(br.resolution, 1)));
 
                 ShapePoint tr = GetAtlasPoint(wfs, wts, nextX, nextY);
-                    
-                    //atlas, drawnTowards, force, shape, ma, nextX, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-                    //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
                 returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tr.resolution, 1)));
 
                 ShapePoint tl = GetAtlasPoint(wfs, wts, x, nextY);
-                    //GetAtlasPoint(atlas, drawnTowards, force, shape, ma, x, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-                    //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
                 returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tl.resolution, 1)));
 
                 return returnRes;
@@ -1557,25 +1230,11 @@ public class ShaderTerrain : MonoBehaviour
 
             ShapePoint botLeftCorner = self;
             ShapePoint botRight = GetAtlasPoint(wfs, wts, nextX, y);
-            //GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, y, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-            //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
             if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(botRight.resolution, 1)))) { return -1; }
-
             ShapePoint topRight = GetAtlasPoint(wfs, wts, nextX, nextY);
-            //GetAtlasPoint(atlas, drawnTowards, force, shape, ma, nextX, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-            //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
             if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(topRight.resolution, 1)))) { return -1; }
-
             ShapePoint topLeft = GetAtlasPoint(wfs, wts, x, nextY);
-            //GetAtlasPoint(atlas, drawnTowards, force, shape, ma, x, nextY, xResolution, yResolution, reverseProjectionSide, currentPos, projectionDirection,
-            //localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
             if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(topLeft.resolution, 1)))) { return -1; }
-
-
-            //Plane bot = new Plane(botLeftCorner.point, topRight.point, topLeft.point);
 
             float area = Mathf.Sqrt(
                          Vector3.Cross(botLeftCorner.point - topLeft.point, botLeftCorner.point - botRight.point).magnitude * 0.5f
@@ -1639,50 +1298,16 @@ public class ShaderTerrain : MonoBehaviour
     }
 
     public ShapePoint GetAtlasPoint(
-        
-        /*ShapePoint[,] atlas,
-        Vector3[,] drawnTo,
-        float[,] force,
-
-        ShaderTerrainShape shape,
-        MeshArrays ma,*/
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
-
         int x,
         int y
-        /*float xResolution,
-        float yResolution,
-        bool reverseProjectionSide,
-
-        Vector3 currentPos,
-        Vector3 projectionDirection,
-        Vector3 localUp,
-        Vector3 extents,
-
-        Vector3 halfMod,
-        Vector3 halfModExtent,
-        Vector3 axisA,
-        Vector3 axisB,
-        Vector3 halfSize,
-        Vector3 halfSizeExtent
-        */
         )
     {
-
         Vector2 percent = new Vector2(x / (wfs.xResolution - 1f), (float)y / (wfs.yResolution - 1f));
-
         ShapePoint searchPos = wfs.atlas[x, y] ?? shape.Calculate(this, wfs, wts, percent, currentPos, wfs.drawnTowards[x, y], wfs.drawnForce[x, y]);
-
-        /*wfs.ma.noise,
-        drawnTo[x,y], force[x,y],
-        currentPos, extents, projectionDirection, reverseProjectionSide,
-        percent, localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);*/
-
         wfs.atlas[x, y] = searchPos;
-
         return searchPos;
-
     }
 
 
@@ -1690,60 +1315,8 @@ public class ShaderTerrain : MonoBehaviour
     private void CreateVerticesAndTriangles(
         WorkingFaceSet wfs,
         WorkingTerrainSet wts
-
-        /*List<ShaderTerrain> childlist,
-        List<Projection> projections,
-        List<AddedTriangle> addedTriangles,
-        Dictionary<Vector3, int[,]> vertexFaces,
-
-        Vector2 borderRes,
-
-        int maxResolution,
-        int resolution,
-        int dir,
-
-        int xResolution,
-        int yResolution,
-        int zResolution,
-
-        int[,] sharedX,
-        int[,] sharedY,
-        int[,] sharedZ,
-
-        int[,] vertexPositions,
-
-
-        //ShapePoint[,] atlas,
-        MeshArrays ma,
-        ShaderTerrainShape shape,
-
-        Vector3 localUp,
-        Vector3 halfMod,
-        Vector3 halfModExtent,
-        Vector3 axisA,
-        Vector3 axisB,
-        Vector3 halfSize,
-        Vector3 halfSizeExtent
-        */
         )
     {
-        //int xResolution = (int)borderRes.x;
-        //int yResolution = (int)borderRes.y;
-        //int zResolution = 
-
-        /*ShapePoint[,] atlas = new ShapePoint[xResolution, yResolution];
-        List<CombinedQuads> cquads = new List<CombinedQuads>();
-        bool[,] occupiedMap = new bool[xResolution-1, yResolution-1];
-        bool[,] cornerMap = new bool[xResolution, yResolution];
-        bool[,] ignoreMap = new bool[xResolution, yResolution];
-
-        Vector3[,] drawnTowards = new Vector3[xResolution, yResolution];
-        float[,] drawnForce = new float[xResolution, yResolution];
-        */
-
-        // int[,] vertLinks = new int[xResolution * yResolution, 9];
-
-
         float maxY = 0;
         int b = 1;
         int r = (int)(wts.maxResolution / wfs.resolution);
@@ -1800,175 +1373,9 @@ public class ShaderTerrain : MonoBehaviour
 
             LinkProjectionAxis(wfs, wts, wfs.childlist[i].radiusHeightSpread, false, yFirst - r, yLast, xFirst - r, xLast, 1, yLen, yChildLength,
               wfs.projections[i].yReverse, wfs.projections[i].relativeY, wfs.projections[i].yFirst, wfs.projections[i].ySecond, wfs.projections[i].flipYTriangles);
-
-            //addedTriangles,ma,drawnTowards, drawnForce, childlist[i].radiusHeightSpread, true, yFirst-r, yLast, xFirst-r, xLast, 1, xLen, xChildLength, xResolution,
-            //  yResolution, projections[i].xReverse, projections[i].relativeX, projections[i].xFirst, projections[i].xSecond, projections[i].flipXTriangles);
-
-            //LinkProjectionAxis(addedTriangles,ma, drawnTowards, drawnForce, childlist[i].radiusHeightSpread, false, yFirst-r, yLast, xFirst-r, xLast, 1, yLen, yChildLength, xResolution,
-            //        yResolution, projections[i].yReverse, projections[i].relativeY, projections[i].yFirst, projections[i].ySecond, projections[i].flipYTriangles);
-
         }
-        //System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-        // Begin timing.
-        //stopwatch.Start();
-
-        //Find all combined quads needed for form this side
-        /*for (int y = 0; y < yResolution - b; y += r)
-        {
-            for (int x = 0; x < xResolution - b; x += r)
-            {
-                Vector2 percent = new Vector2(x / (float)(xResolution - 1f), (float)y / (float)(yResolution - 1f));
-
-                ShapePoint selfpos = GetAtlasPoint(atlas, drawnTowards, drawnForce, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide,
-                    currentPos, projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
-                int nextX = x + r >= xResolution ? xResolution - 1 : x + r;
-                int nextY = y + r >= yResolution ? yResolution - 1 : y + r;
-
-                int res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                            projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
-                
-                if (res != -1)
-                {
-                    bool xBlocked = false;
-                    bool yBlocked = false;
-
-                    int foundX = nextX;
-                    int foundY = nextY;
-                    int foundRes = res;
-
-                    bool first = true;
-                    int count = 0;
-                    while (!(xBlocked && yBlocked))
-                    {
-                        count++;
-                        if (count > 100) {
-                            Debug.Log("Emergency eject: nextX:" + nextX + " xres:" + xResolution + " nexty: " + nextY 
-                                + " yres: "+yResolution+" xBlocked: "+xBlocked+" yblocked: "+yBlocked );
-                            break;
-                        }
-                        //First time we need to grow in both directions
-                        if (first)
-                        {
-                            nextX += r;
-                            nextY += r;
-                            first = false;
-                            //x,y,nextX, nextY
-                            res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
-                            
-                            if (res == -1)
-                            {
-                                xBlocked = true;
-                                yBlocked = true;
-                            } else {
-                                foundX = nextX;
-                                foundY = nextY;
-                            }
-                        }
-                        else
-                        {
-
-                            if (!xBlocked)
-                            {
-                                nextX += r;
-
-                                res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution,maxResolution,  b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
-                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
-
-                                xBlocked = res == -1;
-
-                                if (!xBlocked)
-                                {
-                                    foundX = nextX;
-                                }
-                            }
-
-                            if (!yBlocked)
-                            {
-                                nextY += r;
-
-                                res = CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                                projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
-
-                                yBlocked = res == -1;
-
-                                if (!yBlocked)
-                                {
-                                    foundY = nextY;
-                                }
-                            }
-                        }
-                    }
-
-                    //int pos = cquads.Count;
-
-                    for (int iy = y; iy <= foundY - 1; iy++)
-                    {
-                        for (int ix = x; ix <= foundX - 1; ix++)
-                        {
-                            occupiedMap[ix, iy] = true;
-                        }
-                    }
-
-                    if (foundRes == r)
-                    {
-                        cquads.Add(new CombinedQuads(x, y, foundX, foundY));
-
-                        cornerMap[x, y] = true;
-                        cornerMap[foundX, y] = true;
-                        cornerMap[x, foundY] = true;
-                        cornerMap[foundX, foundY] = true;
-
-                    }
-                    else {
-
-                        for (int iy = y; iy <= foundY; iy +=foundRes)
-                        {
-                            for (int ix = x; ix <= foundX; ix += foundRes)
-                            {
-                                cornerMap[ix, iy] = true;
-
-                                if (iy - foundRes >= y && ix - foundRes >= x) {
-
-                                    int xPrev = ix - foundRes;
-                                    int yPrev = iy - foundRes;
-                                    
-
-                                    AddTriangle(
-                                        ix, iy, xPrev, yPrev, xPrev, iy, flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
-                                        localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                        sharedX, sharedY, sharedZ
-                                        );
-
-                                    AddTriangle(
-                                        ix, iy, xPrev, yPrev, ix, yPrev, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
-                                        localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                        sharedX, sharedY, sharedZ
-                                        );
-
-                                }
-                                //occupiedMap[ix, iy] = true;
-                            }
-                        }
-
-
-                    }
-
-                    //Mark corners
-
-
-                    x = foundX - r;
-
-                }
-            }
-        }*/
-
-        CreateCombinedQuads(wfs,wts,r,b);
-
-        //stopwatch.Stop();
-        //Debug.Log("Atlas creation: " + stopwatch.ElapsedMilliseconds);
+       
+        CreateCombinedQuads(wfs,wts,0,0,wfs.xResolution, wfs.yResolution, r,b,false);
 
         for (int ix = 0; ix < wfs.xResolution; ix++) {
             wfs.cornerMap[ix, 0] = true;
@@ -1980,32 +1387,13 @@ public class ShaderTerrain : MonoBehaviour
             wfs.cornerMap[wfs.xResolution-1, iy] = true;
         }
 
-        //Debug.Log("Done!");
-
-        //stopwatch.Reset();
-        //stopwatch.Start();
-
         foreach (CombinedQuads cq in wfs.cquads) {
 
-            /*
-            AddTriangleNew(cq.startX, cq.startY, cq.endX, cq.endY, cq.startX, cq.endY, !flipTriangles, xResolution, yResolution, zResolution, localUp,
-                halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                sharedZ);
-
-            AddTriangleNew(cq.startX, cq.startY, cq.endX, cq.endY, cq.endX, cq.startY, flipTriangles, xResolution, yResolution, zResolution, localUp,
-                halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                sharedZ);
-                */
-
-            //bool aEnabled = true; //Top left
-            bool bEnabled = true; //Top right
-            bool cEnabled = true; //Bottom right
-            //bool dEnabled = true; //Bottom left
-
+            bool bEnabled = true;
+            bool cEnabled = true; 
             int apX = cq.startX + 1;
             int apY = cq.startY;
 
-            //Find the least top right point
             for (; apX <= cq.endX; apX++) {
                 if (wfs.cornerMap[apX, apY]) {
                     break;
@@ -2013,18 +1401,12 @@ public class ShaderTerrain : MonoBehaviour
             }
             if (apX == cq.endX) { bEnabled = false; }
 
-            // Link top to left side
             int lastY = cq.startY;
 
             for (int toY = cq.startY + 1; toY <= cq.endY; toY++) {
                 if (wfs.cornerMap[cq.startX, toY])
                 {
                     AddTriangle(wfs, wts, cq.startX, lastY, apX, apY, cq.startX, toY, !flipTriangles);
-                    /*AddTriangle(cq.startX, lastY, apX, apY, cq.startX, toY, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution, localUp,
-                        halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                        sharedZ);
-                        */
-
                     lastY = toY;
                 }
             }
@@ -2036,7 +1418,6 @@ public class ShaderTerrain : MonoBehaviour
             //Top right
             if (bEnabled)
             {
-
                 //Find bot right point
                 for (; bpY <= cq.endY; bpY++)
                 {
@@ -2052,11 +1433,6 @@ public class ShaderTerrain : MonoBehaviour
                     if (wfs.cornerMap[toX, cq.startY])
                     {
                         AddTriangle(wfs, wts, lastX, cq.startY, bpX, bpY, toX, cq.startY, !flipTriangles);
-
-                        //AddTriangle(lastX, cq.startY, bpX, bpY, toX, cq.startY, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution, localUp,
-                        //    halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                        //    sharedZ);
-
                         lastX = toX;
                     }
                 }
@@ -2086,20 +1462,10 @@ public class ShaderTerrain : MonoBehaviour
                     if (wfs.cornerMap[cq.endX, toY])
                     {
                         AddTriangle(wfs, wts, cq.endX, lastY, cpX, cpY, cq.endX, toY, !flipTriangles);
-
-                        //AddTriangle(cq.endX, lastY, cpX, cpY, cq.endX, toY, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution, localUp,
-                        ///    halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                        //    sharedZ);
-
                         lastY = toY;
                     }
                 }
 
-            }else{
-
-                //bpX = apX;
-                //bpY = apY;
-                //cpX = cq.endX;
             }
 
             lastX = cpX;
@@ -2109,10 +1475,6 @@ public class ShaderTerrain : MonoBehaviour
                 if (wfs.cornerMap[toX, cq.endY])
                 {
                     AddTriangle(wfs, wts, toX, cq.endY, apX, apY, lastX, cq.endY, !flipTriangles);
-                    //AddTriangle(toX, cq.endY, apX, apY, lastX, cq.endY, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution, localUp,
-                    //    halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                    //    sharedZ);
-
                     lastX = toX;
                 }
             }
@@ -2121,15 +1483,9 @@ public class ShaderTerrain : MonoBehaviour
             if ((apX != bpX || apY != bpY) && (cpX != bpX || cpY != bpY) && (cpX != apX || cpY != apY)) {
 
                 AddTriangle(wfs, wts, apX, apY, bpX, bpY, cpX, cpY, !flipTriangles);
-                //AddTriangle(apX, apY, bpX, bpY, cpX, cpY, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution, localUp,
-                //    halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir, sharedX, sharedY,
-                //    sharedZ);
-
             }
             
         }
-        //stopwatch.Stop();
-        //Debug.Log("Added triangles: " + stopwatch.ElapsedMilliseconds);
 
         HashSet<int> normalized = new HashSet<int>();
         foreach (AddedTriangle tri in wfs.addedTriangles)
@@ -2143,62 +1499,34 @@ public class ShaderTerrain : MonoBehaviour
     private void CreateCombinedQuads(
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
-
-        /*int xResolution, 
-        int yResolution, 
-        int zResolution, 
-        int maxResolution,
+        int xStart,
+        int yStart,
+        int xEnd,
+        int yEnd,
         int r, 
         int b,
-        int dir,
-
-        int[,] sharedX,
-        int[,] sharedY,
-        int[,] sharedZ,
-
-        int[,] vertexPositions,
-
-        ShapePoint[,] atlas,
-        List<CombinedQuads> cquads,
-        Dictionary<Vector3, int[,]> vertexFaces,
-        bool[,] occupiedMap,
-        bool[,] cornerMap ,
-        bool[,] ignoreMap ,
-
-        Vector3[,] drawnTowards,
-        float[,] drawnForce ,
-
-        //ShapePoint[,] atlas,
-        MeshArrays ma,
-        ShaderTerrainShape shape,
-
-        Vector3 localUp,
-        Vector3 halfMod,
-        Vector3 halfModExtent,
-        Vector3 axisA,
-        Vector3 axisB,
-        Vector3 halfSize,
-        Vector3 halfSizeExtent
-        */
-        int r, int b
+        bool inner
         ){
-        for (int y = 0; y < wfs.yResolution - b; y += r)
+
+        int countIter = 0;
+
+        for (int y = yStart; y < (inner ? yEnd : yEnd - b); y += r)  //y < wfs.yResolution-b; y += r)  
         {
-            for (int x = 0; x < wfs.xResolution - b; x += r)
+            for (int x = xStart; x < (inner ? xEnd : xEnd - b); x += r) //x < wfs.xResolution-b; x += r)
             {
-                Vector2 percent = new Vector2(x / (float)(wfs.xResolution - 1f), (float)y / (float)(wfs.yResolution - 1f));
+                //Vector2 percent = new Vector2(x / (float)(wfs.xResolution - 1f), (float)y / (float)(wfs.yResolution - 1f));
 
                 ShapePoint selfpos = GetAtlasPoint(wfs, wts, x, y);
-                    
-                    //atlas, drawnTowards, drawnForce, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide,
-                    //currentPos, projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
-                int nextX = x + r >= wfs.xResolution ? wfs.xResolution - 1 : x + r;
-                int nextY = y + r >= wfs.yResolution ? wfs.yResolution - 1 : y + r;
+                //atlas, drawnTowards, drawnForce, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide,
+                //currentPos, projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
 
-                int res = CheckMap(wfs, wts, selfpos, b, r, x, y, nextX, nextY, errorTolerance);
-                        //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                          //  projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+                int nextX = inner ? x+r : (x + r >= xEnd ? xEnd - 1 : x + r); //xEnd ? xEnd - 1 : x + r; wfs.xResolution ? wfs.xResolution - 1 : x + r;
+                int nextY = inner ? y+r : (y + r >= yEnd ? yEnd - 1 : y + r); //yEnd ? yEnd - 1 : y + r;  wfs.yResolution ? wfs.yResolution - 1 : y + r;
+
+                int res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+                //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                //  projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
                 if (res != -1)
                 {
@@ -2227,9 +1555,9 @@ public class ShaderTerrain : MonoBehaviour
                             nextY += r;
                             first = false;
                             //x,y,nextX, nextY
-                            res = CheckMap(wfs, wts, selfpos, b, r, x, y, nextX, nextY, errorTolerance);
-                                //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
-                                //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
+                            res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+                            //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                            //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
                             if (res == -1)
                             {
@@ -2249,8 +1577,8 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextX += r;
 
-                                res = CheckMap(wfs, wts, selfpos, b, r, x, y, nextX, foundY, errorTolerance);
-                                    //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errorTolerance);
+                                //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
                                 xBlocked = res == -1;
@@ -2265,8 +1593,8 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextY += r;
 
-                                res = CheckMap(wfs, wts, selfpos, b, r, x, y, nextX, nextY, errorTolerance);
-                                    //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errorTolerance);
+                                //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
                                 yBlocked = res == -1;
@@ -2281,15 +1609,9 @@ public class ShaderTerrain : MonoBehaviour
 
                     //int pos = cquads.Count;
 
-                    for (int iy = y; iy <= foundY - 1; iy++)
-                    {
-                        for (int ix = x; ix <= foundX - 1; ix++)
-                        {
-                            wfs.occupiedMap[ix, iy] = true;
-                        }
-                    }
 
-                    if (foundRes == r)
+
+                    if (inner || foundRes == r)// || r == 1)
                     {
                         wfs.cquads.Add(new CombinedQuads(x, y, foundX, foundY));
 
@@ -2298,10 +1620,17 @@ public class ShaderTerrain : MonoBehaviour
                         wfs.cornerMap[x, foundY] = true;
                         wfs.cornerMap[foundX, foundY] = true;
 
-                    }
-                    else
-                    {
+                        for (int iy = y; iy <= foundY - 1; iy++)
+                        {
+                            for (int ix = x; ix <= foundX - 1; ix++)
+                            {
+                                wfs.occupiedMap[ix, iy] = true;
+                            }
+                        }
 
+                    }
+                    /*else
+                    { //if (r == 1)
                         for (int iy = y; iy <= foundY; iy += foundRes)
                         {
                             for (int ix = x; ix <= foundX; ix += foundRes)
@@ -2317,46 +1646,25 @@ public class ShaderTerrain : MonoBehaviour
                                     AddTriangle(wfs, wts, ix, iy, xPrev, yPrev, xPrev, iy, flipTriangles);
                                     AddTriangle(wfs, wts, ix, iy, xPrev, yPrev, ix, yPrev, !flipTriangles);
 
-
-                                    //
-                                    //AddTriangle(
-                                    //    ix, iy, xPrev, yPrev, xPrev, iy, flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
-                                    //   localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                    //   sharedX, sharedY, sharedZ
-                                    //    );
-
-                                    //AddTriangle(
-                                    //     ix, iy, xPrev, yPrev, ix, yPrev, !flipTriangles, atlas, drawnTowards, drawnForce, xResolution, yResolution, zResolution,
-                                    //    localUp, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, vertexPositions, vertexFaces, ma, dir,
-                                    //     sharedX, sharedY, sharedZ
-                                    //    );
-
                                 }
-                                //occupiedMap[ix, iy] = true;
-                            }
-                        }
-
-
-                    }
-                    /*for (int iy = y; iy <= foundY; iy++)
-                    {
-                        for (int ix = x; ix <= foundX; ix++)
-                        {
-                           //Mark borders
-                            if ((iy == y && y == 0) || (iy == foundY && foundY == yResolution - 1)) {
-                                cornerMap[ix, iy] = true;
-                            } else if ((ix == x && x == 0) || (ix == foundX && foundX == yResolution - 1))
-                            {
-                                cornerMap[ix, iy] = true;
                             }
                         }
                     }*/
+                    else
+                    {
+                        if (!inner) {
+                            CreateCombinedQuads(wfs, wts, x, y, foundX + 1, foundY + 1, foundRes, 1,true);
+                        }
+                        countIter++;
+                        if (countIter > 70000) {
+                            Debug.Log("Emergency exit!");
+                            return;
+                        }
+                    }
 
-                    //Mark corners
-
-
-                    x = foundX - r;
-
+                    if (r > 1) {
+                        x = foundX - r;
+                    }
                 }
             }
         }
@@ -2365,23 +1673,138 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
+
+    /*private void CreateCombinedQuadsInner(
+       WorkingFaceSet wfs,
+       WorkingTerrainSet wts,
+       int xStart,
+       int yStart,
+       int xEnd,
+       int yEnd,
+       int r,
+       int b
+
+       )
+    {
+        for (int y = yStart; y < yEnd; y += r){
+            for (int x = xStart; x < xEnd; x += r){
+
+                ShapePoint selfpos = GetAtlasPoint(wfs, wts, x, y);
+
+                int nextX = x + r;
+                int nextY = y + r; 
+
+                int res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+
+                if (res != -1)
+                {
+                    bool xBlocked = false;
+                    bool yBlocked = false;
+
+                    int foundX = nextX;
+                    int foundY = nextY;
+                    int foundRes = res;
+
+                    bool first = true;
+                    int count = 0;
+                    while (!(xBlocked && yBlocked))
+                    {
+                        count++;
+                        if (count > 100)
+                        {
+                            Debug.Log("Emergency eject: nextX:" + nextX + " xres:" + wfs.xResolution + " nexty: " + nextY
+                                + " yres: " + wfs.yResolution + " xBlocked: " + xBlocked + " yblocked: " + yBlocked);
+                            break;
+                        }
+
+                        if (first)
+                        {
+                            nextX += r;
+                            nextY += r;
+                            first = false;
+                            res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+
+                            if (res == -1)
+                            {
+                                xBlocked = true;
+                                yBlocked = true;
+                            }
+                            else
+                            {
+                                foundX = nextX;
+                                foundY = nextY;
+                            }
+                        }
+                        else
+                        {
+
+                            if (!xBlocked)
+                            {
+                                nextX += r;
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errorTolerance);
+                                xBlocked = res == -1;
+
+                                if (!xBlocked)
+                                {
+                                    foundX = nextX;
+                                }
+                            }
+
+                            if (!yBlocked)
+                            {
+                                nextY += r;
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errorTolerance);
+                                yBlocked = res == -1;
+
+                                if (!yBlocked)
+                                {
+                                    foundY = nextY;
+                                }
+                            }
+                        }
+                    }
+
+                    for (int iy = y; iy <= foundY - 1; iy++)
+                    {
+                        for (int ix = x; ix <= foundX - 1; ix++)
+                        {
+                            wfs.occupiedMap[ix, iy] = true;
+                        }
+                    }
+
+                    wfs.cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+
+                    wfs.cornerMap[x, y] = true;
+                    wfs.cornerMap[foundX, y] = true;
+                    wfs.cornerMap[x, foundY] = true;
+                    wfs.cornerMap[foundX, foundY] = true;
+
+
+                    //x = foundX - r;
+
+                }
+            }
+        }
+
+
+    }*/
+
+
     private static void LinkProjectionAxis(
-        /*List<AddedTriangle> addedTriangles,
-        MeshArrays ma,
-        Vector3[,] drawnTo,
-        float[,] force,
-        */
+
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
 
         int radiusSpread,
-        //int[,] vertLinks,
-        bool isX, int yFirst, int yLast, int xFirst, int xLast, 
+        bool isX, 
+        int yFirst, 
+        int yLast,
+        int xFirst, 
+        int xLast, 
         int r,
        
-        float axisLength, float axisChildLength, 
-        
-        //int xResolution, int yResolution, 
+        float axisLength, 
+        float axisChildLength, 
         bool reverse,
         int[,] relative, 
         int firstSlot, 
@@ -2552,7 +1975,21 @@ public class ShaderTerrain : MonoBehaviour
                             float f = 1f - (float)(s) / (float)spread;
                             f = Mathf.Clamp(f * f * f * f * f,0,0.9f);
 
-                            wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
+                           // try
+                            //{
+                                wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
+                           //}
+                           /*
+                            catch (Exception e) {
+
+                                Debug.Log(" thisXPos " + thisXPos + " yLast" + (yLast + s) + "wfs.yResolution - 1  " + (wfs.yResolution - 1) + " firstSlot " + firstSlot + 
+                                    " thisChildPos" + thisChildPos + " " );
+
+                                Debug.Log("Relative: " + relative[firstSlot, thisChildPos] );
+                                Debug.Log(" vertices "+ wts.ma.vertices[relative[firstSlot, thisChildPos] - 1]);
+
+                            }*/
+                            
                             wfs.drawnForce[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = f;
 
                             wfs.drawnTowards[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1];

@@ -76,7 +76,7 @@ public struct NoiseSettings {
     public bool texFour;
     public bool useColor;
 
-    [Range(0, 3)]
+    [Range(0, 10)]
     public float colorMultiplier;
     [Range(0, 1)]
     public float colorCutOff;
