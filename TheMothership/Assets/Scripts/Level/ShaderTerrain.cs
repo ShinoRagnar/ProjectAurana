@@ -344,6 +344,11 @@ public class ShaderTerrain : MonoBehaviour
     [Range(0, 1)]
     public float errorTolerance = 0.1f;
 
+    [Header("Details")]
+    public bool extraDetails;
+    [Range(0.01f, 0.5f)]
+    public float extraDetailsCutoff = 0.5f;
+
     [Header("Child settings")]
     public Vector3 projectionDirection = Vector3.zero;
     //public bool roundInProjectionDirection = false;
@@ -943,17 +948,8 @@ public class ShaderTerrain : MonoBehaviour
     )
     {
         int onePos = AddVertex(wfs, wts, xOne, yOne);
-        //AddVertex(xOne, yOne,  xResolution, yResolution, zResolution, drawnToward, force, localUp, halfMod, halfModExtent,
-        //axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, atlas,vertexFaces, dir,
-        //sharedX, sharedY, sharedZ);
         int twoPos = AddVertex(wfs, wts, xTwo, yTwo);
-            //AddVertex(xTwo, yTwo, xResolution, yResolution, zResolution, drawnToward, force, localUp, halfMod, halfModExtent,
-            //xisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, atlas, vertexFaces, dir,
-            //sharedX, sharedY, sharedZ);
         int threePos = AddVertex(wfs, wts, xThree, yThree);
-        //AddVertex(xThree, yThree, xResolution, yResolution, zResolution, drawnToward, force, localUp, halfMod, halfModExtent,
-        //axisA, axisB, halfSize, halfSizeExtent, ma, vertexPositions, atlas, vertexFaces, dir,
-        //sharedX, sharedY, sharedZ);
 
         wts.ma.triangles.Add(onePos);
 
@@ -969,6 +965,20 @@ public class ShaderTerrain : MonoBehaviour
         }
     }
 
+    private static int ShapePointToVertex(WorkingTerrainSet wts, ShapePoint center, Vector3 relativePos, Vector3 percent) {
+
+        int ret = wts.ma.vertices.Count;
+
+        Vector3 vert = (Vector3)center.point + relativePos;
+        wts.ma.uvs.Add(percent);
+        wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
+        wts.ma.vertexColors.Add(center.color);
+        wts.ma.vertices.Add(vert);
+        wts.ma.normals.Add(center.normal);
+
+        return ret;
+
+    }
 
     public int AddVertex(
         WorkingFaceSet wfs,
@@ -985,17 +995,21 @@ public class ShaderTerrain : MonoBehaviour
             Vector2 percent = new Vector2(x / (float)(wfs.xResolution - 1f), (float)y / (float)(wfs.yResolution - 1f));
 
             ShapePoint center = GetAtlasPoint(wfs, wts, x, y);
-                //atlas, drawnToward, force, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide, currentPos,
-                //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
-
-            Vector3 vert = (Vector3)center.point + relativePos; 
-
+            //atlas, drawnToward, force, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide, currentPos,
+            //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
             wfs.vertexPositions[x, y] = iplus;
+
+
+            Vector3 vert = (Vector3)center.point + relativePos;
+
+            ShapePointToVertex(wts, center, relativePos, percent);
+            /*
             wts.ma.uvs.Add(percent);
             wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
             wts.ma.vertexColors.Add(center.color);
             wts.ma.vertices.Add(vert);
             wts.ma.normals.Add(center.normal);
+            */
         }
         else
         {
@@ -1212,10 +1226,12 @@ public class ShaderTerrain : MonoBehaviour
                 }
             }
 
-            int returnRes = Mathf.Min(r, (int)(wts.maxResolution / Math.Max(self.resolution,1)));
+            int returnRes = r;
 
             if (x + r >= nextX && y + r >= nextY)
             {
+                returnRes = Mathf.Min(r, (int)(wts.maxResolution / Math.Max(self.resolution, 1)));
+
                 ShapePoint br = GetAtlasPoint(wfs, wts, nextX, y);
                 returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(br.resolution, 1)));
 
@@ -1228,7 +1244,8 @@ public class ShaderTerrain : MonoBehaviour
                 return returnRes;
             }
 
-            ShapePoint botLeftCorner = self;
+            ShapePoint botLeft = self;
+            if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(botLeft.resolution, 1)))) { return -1; }
             ShapePoint botRight = GetAtlasPoint(wfs, wts, nextX, y);
             if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(botRight.resolution, 1)))) { return -1; }
             ShapePoint topRight = GetAtlasPoint(wfs, wts, nextX, nextY);
@@ -1237,7 +1254,7 @@ public class ShaderTerrain : MonoBehaviour
             if (returnRes > Mathf.Min(r, (int)(wts.maxResolution / Math.Max(topLeft.resolution, 1)))) { return -1; }
 
             float area = Mathf.Sqrt(
-                         Vector3.Cross(botLeftCorner.point - topLeft.point, botLeftCorner.point - botRight.point).magnitude * 0.5f
+                         Vector3.Cross(botLeft.point - topLeft.point, botLeft.point - botRight.point).magnitude * 0.5f
                          +
                          Vector3.Cross(topRight.point - botRight.point, topRight.point - topLeft.point).magnitude * 0.5f
                         );
@@ -1278,8 +1295,8 @@ public class ShaderTerrain : MonoBehaviour
                             //Bot
                             else
                             {
-                                Vector3 selfpos = botLeftCorner.point
-                                        + yProg * (topLeft.point - botLeftCorner.point)
+                                Vector3 selfpos = botLeft.point
+                                        + yProg * (topLeft.point - botLeft.point)
                                         + xProg * (topRight.point - topLeft.point);
 
                                 errSum += Vector3.Distance(selfpos, comparePos.point) / area;
@@ -1308,6 +1325,13 @@ public class ShaderTerrain : MonoBehaviour
         ShapePoint searchPos = wfs.atlas[x, y] ?? shape.Calculate(this, wfs, wts, percent, currentPos, wfs.drawnTowards[x, y], wfs.drawnForce[x, y]);
         wfs.atlas[x, y] = searchPos;
         return searchPos;
+    }
+
+    public ShapePoint GetShapePointAtPercent(WorkingFaceSet wfs,
+        WorkingTerrainSet wts, 
+        Vector2 percent, int x, int y) {
+
+        return shape.Calculate(this, wfs, wts, percent, currentPos, wfs.drawnTowards[x, y], wfs.drawnForce[x, y]);
     }
 
 
@@ -1508,7 +1532,7 @@ public class ShaderTerrain : MonoBehaviour
         bool inner
         ){
 
-        int countIter = 0;
+        //int countIter = 0;
 
         for (int y = yStart; y < (inner ? yEnd : yEnd - b); y += r)  //y < wfs.yResolution-b; y += r)  
         {
@@ -1613,7 +1637,112 @@ public class ShaderTerrain : MonoBehaviour
 
                     if (inner || foundRes == r)// || r == 1)
                     {
-                        wfs.cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+                        bool detailsAdded = false;
+
+                        if (inner && extraDetails && r == 1 && foundX == x+1 && foundY == y+1) {
+
+                            ShapePoint botLeft = GetAtlasPoint(wfs, wts, x, y);
+                            ShapePoint botRight  = GetAtlasPoint(wfs, wts, foundX, y);
+                            ShapePoint topLeft = GetAtlasPoint(wfs, wts, x, foundY);
+                            ShapePoint topRight = GetAtlasPoint(wfs, wts, foundX, foundY);
+
+                            Plane notTopLeft = new Plane(botLeft.point, botRight.point, topRight.point);
+                            Plane notTopRight = new Plane(botLeft.point, botRight.point, topLeft.point);
+
+                            Plane notBotRight = new Plane(botLeft.point, topLeft.point, topRight.point);
+                            Plane notBotLeft = new Plane(botRight.point, topLeft.point, topRight.point);
+
+
+                            float area = Mathf.Sqrt(
+                                Vector3.Cross(botLeft.point - topLeft.point, botLeft.point - botRight.point).magnitude * 0.5f
+                                +
+                                Vector3.Cross(topRight.point - botRight.point, topRight.point - topLeft.point).magnitude * 0.5f
+                                );
+
+
+
+                            if (extraDetailsCutoff < (
+                                notTopLeft.GetDistanceToPoint(topLeft.point) 
+                                + notBotRight.GetDistanceToPoint(botRight.point)
+                                + notTopRight.GetDistanceToPoint(topRight.point)
+                                + notBotLeft.GetDistanceToPoint(botLeft.point)
+                                ) / area) {
+
+                                Vector3 percent = new Vector2(
+                                    ((float)(x + foundX) / 2f) / (float)(wfs.xResolution - 1f),
+                                    ((float)(y + foundY) / 2f) / (float)(wfs.yResolution - 1f));
+
+                                ShapePoint center = GetShapePointAtPercent(wfs, wts, percent, x, y);
+
+                                int botl = AddVertex(wfs, wts, x, y);
+                                int botr = AddVertex(wfs, wts, foundX, y);
+                                int topl = AddVertex(wfs, wts, x, foundY);
+                                int topr = AddVertex(wfs, wts, foundX, foundY);
+
+                                int cntr = ShapePointToVertex(wts, center, relativePos, percent);
+
+                                wts.ma.triangles.Add(botl);
+                                if (!flipTriangles)
+                                {
+                                    wts.ma.triangles.Add(botr);
+                                    wts.ma.triangles.Add(cntr);
+                                }
+                                else {
+                                    wts.ma.triangles.Add(cntr);
+                                    wts.ma.triangles.Add(botr);
+                                }
+
+
+                                wts.ma.triangles.Add(botr);
+                                if (!flipTriangles)
+                                {
+                                    wts.ma.triangles.Add(topr);
+                                    wts.ma.triangles.Add(cntr);
+                                }
+                                else
+                                {
+                                    wts.ma.triangles.Add(cntr);
+                                    wts.ma.triangles.Add(topr);
+                                }
+
+
+                                wts.ma.triangles.Add(topr);
+                                if (!flipTriangles)
+                                {
+                                    wts.ma.triangles.Add(topl);
+                                    wts.ma.triangles.Add(cntr);
+                                }
+                                else
+                                {
+                                    wts.ma.triangles.Add(cntr);
+                                    wts.ma.triangles.Add(topl);
+                                }
+
+
+                                wts.ma.triangles.Add(topl);
+                                if (!flipTriangles)
+                                {
+                                    wts.ma.triangles.Add(botl);
+                                    wts.ma.triangles.Add(cntr);
+                                }
+                                else
+                                {
+                                    wts.ma.triangles.Add(cntr);
+                                    wts.ma.triangles.Add(botl);
+                                }
+
+
+                                detailsAdded = true;
+                            }
+
+
+                        }
+
+
+                        if (!detailsAdded) {
+                            wfs.cquads.Add(new CombinedQuads(x, y, foundX, foundY));
+                        }
+
 
                         wfs.cornerMap[x, y] = true;
                         wfs.cornerMap[foundX, y] = true;
@@ -1652,14 +1781,14 @@ public class ShaderTerrain : MonoBehaviour
                     }*/
                     else
                     {
-                        if (!inner) {
+                        //if (!inner) {
                             CreateCombinedQuads(wfs, wts, x, y, foundX + 1, foundY + 1, foundRes, 1,true);
-                        }
-                        countIter++;
-                        if (countIter > 70000) {
-                            Debug.Log("Emergency exit!");
-                            return;
-                        }
+                        //}
+                       // countIter++;
+                       // if (countIter > 70000) {
+                        //    Debug.Log("Emergency exit!");
+                       //     return;
+                        //}
                     }
 
                     if (r > 1) {
