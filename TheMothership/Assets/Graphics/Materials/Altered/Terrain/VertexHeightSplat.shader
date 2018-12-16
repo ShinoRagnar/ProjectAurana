@@ -181,8 +181,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#ifdef _UVFREE_FLIP_BACKWARD_TEXTURES
 			//	fixed3 normal;
 			//#endif
+           // float2 texcoord : TEXCOORD0;
             float2 texcoord : TEXCOORD0;
-            float2 texcoord1 : TEXCOORD1;
 
 			float3 worldPos;
 			fixed3 viewDirForParallax;
@@ -251,8 +251,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 				  +	(-(worldNormal.z) * (o.powerNormal.z))
 				;
 				
-				o.texcoord1.x = v.texcoord1.x;
-				o.texcoord1.y = v.texcoord1.y;
+				o.texcoord.x = v.texcoord.x;
+				o.texcoord.y = v.texcoord.y;
 
 			//#endif
 
@@ -442,8 +442,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 				
 
 			//#endif*/
-			fixed firstMix = (parallax*IN.texcoord1.x*_ParallaxTextureHeight);
-			fixed secondMix = (parallax1*IN.texcoord1.y*_ParallaxTextureHeight1);
+			fixed firstMix = (parallax*IN.texcoord.x*_ParallaxTextureHeight);
+			fixed secondMix = (parallax1*IN.texcoord.y*_ParallaxTextureHeight1);
 			fixed totalMix = firstMix+secondMix+IN.color.a;
 			
 			fixed firstPercent = firstMix/totalMix;

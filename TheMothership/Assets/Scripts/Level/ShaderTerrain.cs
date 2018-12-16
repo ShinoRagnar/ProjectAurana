@@ -147,7 +147,7 @@ public struct MeshArrays
 
     public List<Vector3> vertices;
     public List<Vector2> uvs;
-    public List<Vector2> uv2;
+    //public List<Vector2> uv2;
     public List<Vector3> normals;
     public List<int> triangles;
     public List<Color32> vertexColors;
@@ -163,7 +163,7 @@ public struct MeshArrays
 
         this.vertices = new List<Vector3>();
         this.uvs = new List<Vector2>();
-        this.uv2 = new List<Vector2>();
+      //  this.uv2 = new List<Vector2>();
         this.normals = new List<Vector3>();
         this.triangles = new List<int>();
         //this.splat = colors;
@@ -356,6 +356,8 @@ public class ShaderTerrain : MonoBehaviour
     public bool doubleProject = false;
     [Range(0, 20)]
     public int radiusHeightSpread = 0;
+    [Range(0, 10)]
+    public int slope = 0;
 
     //[Header("Roundness")]
     //public float roundness = 1f;
@@ -483,13 +485,15 @@ public class ShaderTerrain : MonoBehaviour
 
         m.Clear();
         m.vertices = ms.vertices.ToArray();
+        //m.uv = ms.uvs.ToArray();
         m.uv = ms.uvs.ToArray();
-        m.uv2 = ms.uv2.ToArray();
         m.normals = ms.normals.ToArray();
         m.colors32 = ms.vertexColors.ToArray();
         m.triangles = ms.triangles.ToArray();
 
         m.RecalculateNormals();
+        //UnityEditor.Unwrapping.GenerateSecondaryUVSet(m);
+
 
         Material newMat = new Material(material);
         SetTexture(0, splatTextures[0], newMat);
@@ -497,6 +501,7 @@ public class ShaderTerrain : MonoBehaviour
         //SetTexture(1, splatTextures[1], newMat);
         //SetTexture(2, splatTextures[2], newMat);
         //SetTexture(3, splatTextures[3], newMat);
+
 
 
         newMat.SetFloat("_ParallaxTextureHeight", textureHeightTexOne);
@@ -970,8 +975,8 @@ public class ShaderTerrain : MonoBehaviour
         int ret = wts.ma.vertices.Count;
 
         Vector3 vert = (Vector3)center.point + relativePos;
-        wts.ma.uvs.Add(percent);
-        wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
+        wts.ma.uvs.Add(new Vector2(center.texOne, center.texTwo));
+        //wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
         wts.ma.vertexColors.Add(center.color);
         wts.ma.vertices.Add(vert);
         wts.ma.normals.Add(center.normal);
@@ -1392,10 +1397,10 @@ public class ShaderTerrain : MonoBehaviour
                 }
             }
 
-            LinkProjectionAxis(wfs, wts, wfs.childlist[i].radiusHeightSpread, true, yFirst - r, yLast, xFirst - r, xLast, 1, xLen, xChildLength,
+            LinkProjectionAxis(wfs, wts,relativePos, wfs.childlist[i].slope, wfs.childlist[i].radiusHeightSpread, true, yFirst - r, yLast, xFirst - r, xLast, 1, xLen, xChildLength,
                 wfs.projections[i].xReverse, wfs.projections[i].relativeX, wfs.projections[i].xFirst, wfs.projections[i].xSecond, wfs.projections[i].flipXTriangles);
 
-            LinkProjectionAxis(wfs, wts, wfs.childlist[i].radiusHeightSpread, false, yFirst - r, yLast, xFirst - r, xLast, 1, yLen, yChildLength,
+            LinkProjectionAxis(wfs, wts,relativePos, wfs.childlist[i].slope, wfs.childlist[i].radiusHeightSpread, false, yFirst - r, yLast, xFirst - r, xLast, 1, yLen, yChildLength,
               wfs.projections[i].yReverse, wfs.projections[i].relativeY, wfs.projections[i].yFirst, wfs.projections[i].ySecond, wfs.projections[i].flipYTriangles);
         }
        
@@ -1639,6 +1644,7 @@ public class ShaderTerrain : MonoBehaviour
                     {
                         bool detailsAdded = false;
 
+                        //Adds extra details by doubling the triangles for certain quads
                         if (inner && extraDetails && r == 1 && foundX == x+1 && foundY == y+1) {
 
                             ShapePoint botLeft = GetAtlasPoint(wfs, wts, x, y);
@@ -1802,129 +1808,15 @@ public class ShaderTerrain : MonoBehaviour
     }
 
 
-
-    /*private void CreateCombinedQuadsInner(
-       WorkingFaceSet wfs,
-       WorkingTerrainSet wts,
-       int xStart,
-       int yStart,
-       int xEnd,
-       int yEnd,
-       int r,
-       int b
-
-       )
-    {
-        for (int y = yStart; y < yEnd; y += r){
-            for (int x = xStart; x < xEnd; x += r){
-
-                ShapePoint selfpos = GetAtlasPoint(wfs, wts, x, y);
-
-                int nextX = x + r;
-                int nextY = y + r; 
-
-                int res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
-
-                if (res != -1)
-                {
-                    bool xBlocked = false;
-                    bool yBlocked = false;
-
-                    int foundX = nextX;
-                    int foundY = nextY;
-                    int foundRes = res;
-
-                    bool first = true;
-                    int count = 0;
-                    while (!(xBlocked && yBlocked))
-                    {
-                        count++;
-                        if (count > 100)
-                        {
-                            Debug.Log("Emergency eject: nextX:" + nextX + " xres:" + wfs.xResolution + " nexty: " + nextY
-                                + " yres: " + wfs.yResolution + " xBlocked: " + xBlocked + " yblocked: " + yBlocked);
-                            break;
-                        }
-
-                        if (first)
-                        {
-                            nextX += r;
-                            nextY += r;
-                            first = false;
-                            res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
-
-                            if (res == -1)
-                            {
-                                xBlocked = true;
-                                yBlocked = true;
-                            }
-                            else
-                            {
-                                foundX = nextX;
-                                foundY = nextY;
-                            }
-                        }
-                        else
-                        {
-
-                            if (!xBlocked)
-                            {
-                                nextX += r;
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errorTolerance);
-                                xBlocked = res == -1;
-
-                                if (!xBlocked)
-                                {
-                                    foundX = nextX;
-                                }
-                            }
-
-                            if (!yBlocked)
-                            {
-                                nextY += r;
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errorTolerance);
-                                yBlocked = res == -1;
-
-                                if (!yBlocked)
-                                {
-                                    foundY = nextY;
-                                }
-                            }
-                        }
-                    }
-
-                    for (int iy = y; iy <= foundY - 1; iy++)
-                    {
-                        for (int ix = x; ix <= foundX - 1; ix++)
-                        {
-                            wfs.occupiedMap[ix, iy] = true;
-                        }
-                    }
-
-                    wfs.cquads.Add(new CombinedQuads(x, y, foundX, foundY));
-
-                    wfs.cornerMap[x, y] = true;
-                    wfs.cornerMap[foundX, y] = true;
-                    wfs.cornerMap[x, foundY] = true;
-                    wfs.cornerMap[foundX, foundY] = true;
-
-
-                    //x = foundX - r;
-
-                }
-            }
-        }
-
-
-    }*/
-
-
     private static void LinkProjectionAxis(
 
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
 
+        Vector3 relativePos,
+        int slope,
         int radiusSpread,
+
         bool isX, 
         int yFirst, 
         int yLast,
@@ -1970,67 +1862,10 @@ public class ShaderTerrain : MonoBehaviour
                 int nextPos = (int)Mathf.Clamp((i + 1f) * r, 0, axisLength);
 
                 //Pull terrain towards child
-                if ((first || val != lastval) && spread > 0) {
-                    if (isX)
-                    {
-                        int thisXPos = xFirst/*(xFirst - r)*/ + thisPos;
-                        for (int s = 0; s <= spread; s++)
-                        {
-                            float f = 1f - (float)(s) / (float)spread;
-                            f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
-
-                            wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
-                            wfs.drawnForce[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = f;
-
-                            wfs.drawnTowards[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            wfs.drawnForce[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/- s, 0)] = f;
-                        }
-                        //Cover corners
-                        if (first)
-                        {
-
-                            for (int xs = 0; xs <= spread; xs++)
-                            {
-                                for (int ys = 0; ys <= spread; ys++)
-                                {
-                                    float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
-                                    f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
-
-                                    int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
-                                    int yp = Mathf.Max(yFirst/*(yFirst - r)*/ - ys, 0);
-                                    int xpPlus = Mathf.Min(xLast + xs, wfs.xResolution - 1);
-                                    int ypPlus = Mathf.Min(yLast + ys, wfs.yResolution - 1);
-
-                                    wfs.drawnTowards[xp, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? (int)(axisChildLength) : 0)] - 1];
-                                    wfs.drawnForce[xp, yp] = f;
-
-                                    wfs.drawnTowards[xpPlus, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ? 0 : (int)(axisChildLength))] - 1];
-                                    wfs.drawnForce[xpPlus, ypPlus] = f;
-
-                                    wfs.drawnTowards[xp, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ? (int)(axisChildLength) : 0)] - 1];
-                                    wfs.drawnForce[xp, ypPlus] = f;
-
-                                    wfs.drawnTowards[xpPlus, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? 0 : (int)(axisChildLength))] - 1];
-                                    wfs.drawnForce[xpPlus, yp] = f;
-
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        int thisYPos = (yFirst - r) + thisPos;
-                        for (int s = 0; s <= spread; s++)
-                        {
-                            float f = 1f - (float)(s) / (float)spread;
-                            f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
-
-                            wfs.drawnTowards[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
-                            wfs.drawnForce[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = f;
-
-                            wfs.drawnTowards[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            wfs.drawnForce[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = f;
-                        }
-                    }
+                if ( spread > 0)
+                { //(first || val != lastval) &&
+                    SpreadHeight(wfs, wts, relativePos, slope,  xFirst, yFirst, xLast, yLast, thisPos, 
+                        spread, r, isX, relative, firstSlot, secondSlot, thisChildPos, (int)axisChildLength, first, reverse);
                 }
 
                 if (thisPos != nextPos) {
@@ -2096,79 +1931,8 @@ public class ShaderTerrain : MonoBehaviour
 
                 if ((first || val != lastval) && spread > 0)
                 {
-                    if (isX)
-                    {
-                        int thisXPos = (xFirst - r) + val;
-                        for (int s = 0; s <= spread; s++)
-                        {
-                            float f = 1f - (float)(s) / (float)spread;
-                            f = Mathf.Clamp(f * f * f * f * f,0,0.9f);
-
-                           // try
-                            //{
-                                wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
-                           //}
-                           /*
-                            catch (Exception e) {
-
-                                Debug.Log(" thisXPos " + thisXPos + " yLast" + (yLast + s) + "wfs.yResolution - 1  " + (wfs.yResolution - 1) + " firstSlot " + firstSlot + 
-                                    " thisChildPos" + thisChildPos + " " );
-
-                                Debug.Log("Relative: " + relative[firstSlot, thisChildPos] );
-                                Debug.Log(" vertices "+ wts.ma.vertices[relative[firstSlot, thisChildPos] - 1]);
-
-                            }*/
-                            
-                            wfs.drawnForce[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = f;
-
-                            wfs.drawnTowards[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            wfs.drawnForce[thisXPos, Mathf.Max(yFirst/*(xFirst - r)*/ - s, 0)] = f;
-                        }
-                        if (first)
-                        {
-
-                            for (int xs = 0; xs <= spread; xs++)
-                            {
-                                for (int ys = 0; ys <= spread; ys++)
-                                {
-                                    float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
-                                    f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
-
-                                    int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
-                                    int yp = Mathf.Max(yFirst/*(xFirst - r)*/ - ys, 0);
-                                    int xpPlus = Mathf.Min(xLast + xs, wfs.xResolution - 1);
-                                    int ypPlus = Mathf.Min(yLast + ys, wfs.yResolution - 1);
-
-                                    wfs.drawnTowards[xp, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? (int)(axisChildLength) : 0)] - 1];
-                                    wfs.drawnForce[xp, yp] = f;
-
-                                    wfs.drawnTowards[xpPlus, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ?  0 : (int)(axisChildLength))] - 1];
-                                    wfs.drawnForce[xpPlus, ypPlus] = f;
-
-                                    wfs.drawnTowards[xp, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ? (int)(axisChildLength) : 0)] - 1];
-                                    wfs.drawnForce[xp, ypPlus] = f;
-
-                                    wfs.drawnTowards[xpPlus, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? 0 : (int)(axisChildLength))] - 1];
-                                    wfs.drawnForce[xpPlus, yp] = f;
-
-                                }
-                            }
-                        }
-                    }
-                    else{
-                        int thisYPos = (yFirst - r) + val;
-                        for (int s = 0; s <= spread; s++)
-                        {
-                            float f = 1f - (float)(s) / (float)spread;
-                            f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
-
-                            wfs.drawnTowards[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1];
-                            wfs.drawnForce[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = f;
-
-                            wfs.drawnTowards[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1];
-                            wfs.drawnForce[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = f;
-                        }
-                    }
+                    SpreadHeight(wfs, wts, relativePos, slope, xFirst, yFirst, xLast, yLast, val,
+                        spread, r, isX, relative, firstSlot, secondSlot, thisChildPos, (int)axisChildLength, first, reverse);
                 }
 
                 if (nextChildPos != thisChildPos) {
@@ -2176,16 +1940,16 @@ public class ShaderTerrain : MonoBehaviour
                     wfs.addedTriangles.Add(new AddedTriangle(
                         relative[secondSlot, thisChildPos],
                         relative[secondSlot, nextChildPos],
-                        xFirst/*(xFirst - r)*/ + (isX ? val : 0),
-                        yFirst/*(yFirst - r)*/ + (isX ? 0 : val),
+                        xFirst + (isX ? val : 0),
+                        yFirst + (isX ? 0 : val),
                         flip
                         ));
 
                     wfs.addedTriangles.Add(new AddedTriangle(
                         relative[firstSlot, thisChildPos],
                         relative[firstSlot, nextChildPos],
-                        isX ? xFirst/*(xFirst - r)*/ + val : xLast,
-                        isX ? yLast : (yFirst/*(yFirst - r)*/ + val),
+                        isX ? xFirst + val : xLast,
+                        isX ? yLast : (yFirst+ val),
                         !flip
                         ));
                 }
@@ -2220,6 +1984,102 @@ public class ShaderTerrain : MonoBehaviour
             // Debug.Log("Added triangles needed: r: " + r + " xStart: " + xFirst + " xLast: " + xLast + " mod: " + ((xFirst - 1) % r));
 
         }
+
+    }
+
+    public static void SpreadHeight(
+        WorkingFaceSet wfs,
+        WorkingTerrainSet wts,
+        Vector3 relativePos,
+        int slope,
+        int xFirst,
+        int yFirst,
+        int xLast,
+        int yLast,
+        int thisPos,
+        int spread,
+        int r,
+        bool isX,
+        int[,] relative,
+        int firstSlot,
+        int secondSlot,
+        int thisChildPos,
+        int axisChildLength,
+        bool first,
+        bool reverse
+
+        ) {
+
+        if (isX)
+        {
+            int thisXPos = xFirst+ thisPos;
+            for (int s = 0; s <= spread; s++)
+            {
+                float f = 1f - (float)(s) / (float)spread;
+                for (int sl = 0; sl < slope; sl++) {
+                    f *= f;
+                }
+                f = Mathf.Clamp(f, 0, 0.9f);
+
+                wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] =
+                    wts.ma.vertices[relative[firstSlot, thisChildPos] - 1] - relativePos;
+                wfs.drawnForce[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = f;
+
+                wfs.drawnTowards[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1] - relativePos;
+                wfs.drawnForce[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/- s, 0)] = f;
+            }
+            //Cover corners
+            if (first)
+            {
+
+                for (int xs = 0; xs <= spread; xs++)
+                {
+                    for (int ys = 0; ys <= spread; ys++)
+                    {
+                        float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
+                        f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
+
+                        int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
+                        int yp = Mathf.Max(yFirst/*(yFirst - r)*/ - ys, 0);
+                        int xpPlus = Mathf.Min(xLast + xs, wfs.xResolution - 1);
+                        int ypPlus = Mathf.Min(yLast + ys, wfs.yResolution - 1);
+
+                        wfs.drawnTowards[xp, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? (int)(axisChildLength) : 0)] - 1] - relativePos;
+                        wfs.drawnForce[xp, yp] = f;
+
+                        wfs.drawnTowards[xpPlus, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ? 0 : (int)(axisChildLength))] - 1] - relativePos;
+                        wfs.drawnForce[xpPlus, ypPlus] = f;
+
+                        wfs.drawnTowards[xp, ypPlus] = wts.ma.vertices[relative[firstSlot, (reverse ? (int)(axisChildLength) : 0)] - 1] - relativePos;
+                        wfs.drawnForce[xp, ypPlus] = f;
+
+                        wfs.drawnTowards[xpPlus, yp] = wts.ma.vertices[relative[secondSlot, (reverse ? 0 : (int)(axisChildLength))] - 1] - relativePos;
+                        wfs.drawnForce[xpPlus, yp] = f;
+
+                    }
+                }
+            }
+        }
+        else
+        {
+            int thisYPos = (yFirst - r) + thisPos;
+            for (int s = 0; s <= spread; s++)
+            {
+                float f = 1f - (float)(s) / (float)spread;
+                for (int sl = 0; sl < slope; sl++)
+                {
+                    f *= f;
+                }
+                f = Mathf.Clamp(f, 0, 0.9f);
+
+                wfs.drawnTowards[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = wts.ma.vertices[relative[firstSlot, thisChildPos] - 1] - relativePos;
+                wfs.drawnForce[Mathf.Min(xLast + s, wfs.xResolution - 1), thisYPos] = f;
+
+                wfs.drawnTowards[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1] - relativePos;
+                wfs.drawnForce[Mathf.Max(xFirst/*(xFirst - r)*/ - s, 0), thisYPos] = f;
+            }
+        }
+
 
     }
 
