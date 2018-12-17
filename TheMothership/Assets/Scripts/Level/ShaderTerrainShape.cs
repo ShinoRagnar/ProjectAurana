@@ -76,6 +76,7 @@ public struct NoiseSettings {
     public Color highColor;
     public Color highColorLerp;
     public Color lowColor;
+    public Material material;
     public bool texOne;
     public bool texTwo;
     public bool texThree;

@@ -18,6 +18,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 
 		_MainTex ("Albedo (RGB)", 2D) = "white" {}
 		_MainTex1 ("Albedo2 (RGB)", 2D) = "white" {}
+		_MainTex2 ("Albedo3 (RGB)", 2D) = "white" {}
+		//_MainTex3 ("Albedo4 (RGB)", 2D) = "white" {}
 		
 		//_VertexColorStrength("Vertex Color Strength", Range(0.0,1.0)) = 1.0
 		
@@ -41,6 +43,10 @@ Shader "MixTerrain/VertexHeightSplat" {
 		_BumpMap("Normal Map", 2D) = "bump" {}
 		_BumpScale1("Bump Scale 2", Float) = 1.0
 		_BumpMap1("Normal Map 2", 2D) = "bump" {}
+		_BumpScale2("Bump Scale 3", Float) = 1.0
+		_BumpMap2("Normal Map 3", 2D) = "bump" {}
+		//_BumpScale3("Bump Scale 4", Float) = 1.0
+		//_BumpMap3("Normal Map 4", 2D) = "bump" {}
 
 
 
@@ -117,9 +123,13 @@ Shader "MixTerrain/VertexHeightSplat" {
 		sampler2D _MainTex;
 		float4 _MainTex_ST;
 		sampler2D _MainTex1;
+		sampler2D _MainTex2;
+		//sampler2D _MainTex3;
 
 		sampler2D _BumpMap;
 		sampler2D _BumpMap1;
+		sampler2D _BumpMap2;
+		//sampler2D _BumpMap3;
 
 		sampler2D _BumpMapColor;
 		float4 _BumpMapColor_ST;
@@ -183,6 +193,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#endif
            // float2 texcoord : TEXCOORD0;
             float2 texcoord : TEXCOORD0;
+			float2 texcoord1 : TEXCOORD1;
+			float2 texcoord2 : TEXCOORD2;
 
 			float3 worldPos;
 			fixed3 viewDirForParallax;
@@ -254,6 +266,9 @@ Shader "MixTerrain/VertexHeightSplat" {
 				o.texcoord.x = v.texcoord.x;
 				o.texcoord.y = v.texcoord.y;
 
+				o.texcoord2.x = v.texcoord2.x;
+				o.texcoord2.y = v.texcoord2.y;
+
 			//#endif
 
 			//#ifdef _PARALLAXMAP
@@ -289,6 +304,14 @@ Shader "MixTerrain/VertexHeightSplat" {
 			float2 xUV1 = xUV;
 			float2 yUV1 = yUV;
 			float2 zUV1 = zUV;
+
+			float2 xUV2 = xUV;
+			float2 yUV2 = yUV;
+			float2 zUV2 = zUV;
+
+			float2 xUV3 = xUV;
+			float2 yUV3 = yUV;
+			float2 zUV3 = zUV;
 
 			float2 xUVColor = posX * _BumpMapColor_ST.xy + _BumpMapColor_ST.zw;
 			float2 yUVColor = posY * _BumpMapColor_ST.xy + _BumpMapColor_ST.zw;
@@ -368,6 +391,31 @@ Shader "MixTerrain/VertexHeightSplat" {
 			fixed3 albedo1 = max(fixed3(0.0, 0.0, 0.0), tex1.rgb * tint.rgb);
 
 
+			//===================== 3
+			fixed4 texX2 = tex2D(_MainTex2, xUV2);
+			fixed4 texY2 = tex2D(_MainTex2, yUV2);
+			fixed4 texZ2 = tex2D(_MainTex2, zUV2);			
+			
+			fixed4 tex2 = 
+			    texX2 * IN.powerNormal.x
+			  + texY2 * IN.powerNormal.y
+			  + texZ2 * IN.powerNormal.z;
+			
+			fixed3 albedo2 = max(fixed3(0.0, 0.0, 0.0), tex2.rgb * tint.rgb);
+
+			//===================== 4
+			/*fixed4 texX3 = tex2D(_MainTex3, xUV3);
+			fixed4 texY3 = tex2D(_MainTex3, yUV3);
+			fixed4 texZ3 = tex2D(_MainTex3, zUV3);			
+			
+			fixed4 tex3 = 
+			    texX3 * IN.powerNormal.x
+			  + texY3 * IN.powerNormal.y
+			  + texZ3 * IN.powerNormal.z;
+			
+			fixed3 albedo3 = max(fixed3(0.0, 0.0, 0.0), tex3.rgb * tint.rgb);
+			*/
+
 			//#ifdef _UVFREE_VERTEX_COLOR			 
 			//	tex *= lerp(fixed4(1.0,1.0,1.0,1.0), IN.color, _VertexColorStrength);
 			//#endif
@@ -444,10 +492,16 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#endif*/
 			fixed firstMix = (parallax*IN.texcoord.x*_ParallaxTextureHeight);
 			fixed secondMix = (parallax1*IN.texcoord.y*_ParallaxTextureHeight1);
-			fixed totalMix = firstMix+secondMix+IN.color.a;
+			fixed thirdMix = (IN.texcoord2.x);
+			fixed fourthMix = (IN.texcoord2.y);
+
+			fixed totalMix = firstMix+secondMix+IN.color.a; //thirdMix+fourthMix
 			
 			fixed firstPercent = firstMix/totalMix;
 			fixed secondPercent = secondMix/totalMix;
+			//fixed thirdPercent = thirdMix/totalMix;
+			//fixed fourthPercent = fourthMix/totalMix;
+
 			fixed colorPercent = IN.color.a/totalMix;
 
 			//float mixR = (parallax*IN.texcoord1.x*_ParallaxTextureHeight) 
@@ -461,6 +515,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			mixedDiffuse = 0.0f;
 			mixedDiffuse += firstPercent * albedo; //IN.texcoord1.x * albedo; //IN.color.r * albedo; //IN.uv2.x * albedo;
 			mixedDiffuse += secondPercent * albedo1; //IN.texcoord1.y * albedo1; //IN.color.g * albedo1; //IN.uv2.y * albedo1;
+			//mixedDiffuse += thirdPercent * albedo2;
+			//mixedDiffuse += fourthPercent * albedo3;
 			mixedDiffuse += colorPercent * IN.color.rgb;
 
 			o.Albedo = mixedDiffuse; //IN.color;//albedo1;
@@ -491,6 +547,26 @@ Shader "MixTerrain/VertexHeightSplat" {
 			  + bumpY1 * IN.powerNormal.y
 			  + bumpZ1 * IN.powerNormal.z;
 
+			//===================== 3
+			fixed3 bumpX2 = UnpackScaleNormal(tex2D(_BumpMap2, xUV2), _BumpScale);
+			fixed3 bumpY2 = UnpackScaleNormal(tex2D(_BumpMap2, yUV2), _BumpScale);
+			fixed3 bumpZ2 = UnpackScaleNormal(tex2D(_BumpMap2, zUV2), _BumpScale);
+			
+			fixed3 bump2 = 
+			    bumpX2 * IN.powerNormal.x
+			  + bumpY2 * IN.powerNormal.y
+			  + bumpZ2 * IN.powerNormal.z;
+
+			//===================== 4
+			/*fixed3 bumpX3 = UnpackScaleNormal(tex2D(_BumpMap3, xUV3), _BumpScale);
+			fixed3 bumpY3 = UnpackScaleNormal(tex2D(_BumpMap3, yUV3), _BumpScale);
+			fixed3 bumpZ3 = UnpackScaleNormal(tex2D(_BumpMap3, zUV3), _BumpScale);
+			
+			fixed3 bump3 = 
+			    bumpX3 * IN.powerNormal.x
+			  + bumpY3 * IN.powerNormal.y
+			  + bumpZ3 * IN.powerNormal.z;
+*/
 			//===================== Color
 			fixed3 bumpXColor = UnpackScaleNormal(tex2D(_BumpMapColor, xUVColor), _BumpScale);
 			fixed3 bumpYColor = UnpackScaleNormal(tex2D(_BumpMapColor, yUVColor), _BumpScale);
@@ -541,6 +617,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			fixed3 finalBump =
 					firstPercent * bump
 				  + secondPercent * bump1
+				 // + thirdPercent * bump2
+				 // + fourthPercent * bump3
 				  + colorPercent * bumpColor;
 					//IN.uv2.x * bump
 				  //+ IN.uv2.y * bump1;
@@ -569,7 +647,7 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#endif
 			o.Metallic = colorPercent*_ColorMetallic+(firstPercent+secondPercent)*_Metallic; //mg.x;
 			o.Smoothness = colorPercent*_ColorGlossiness+(firstPercent+secondPercent)*_Glossiness; //_Glossiness; //mg.y;
-
+			//+thirdPercent+fourthPercent
 
 			o.Emission = colorPercent * IN.color.rgb * _ColorGlow;
 

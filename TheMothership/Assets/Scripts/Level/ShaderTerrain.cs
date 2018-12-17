@@ -147,7 +147,7 @@ public struct MeshArrays
 
     public List<Vector3> vertices;
     public List<Vector2> uvs;
-    //public List<Vector2> uv2;
+    public List<Vector2> uv3;
     public List<Vector3> normals;
     public List<int> triangles;
     public List<Color32> vertexColors;
@@ -163,7 +163,7 @@ public struct MeshArrays
 
         this.vertices = new List<Vector3>();
         this.uvs = new List<Vector2>();
-      //  this.uv2 = new List<Vector2>();
+        this.uv3 = new List<Vector2>();
         this.normals = new List<Vector3>();
         this.triangles = new List<int>();
         //this.splat = colors;
@@ -398,6 +398,8 @@ public class ShaderTerrain : MonoBehaviour
     private List<ShaderTerrain>[] childrenPerFace = null;
     private bool generated = false;
 
+    public ListHash<Material> materials = null;
+
 
     public void Initialize()
     {
@@ -451,13 +453,13 @@ public class ShaderTerrain : MonoBehaviour
         }
         else
         {
-
-            PrepareChildren();
+            materials = new ListHash<Material>();
+            PrepareChildren(materials);
             Initialize();
             ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
         }
     }
-    public void SetDefs() {
+    public void SetDefs(ListHash<Material> materials) {
 
         currentPos = transform.position;
         localPos = transform.localPosition;
@@ -467,26 +469,38 @@ public class ShaderTerrain : MonoBehaviour
         }
 
         shape.parent = this;
-    }
-    public void PrepareChildren() {
 
-        SetDefs();
+        if (shape.noises != null) {
+            foreach (NoiseSettings ns in shape.noises) {
+                if (ns.material != null) {
+                    materials.AddIfNotContains(ns.material);
+                }
+            }
+        }
+    }
+    public void PrepareChildren(ListHash<Material> materials) {
+
+        SetDefs(materials);
 
         if (children != null) {
             foreach (ShaderTerrain st in children)
             {
-                st.PrepareChildren();
+                st.PrepareChildren(materials);
             }
         }
     }
+
+
 
     public void ApplyMeshArrays(MeshArrays ms, Mesh m)
     {
 
         m.Clear();
         m.vertices = ms.vertices.ToArray();
-        //m.uv = ms.uvs.ToArray();
+   
         m.uv = ms.uvs.ToArray();
+        m.uv3 = ms.uv3.ToArray();
+
         m.normals = ms.normals.ToArray();
         m.colors32 = ms.vertexColors.ToArray();
         m.triangles = ms.triangles.ToArray();
@@ -496,8 +510,10 @@ public class ShaderTerrain : MonoBehaviour
 
 
         Material newMat = new Material(material);
-        SetTexture(0, splatTextures[0], newMat);
-        SetTexture(1, splatTextures[1], newMat);
+        SetTexture(0, splatTextures[0], newMat,true);
+        SetTexture(1, splatTextures[1], newMat,true);
+        SetTexture(2, splatTextures[2], newMat,false);
+        //SetTexture(3, splatTextures[3], newMat,false);
         //SetTexture(1, splatTextures[1], newMat);
         //SetTexture(2, splatTextures[2], newMat);
         //SetTexture(3, splatTextures[3], newMat);
@@ -521,6 +537,8 @@ public class ShaderTerrain : MonoBehaviour
 
 
     }
+
+
     public void SortChildren()
     {
 
@@ -579,7 +597,7 @@ public class ShaderTerrain : MonoBehaviour
 
         return (int)(res.x * 2 - 4 + res.y * 2);
     }
-    public void SetTexture(int num, Material from, Material to)
+    public void SetTexture(int num, Material from, Material to, bool setParallaxDetails)
     {
         string n = num == 0 ? "" : num + "";
 
@@ -589,22 +607,26 @@ public class ShaderTerrain : MonoBehaviour
         to.SetTexture("_BumpMap" + n, from.GetTexture("_BumpMap"));
         to.SetTextureScale("_BumpMap" + n, new Vector2(textureScale, textureScale));
 
-        to.SetTexture("_ParallaxMap" + n, from.GetTexture("_ParallaxMap"));
-        to.SetTextureScale("_ParallaxMap" + n, new Vector2(textureScale, textureScale));
+        if (setParallaxDetails) {
 
-        to.SetTexture("_OcclusionMap" + n, from.GetTexture("_OcclusionMap"));
-        to.SetTextureScale("_OcclusionMap" + n, new Vector2(textureScale, textureScale));
+            to.SetTexture("_ParallaxMap" + n, from.GetTexture("_ParallaxMap"));
+            to.SetTextureScale("_ParallaxMap" + n, new Vector2(textureScale, textureScale));
 
-        to.SetTexture("_MetallicGlossMap" + n, from.GetTexture("_MetallicGlossMap"));
-        to.SetTextureScale("_MetallicGlossMap" + n, new Vector2(textureScale, textureScale));
+            to.SetTexture("_OcclusionMap" + n, from.GetTexture("_OcclusionMap"));
+            to.SetTextureScale("_OcclusionMap" + n, new Vector2(textureScale, textureScale));
 
-        to.SetTexture("_DetailAlbedoMap" + n, from.GetTexture("_DetailAlbedoMap"));
-        to.SetTextureScale("_DetailAlbedoMap" + n, new Vector2(detailScale, detailScale));
+            to.SetTexture("_MetallicGlossMap" + n, from.GetTexture("_MetallicGlossMap"));
+            to.SetTextureScale("_MetallicGlossMap" + n, new Vector2(textureScale, textureScale));
 
-        to.SetTexture("_DetailNormalMap" + n, from.GetTexture("_DetailNormalMap"));
-        to.SetTextureScale("_DetailNormalMap" + n, new Vector2(detailScale, detailScale));
+            to.SetTexture("_DetailAlbedoMap" + n, from.GetTexture("_DetailAlbedoMap"));
+            to.SetTextureScale("_DetailAlbedoMap" + n, new Vector2(detailScale, detailScale));
 
-        to.SetFloat("_Parallax" + n, from.GetFloat("_Parallax"));
+            to.SetTexture("_DetailNormalMap" + n, from.GetTexture("_DetailNormalMap"));
+            to.SetTextureScale("_DetailNormalMap" + n, new Vector2(detailScale, detailScale));
+
+            to.SetFloat("_Parallax" + n, from.GetFloat("_Parallax"));
+        }
+
         to.SetFloat("_Metallic" + n, from.GetFloat("_Metallic"));
         to.SetFloat("_Glossiness" + n, from.GetFloat("_Glossiness"));
         to.SetFloat("_BumpScale" + n, from.GetFloat("_BumpScale"));
@@ -976,6 +998,8 @@ public class ShaderTerrain : MonoBehaviour
 
         Vector3 vert = (Vector3)center.point + relativePos;
         wts.ma.uvs.Add(new Vector2(center.texOne, center.texTwo));
+        wts.ma.uv3.Add(new Vector2(center.texThree, center.texFour));
+
         //wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
         wts.ma.vertexColors.Add(center.color);
         wts.ma.vertices.Add(vert);
