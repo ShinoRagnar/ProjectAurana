@@ -91,7 +91,7 @@ public class ShaderTerrainSampler : MonoBehaviour {
             occlusionFormat = ((Texture2D)fallback.GetTexture(OCCLUSION)).format;
             detailAlbedoFormat = ((Texture2D)fallback.GetTexture(DETAIL_ALBEDO)).format;
             detailBumpFormat = ((Texture2D)fallback.GetTexture(DETAIL_BUMP)).format;
-
+           
             albedo = new Texture2DArray(size,size, count, albedoFormat, true);
             bump = new Texture2DArray(size, size, count, bumpFormat, true);
             height = new Texture2DArray(size, size, count, heightFormat, true);
@@ -172,15 +172,4 @@ public class ShaderTerrainSampler : MonoBehaviour {
             
         }
     }
-
-
-    // Use this for initialization
-    void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 }

@@ -114,45 +114,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!28 &12660152
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  serializedVersion: 2
-  m_Width: 256
-  m_Height: 1
-  m_CompleteImageSize: 1024
-  m_TextureFormat: 5
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 1
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_LightmapFormat: 0
-  m_ColorSpace: 1
-  image data: 1024
-  _typelessdata: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-  m_StreamData:
-    offset: 0
-    size: 0
-    path: 
 --- !u!1 &14236168
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,6 +188,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -363,7 +325,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent: {fileID: 171298710}
-  update: 1
+  update: 0
   roundness: 0.5
   roundInProjectionDirection: 0
   roundX: 1
@@ -393,6 +355,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
     texOne: 0
     texTwo: 1
     texThree: 0
@@ -426,6 +389,7 @@ MonoBehaviour:
     highColor: {r: 0.6886792, g: 0.5723023, b: 0.3475881, a: 0}
     highColorLerp: {r: 0.9339623, g: 0.65693974, b: 0.4273318, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -571,6 +535,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -703,6 +668,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -722,6 +688,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 518360237}
+  - component: {fileID: 518360241}
   - component: {fileID: 518360240}
   - component: {fileID: 518360236}
   - component: {fileID: 518360239}
@@ -805,7 +772,7 @@ MeshFilter:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 518360235}
-  m_Mesh: {fileID: 1556263477}
+  m_Mesh: {fileID: 1516033407}
 --- !u!23 &518360239
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -821,7 +788,7 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RenderingLayerMask: 4294967295
   m_Materials:
-  - {fileID: 2127170257}
+  - {fileID: 906434124}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -883,6 +850,7 @@ MonoBehaviour:
     highColor: {r: 0.990566, g: 0.40731367, b: 0.06074228, a: 0}
     highColorLerp: {r: 0.990566, g: 0.1899169, b: 0.1728818, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -916,6 +884,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
     texOne: 0
     texTwo: 1
     texThree: 0
@@ -949,6 +918,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 1
     texThree: 0
@@ -960,6 +930,46 @@ MonoBehaviour:
     colorCutOff: 0.248
     colorIncompatability: 0
     removeColor: 0
+--- !u!114 &518360241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 518360235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e52174244a35564a954bc974630f5bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  update: 0
+  fallback: {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  size: 2048
+  albedoMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  albedoFormat: 12
+  bumpMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  bumpFormat: 12
+  heightMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  heightFormat: 10
+  occlusionMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  occlusionFormat: 10
+  sizeDetails: 1024
+  detailAlbedoMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  detailAlbedoFormat: 10
+  detailBumpMat:
+  - {fileID: 2100000, guid: ed467895efebdff488df09615b3025b4, type: 2}
+  - {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
+  detailBumpFormat: 12
+  terrain: {fileID: 518360236}
 --- !u!1 &532849639
 GameObject:
   m_ObjectHideFlags: 0
@@ -1019,6 +1029,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -1288,6 +1299,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -1486,6 +1498,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -1497,6 +1510,45 @@ MonoBehaviour:
     colorCutOff: 0
     colorIncompatability: 0
     removeColor: 0
+--- !u!28 &742023199
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_ForcedFallbackFormat: 4
+  m_DownscaleFallback: 0
+  serializedVersion: 2
+  m_Width: 256
+  m_Height: 1
+  m_CompleteImageSize: 1024
+  m_TextureFormat: 5
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_LightmapFormat: 0
+  m_ColorSpace: 1
+  image data: 1024
+  _typelessdata: ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  m_StreamData:
+    offset: 0
+    size: 0
+    path: 
 --- !u!1 &857192952
 GameObject:
   m_ObjectHideFlags: 0
@@ -1575,7 +1627,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parent: {fileID: 857192955}
-  update: 1
+  update: 0
   roundness: 2.5
   roundInProjectionDirection: 1
   roundX: 1
@@ -1605,6 +1657,7 @@ MonoBehaviour:
     highColor: {r: 0.03773582, g: 0.021210376, b: 0.00017799958, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 2100000, guid: 3f5c3a5fbaebab74e86170505fc516d9, type: 2}
     texOne: 0
     texTwo: 1
     texThree: 0
@@ -1638,6 +1691,7 @@ MonoBehaviour:
     highColor: {r: 0.99215686, g: 0.40784314, b: 0.05882353, a: 0}
     highColorLerp: {r: 0.9056604, g: 0.17122583, b: 0.14097545, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -1663,6 +1717,166 @@ Transform:
   m_Father: {fileID: 518360237}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &906434124
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: VertexHeightSplat
+  m_Shader: {fileID: 4800000, guid: 3020ca09120058b4bb900285c747ef6d, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 628a840348d4a8941a0e5f1eab080bf1, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap1:
+        m_Texture: {fileID: 2800000, guid: 2faa900a48cff2a48ac739e532e86465, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMapColor:
+        m_Texture: {fileID: 2800000, guid: 0b517f1bb273da84c8669be612284128, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 2800000, guid: 41dfc68d4901f924ea85dc9e7dcfb5dc, type: 3}
+        m_Scale: {x: 1.5, y: 1.5}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap1:
+        m_Texture: {fileID: 2800000, guid: 016e95565131cbe4bbe66d399a1c4efa, type: 3}
+        m_Scale: {x: 1.5, y: 1.5}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 2800000, guid: 5509ded9297dad54785f6adfae502923, type: 3}
+        m_Scale: {x: 1.5, y: 1.5}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap1:
+        m_Texture: {fileID: 2800000, guid: 047414cbd2e318e41a7d1557a27d36c5, type: 3}
+        m_Scale: {x: 1.5, y: 1.5}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: c01c40b99d590b94a9f7756d16fabc6c, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex1:
+        m_Texture: {fileID: 2800000, guid: ba1279ab30c186545a43dd1d4702ae5b, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex2:
+        m_Texture: {fileID: 2800000, guid: 92a32182b1f961e4f86128977d395434, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _Normal0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 2800000, guid: 383d810957792954a9f80016fc9cee4d, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 2800000, guid: b38f2d435441d4d449b16e4bdd753662, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap1:
+        m_Texture: {fileID: 2800000, guid: b5cb785fb5cef594db91e55c0de95b6e, type: 3}
+        m_Scale: {x: 0.2, y: 0.2}
+        m_Offset: {x: 0, y: 0}
+    - _Splat0:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Splat1:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Splat2:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Splat3:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _BumpScale: 1
+    - _BumpScale1: 1
+    - _BumpScale2: 1
+    - _ColorGlossiness: 0.729
+    - _ColorGlow: 0.333
+    - _ColorMetallic: 0.816
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DetailNormalMapScale1: 1
+    - _DstBlend: 0
+    - _EmissionScaleUI: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.177
+    - _GlossyReflections: 1
+    - _Metallic: 0.29099998
+    - _Metallic0: 0
+    - _Metallic1: 0.66499996
+    - _Metallic2: 0
+    - _Metallic3: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.08
+    - _Parallax1: 0.08
+    - _ParallaxTextureHeight: 0.294
+    - _ParallaxTextureHeight1: 1
+    - _Smoothness0: 1
+    - _Smoothness1: 1
+    - _Smoothness2: 1
+    - _Smoothness3: 1
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _TexPower: 10
+    - _TriplanarSpace: 0
+    - _UVScale: 100
+    - _UVSec: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _EmissionColorUI: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &936819987
 GameObject:
   m_ObjectHideFlags: 0
@@ -1678,7 +1892,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &936819988
 Transform:
   m_ObjectHideFlags: 0
@@ -1698,7 +1912,7 @@ Light:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 936819987}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 1, g: 0.6517962, b: 0, a: 1}
@@ -1959,7 +2173,7 @@ MonoBehaviour:
       m_Mode: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
-    m_lensFlareGradTexture: {fileID: 12660152}
+    m_lensFlareGradTexture: {fileID: 742023199}
     m_lensFlareHaloParams: {x: 0.1, y: 0.573, z: 1, w: 128}
     m_lensFlareHaloChrDistortion: 1.51
     m_lensFlareGaussianBlurAmount: 1
@@ -2175,6 +2389,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -2306,6 +2521,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -2434,6 +2650,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -2561,6 +2778,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -2572,7 +2790,7 @@ MonoBehaviour:
     colorCutOff: 0
     colorIncompatability: 0
     removeColor: 0
---- !u!43 &1556263477
+--- !u!43 &1516033407
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2848,6 +3066,7 @@ MonoBehaviour:
     highColor: {r: 0, g: 0, b: 0, a: 0}
     highColorLerp: {r: 0, g: 0, b: 0, a: 0}
     lowColor: {r: 0, g: 0, b: 0, a: 0}
+    material: {fileID: 0}
     texOne: 0
     texTwo: 0
     texThree: 0
@@ -2859,166 +3078,6 @@ MonoBehaviour:
     colorCutOff: 0
     colorIncompatability: 0
     removeColor: 0
---- !u!21 &2127170257
-Material:
-  serializedVersion: 6
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_Name: VertexHeightSplat
-  m_Shader: {fileID: 4800000, guid: 3020ca09120058b4bb900285c747ef6d, type: 3}
-  m_ShaderKeywords: 
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: 628a840348d4a8941a0e5f1eab080bf1, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _BumpMap1:
-        m_Texture: {fileID: 2800000, guid: 2faa900a48cff2a48ac739e532e86465, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _BumpMap2:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _BumpMapColor:
-        m_Texture: {fileID: 2800000, guid: 0b517f1bb273da84c8669be612284128, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailAlbedoMap:
-        m_Texture: {fileID: 2800000, guid: 41dfc68d4901f924ea85dc9e7dcfb5dc, type: 3}
-        m_Scale: {x: 1.5, y: 1.5}
-        m_Offset: {x: 0, y: 0}
-    - _DetailAlbedoMap1:
-        m_Texture: {fileID: 2800000, guid: 016e95565131cbe4bbe66d399a1c4efa, type: 3}
-        m_Scale: {x: 1.5, y: 1.5}
-        m_Offset: {x: 0, y: 0}
-    - _DetailMask:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _DetailNormalMap:
-        m_Texture: {fileID: 2800000, guid: 5509ded9297dad54785f6adfae502923, type: 3}
-        m_Scale: {x: 1.5, y: 1.5}
-        m_Offset: {x: 0, y: 0}
-    - _DetailNormalMap1:
-        m_Texture: {fileID: 2800000, guid: 047414cbd2e318e41a7d1557a27d36c5, type: 3}
-        m_Scale: {x: 1.5, y: 1.5}
-        m_Offset: {x: 0, y: 0}
-    - _EmissionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 2800000, guid: c01c40b99d590b94a9f7756d16fabc6c, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex1:
-        m_Texture: {fileID: 2800000, guid: ba1279ab30c186545a43dd1d4702ae5b, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex2:
-        m_Texture: {fileID: 2800000, guid: 92a32182b1f961e4f86128977d395434, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _MetallicGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _Normal0:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Normal1:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Normal2:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Normal3:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _OcclusionMap:
-        m_Texture: {fileID: 2800000, guid: 383d810957792954a9f80016fc9cee4d, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _ParallaxMap:
-        m_Texture: {fileID: 2800000, guid: b38f2d435441d4d449b16e4bdd753662, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _ParallaxMap1:
-        m_Texture: {fileID: 2800000, guid: b5cb785fb5cef594db91e55c0de95b6e, type: 3}
-        m_Scale: {x: 0.2, y: 0.2}
-        m_Offset: {x: 0, y: 0}
-    - _Splat0:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Splat1:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Splat2:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Splat3:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Floats:
-    - _BumpScale: 1
-    - _BumpScale1: 1
-    - _BumpScale2: 1
-    - _ColorGlossiness: 0.729
-    - _ColorGlow: 0.333
-    - _ColorMetallic: 0.816
-    - _Cutoff: 0.5
-    - _DetailNormalMapScale: 1
-    - _DetailNormalMapScale1: 1
-    - _DstBlend: 0
-    - _EmissionScaleUI: 0
-    - _GlossMapScale: 1
-    - _Glossiness: 0.177
-    - _GlossyReflections: 1
-    - _Metallic: 0.29099998
-    - _Metallic0: 0
-    - _Metallic1: 0.66499996
-    - _Metallic2: 0
-    - _Metallic3: 0
-    - _Mode: 0
-    - _OcclusionStrength: 1
-    - _Parallax: 0.08
-    - _Parallax1: 0.08
-    - _ParallaxTextureHeight: 0.294
-    - _ParallaxTextureHeight1: 1
-    - _Smoothness0: 1
-    - _Smoothness1: 1
-    - _Smoothness2: 1
-    - _Smoothness3: 1
-    - _SmoothnessTextureChannel: 0
-    - _SpecularHighlights: 1
-    - _SrcBlend: 1
-    - _TexPower: 10
-    - _TriplanarSpace: 0
-    - _UVScale: 100
-    - _UVSec: 0
-    - _ZWrite: 1
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _EmissionColorUI: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2143851720
 GameObject:
   m_ObjectHideFlags: 0
