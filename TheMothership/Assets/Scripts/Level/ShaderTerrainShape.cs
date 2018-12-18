@@ -34,7 +34,8 @@ public class ShapePoint
     }
 }
 [Serializable]
-public struct NoiseSettings {
+public struct NoiseSettings
+{
 
     [Header("Noise settings")]
     public Vector3 offset;
@@ -95,10 +96,11 @@ public struct NoiseSettings {
     public float colorIncompatability;
 
     public bool removeColor;
-    
+
 
 }
-public class ShaderTerrainShape : MonoBehaviour {
+public class ShaderTerrainShape : MonoBehaviour
+{
 
 
     public ShaderTerrain parent;
@@ -153,7 +155,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         Vector3 currentPos,
         Vector3 drawnTo,
         float force
-        
+
         //int x,
         //int y
         /*Noise noise, Vector3 drawnTo, float force, Vector3 currentPos, Vector3 extents, Vector3 projectionDirection, bool reverseProjectionSide,
@@ -163,7 +165,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         )
     {
         //Vector4 calc = CalculateAtPercent(noise, currentPos, extents, projectionDirection, reverseProjectionSide, percent, 
-         //                                   localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
+        //                                   localUp, mod, extentMod, axisA, axisB, halfSize, halfSizeExtent);
 
         //Vector3 pointOnUnitCube = GetPointOnCube(localUp, percent, mod, axisA, axisB);
 
@@ -189,7 +191,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         bool[] used = new bool[noises.Length];
 
         //Noise before alterations
-        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0,0,0,0),0,1), 
+        ShapePoint ret = CombineNoiseWithShapePoint(new ShapePoint(shapeNormal, shape, 0, 0, 0, 0, new Color32(0, 0, 0, 0), 0, 1),
             wts.ma.noise, currentPos, st.extents, wfs.localUp, percent, used, false);
 
         //Alterations
@@ -216,7 +218,7 @@ public class ShaderTerrainShape : MonoBehaviour {
         ret = CombineNoiseWithShapePoint(ret, wts.ma.noise, currentPos, st.extents, wfs.localUp, percent, used, true);
 
         //if (force > 0.5) {
-            ret.point = Vector3.Lerp(ret.point, drawnTo, force);
+        ret.point = Vector3.Lerp(ret.point, drawnTo, force);
         //}
         //
 
@@ -228,13 +230,10 @@ public class ShaderTerrainShape : MonoBehaviour {
         Vector3 percent, Vector3 localUp, Vector3 mod, Vector3 extentMod, Vector3 axisA, Vector3 axisB, Vector3 halfSize, Vector3 halfSizeExtent
         )
     {
-
-
-
         return new Vector4(final.x, final.y, final.z, noi);
-
     }*/
-    private static ShapePoint NormalizeColors(ShapePoint sp) {
+    private static ShapePoint NormalizeColors(ShapePoint sp)
+    {
 
         //Ignore negative colors
         sp.texOne = Mathf.Max(sp.texOne, 0);
@@ -243,14 +242,15 @@ public class ShaderTerrainShape : MonoBehaviour {
         sp.texFour = Mathf.Max(sp.texFour, 0);
         sp.alpha = Mathf.Max(sp.alpha, 0);
 
-        float total = (sp.texOne + sp.texTwo + sp.texThree + sp.texFour+sp.alpha);
+        float total = (sp.texOne + sp.texTwo + sp.texThree + sp.texFour + sp.alpha);
 
         //TexOne is the default texture
         if (total < 1f)
         {
             sp.texOne += 1f - total;
         }
-        else {
+        else
+        {
             sp.texOne = sp.texOne / (total);
             sp.texTwo = sp.texTwo / (total);
             sp.texThree = sp.texThree / (total);
@@ -269,8 +269,9 @@ public class ShaderTerrainShape : MonoBehaviour {
     }
 
     public ShapePoint CombineNoiseWithShapePoint(
-        ShapePoint sp, Noise noise, Vector3 currentPos, Vector3 extents, Vector3 localUp, Vector3 percent, bool[] used, bool afterAlterations) {
-        
+        ShapePoint sp, Noise noise, Vector3 currentPos, Vector3 extents, Vector3 localUp, Vector3 percent, bool[] used, bool afterAlterations)
+    {
+
 
         if (noises != null && noises.Length > 0)
         {
@@ -283,8 +284,8 @@ public class ShaderTerrainShape : MonoBehaviour {
                 {
                     NoiseSettings ns = noises[i];
 
-                    if (!used[i] 
-                        && ns.afterAlterations == afterAlterations 
+                    if (!used[i]
+                        && ns.afterAlterations == afterAlterations
                         && ns.normalRelativeTarget == o.normalRelativeTarget
                         && ns.strength > 0
                         && ns.layers > 0
@@ -297,11 +298,12 @@ public class ShaderTerrainShape : MonoBehaviour {
                         used[i] = true;
                         found = true;
 
-                        
+
                         float eval = EvaluateNoise(noise, currentPos, sp.point + ns.offset, ns);
 
                         //Noise only applied to this face
-                        if (ns.appliesOnlyToFace == localUp && ns.edgeSmoothening > 0) {
+                        if (ns.appliesOnlyToFace == localUp && ns.edgeSmoothening > 0)
+                        {
 
 
                             float mul = Mathf.Clamp01(Mathf.Sin(percent.x * Mathf.PI) * Mathf.Sin(percent.y * Mathf.PI) * ns.edgeSmoothening);
@@ -312,7 +314,8 @@ public class ShaderTerrainShape : MonoBehaviour {
 
                         noi = UpdateNoise(noi, eval, ns.negative, ns.multiply, ns.cutoff);
 
-                        if (noi > ns.resolutionCutoff && ns.resolution > 1) {
+                        if (noi > ns.resolutionCutoff && ns.resolution > 1)
+                        {
                             sp.resolution = Mathf.Max(sp.resolution, ns.resolution);
                         }
 
@@ -329,21 +332,24 @@ public class ShaderTerrainShape : MonoBehaviour {
                         sp.alpha = ns.useColor ? UpdateNoise(sp.alpha, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.alpha;
 
                         //Removes other colors based on this color
-                        if (ns.useColor) {
+                        if (ns.useColor)
+                        {
 
-                            Color32 highColorVariant = Color32.Lerp(ns.highColor, ns.highColorLerp, 
-                                SimpleNoise(noise, currentPos, sp.point, ns.colorLerpRoughness)*ns.colorLerpStrength);
+                            Color32 highColorVariant = Color32.Lerp(ns.highColor, ns.highColorLerp,
+                                SimpleNoise(noise, currentPos, sp.point, ns.colorLerpRoughness) * ns.colorLerpStrength);
 
-                            
+
                             if (sp.color.r == 0 && sp.color.g == 0 && sp.color.b == 0)
                             {
                                 sp.color = Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha);
                             }
-                            else {
-                                sp.color = Color.Lerp(sp.color, Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha),0.5f);
+                            else
+                            {
+                                sp.color = Color.Lerp(sp.color, Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha), 0.5f);
                             }
                         }
-                        if (ns.texOne && ns.colorIncompatability > 0) {
+                        if (ns.texOne && ns.colorIncompatability > 0)
+                        {
                             sp.texTwo = ReduceColor(sp.texTwo, sp.texOne - spPrevTexOne, ns.colorIncompatability);
                             sp.texThree = ReduceColor(sp.texThree, sp.texOne - spPrevTexOne, ns.colorIncompatability);
                             sp.texFour = ReduceColor(sp.texFour, sp.texOne - spPrevTexOne, ns.colorIncompatability);
@@ -390,7 +396,7 @@ public class ShaderTerrainShape : MonoBehaviour {
                         ((o.ignoreNormal ? 0 : sp.normal.y) + o.normalRelativeTarget.y) * extents.y * (1f + o.overExtent) * (o.reverse ? -1 : 1),
                         ((o.ignoreNormal ? 0 : sp.normal.z) + o.normalRelativeTarget.z) * extents.z * (1f + o.overExtent) * (o.reverse ? -1 : 1)
                         );
-                    
+
 
                     sp.point = Vector3.Lerp(sp.point, sp.point + noiseVector, noi);
                 }
@@ -399,27 +405,30 @@ public class ShaderTerrainShape : MonoBehaviour {
         return sp;
     }
 
-    private static float ReduceColor(float toReduce, float reducor, float incompatability) {
+    private static float ReduceColor(float toReduce, float reducor, float incompatability)
+    {
         return toReduce - reducor * incompatability;
 
     }
-        
 
 
-    private static float UpdateNoise(float noi, float eval, bool negative, bool multiply, float cutoff = 0, float multiplier = 1f) {
+
+    private static float UpdateNoise(float noi, float eval, bool negative, bool multiply, float cutoff = 0, float multiplier = 1f)
+    {
 
         if (noi == 0 || !multiply)
         {
-            noi += Mathf.Max(0,eval - cutoff) * (negative ? -1 : 1);
+            noi += Mathf.Max(0, eval - cutoff) * (negative ? -1 : 1);
         }
         else
         {
             noi *= Mathf.Max(0, eval - cutoff);
         }
-        return noi*multiplier;
+        return noi * multiplier;
     }
 
-    public static float SameAsProjectionVector(Vector3 check, Vector3 projectionDirection) {
+    public static float SameAsProjectionVector(Vector3 check, Vector3 projectionDirection)
+    {
 
         if (projectionDirection.x != 0)
         {
@@ -437,7 +446,8 @@ public class ShaderTerrainShape : MonoBehaviour {
         return 0;
     }
 
-    private static Vector3 Sine(Vector3 v) {
+    private static Vector3 Sine(Vector3 v)
+    {
         return new Vector3(Mathf.Sin(v.x), Mathf.Sin(v.y), Mathf.Sin(v.z));
     }
 
@@ -463,7 +473,8 @@ public class ShaderTerrainShape : MonoBehaviour {
             projectionDirection = projectionDirection * -1;
         }
 
-        if (roundX) {
+        if (roundX)
+        {
             if (inner.x < -halfX + roundness &&
             RoundnessProjectionCheck(projectionDirection, Vector3.left, roundInProjectionDirection, reversedProjectionDirection))
             {
@@ -476,7 +487,8 @@ public class ShaderTerrainShape : MonoBehaviour {
             }
         }
 
-        if (roundY) {
+        if (roundY)
+        {
             if (inner.y < -halfY + roundness &&
                  RoundnessProjectionCheck(projectionDirection, Vector3.down, roundInProjectionDirection, reversedProjectionDirection))
             {
@@ -489,7 +501,8 @@ public class ShaderTerrainShape : MonoBehaviour {
             }
         }
 
-        if (roundZ) {
+        if (roundZ)
+        {
             if (inner.z < -halfZ + roundness &&
                  RoundnessProjectionCheck(projectionDirection, Vector3.back, roundInProjectionDirection, reversedProjectionDirection))
             {
@@ -501,7 +514,7 @@ public class ShaderTerrainShape : MonoBehaviour {
                 inner.z = halfZ - roundness;
             }
         }
-        
+
         Vector3 normal = (cube - inner).normalized;
 
         return inner + normal * roundness;
@@ -580,11 +593,8 @@ public class ShaderTerrainShape : MonoBehaviour {
     }
     /*if (maxoutExtentsAtProjectionEnds && projectionDirection != Vector3.zero) {
     if(projectionDirection.x != 0){
-
         noi = Mathf.Lerp(noi, 1, 1f - sinProgress.x);
-
     }else if (projectionDirection.y != 0){
-
         noi = Mathf.Lerp(noi, 1, 1f - sinProgress.y);
     }
     else if (projectionDirection.z != 0)
