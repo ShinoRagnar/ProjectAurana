@@ -47,6 +47,8 @@ public struct NoiseSettings
     public float persistance;
     [Range(0, 1)]
     public float strength;
+    [Range(0, 1)]
+    public float height;
     [Range(0, 10)]
     public int layers;
     [Range(0, 1)]
@@ -398,7 +400,7 @@ public class ShaderTerrainShape : MonoBehaviour
                         );
 
 
-                    sp.point = Vector3.Lerp(sp.point, sp.point + noiseVector, noi);
+                    sp.point = Vector3.Lerp(sp.point, sp.point + noiseVector, noi*o.height);
                 }
             }
         }

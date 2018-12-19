@@ -165,6 +165,10 @@ Shader "MixTerrain/VertexHeightSplat" {
 		half _Parallax1;
 		half _Parallax2;
 		half _Parallax3;
+		half _ParallaxTextureHeight;
+		half _ParallaxTextureHeight1;
+		half _ParallaxTextureHeight2;
+		half _ParallaxTextureHeight3;
 		UNITY_DECLARE_TEX2D(_ParallaxMap);
 		UNITY_DECLARE_TEX2D_NOSAMPLER(_ParallaxMap1);
 		UNITY_DECLARE_TEX2D_NOSAMPLER(_ParallaxMap2);
@@ -185,8 +189,7 @@ Shader "MixTerrain/VertexHeightSplat" {
 		float4 _BumpMapColor_ST;
 
 		
-		half _ParallaxTextureHeight;
-		half _ParallaxTextureHeight1;
+
 
 		fixed _Metallic;
 		fixed _Glossiness;
@@ -236,9 +239,10 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//	fixed3 normal;
 			//#endif
            // float2 texcoord : TEXCOORD0;
-            float2 texcoord : TEXCOORD0;
-			float2 texcoord1 : TEXCOORD1;
-			float2 texcoord2 : TEXCOORD2;
+            float4 texChoice; // : TEXCOORD0;
+
+			//float2 //uv2_texcoord;
+			//float2 texcoord2 : TEXCOORD2;
 
 			float3 worldPos;
 			fixed3 viewDirForParallax;
@@ -307,11 +311,19 @@ Shader "MixTerrain/VertexHeightSplat" {
 				  +	(-(worldNormal.z) * (o.powerNormal.z))
 				;
 				
-				o.texcoord.x = v.texcoord.x;
-				o.texcoord.y = v.texcoord.y;
+				o.texChoice.x = v.texcoord.x;
+				o.texChoice.y = v.texcoord.y;
+				o.texChoice.z = v.texcoord1.x;
+				o.texChoice.w = v.texcoord1.y;
 
-				o.texcoord2.x = v.texcoord2.x;
-				o.texcoord2.y = v.texcoord2.y;
+				//o.texcoord.x = v.texcoord.x;
+				//o.texcoord.y = v.texcoord.y;
+
+				//o.texcoord1.x = v.texcoord1.x;
+				//o.texcoord1.y = v.texcoord1.y;
+
+				//o.texcoord2.x = v.texcoord2.x;
+				//o.texcoord2.y = v.texcoord2.y;
 
 			//#endif
 
@@ -534,17 +546,17 @@ Shader "MixTerrain/VertexHeightSplat" {
 				
 
 			//#endif*/
-			fixed firstMix = (parallax*IN.texcoord.x*_ParallaxTextureHeight);
-			fixed secondMix = (parallax1*IN.texcoord.y*_ParallaxTextureHeight1);
-			fixed thirdMix = (IN.texcoord2.x);
-			fixed fourthMix = (IN.texcoord2.y);
+			fixed firstMix =	(parallax * IN.texChoice.x  *_ParallaxTextureHeight);
+			fixed secondMix =	(parallax1* IN.texChoice.y  *_ParallaxTextureHeight1);
+			fixed thirdMix =	(parallax2* IN.texChoice.z *_ParallaxTextureHeight2);
+			fixed fourthMix =	(parallax3* IN.texChoice.w *_ParallaxTextureHeight3);
 
-			fixed totalMix = firstMix+secondMix+IN.color.a; //thirdMix+fourthMix
+			fixed totalMix = firstMix+secondMix+thirdMix+fourthMix+IN.color.a; //thirdMix+fourthMix
 			
 			fixed firstPercent = firstMix/totalMix;
 			fixed secondPercent = secondMix/totalMix;
-			//fixed thirdPercent = thirdMix/totalMix;
-			//fixed fourthPercent = fourthMix/totalMix;
+			fixed thirdPercent = thirdMix/totalMix;
+			fixed fourthPercent = fourthMix/totalMix;
 
 			fixed colorPercent = IN.color.a/totalMix;
 
@@ -559,8 +571,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			mixedDiffuse = 0.0f;
 			mixedDiffuse += firstPercent * albedo; //IN.texcoord1.x * albedo; //IN.color.r * albedo; //IN.uv2.x * albedo;
 			mixedDiffuse += secondPercent * albedo1; //IN.texcoord1.y * albedo1; //IN.color.g * albedo1; //IN.uv2.y * albedo1;
-			//mixedDiffuse += thirdPercent * albedo2;
-			//mixedDiffuse += fourthPercent * albedo3;
+			mixedDiffuse += thirdPercent * albedo2;
+			mixedDiffuse += fourthPercent * albedo3;
 			mixedDiffuse += colorPercent * IN.color.rgb;
 
 			o.Albedo = mixedDiffuse; //IN.color;//albedo1;
@@ -663,8 +675,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 			fixed3 finalBump =
 					firstPercent * bump
 				  + secondPercent * bump1
-				 // + thirdPercent * bump2
-				 // + fourthPercent * bump3
+				  + thirdPercent * bump2
+				  + fourthPercent * bump3
 				  + colorPercent * bumpColor;
 					//IN.uv2.x * bump
 				  //+ IN.uv2.y * bump1;

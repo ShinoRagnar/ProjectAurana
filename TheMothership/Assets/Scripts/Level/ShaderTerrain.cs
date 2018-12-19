@@ -512,7 +512,9 @@ public class ShaderTerrain : MonoBehaviour
         m.Clear();
         m.vertices = ms.vertices.ToArray();
 
+        
         m.uv = ms.uvs.ToArray();
+        m.uv2 = ms.uv3.ToArray();
         m.uv3 = ms.uv3.ToArray();
 
         m.normals = ms.normals.ToArray();
