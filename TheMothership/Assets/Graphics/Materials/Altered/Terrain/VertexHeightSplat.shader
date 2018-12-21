@@ -240,7 +240,7 @@ Shader "MixTerrain/VertexHeightSplat" {
 			//#endif
            // float2 texcoord : TEXCOORD0;
             float4 texChoice; // : TEXCOORD0;
-
+			float glow;
 			//float2 //uv2_texcoord;
 			//float2 texcoord2 : TEXCOORD2;
 
@@ -315,6 +315,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 				o.texChoice.y = v.texcoord.y;
 				o.texChoice.z = v.texcoord1.x;
 				o.texChoice.w = v.texcoord1.y;
+
+				o.glow = v.texcoord2.x;
 
 				//o.texcoord.x = v.texcoord.x;
 				//o.texcoord.y = v.texcoord.y;
@@ -703,8 +705,8 @@ Shader "MixTerrain/VertexHeightSplat" {
 				  */
 
 			//#endif
-			o.Metallic = colorPercent*_ColorMetallic+(firstPercent+secondPercent)*_Metallic; //mg.x;
-			o.Smoothness = colorPercent*_ColorGlossiness+(firstPercent+secondPercent)*_Glossiness; //_Glossiness; //mg.y;
+			o.Metallic = colorPercent*_ColorMetallic+(firstPercent+secondPercent+thirdPercent+fourthPercent)*_Metallic; //mg.x;
+			o.Smoothness = colorPercent*_ColorGlossiness+(firstPercent+secondPercent+thirdPercent+fourthPercent)*_Glossiness; //_Glossiness; //mg.y;
 			//+thirdPercent+fourthPercent
 
 			o.Emission = colorPercent * IN.color.rgb * _ColorGlow;

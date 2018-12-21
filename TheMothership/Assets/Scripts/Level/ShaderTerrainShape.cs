@@ -14,6 +14,10 @@ public class ShapePoint
     public float texFour;
 
     public float alpha;
+    //public float metalness;
+    //public float glow;
+    //public float smoothness;
+
     public Color32 color;
 
     public int resolution;
@@ -56,7 +60,11 @@ public struct NoiseSettings
     [Range(0, 50)]
     public float overExtent;
     public bool rigid;
-
+    public bool sine;
+    public bool smooth;
+    public bool notNormalized;
+    [Range(0, 10)]
+    public int quadratic;
 
     [Header("Noise application Settings")]
     public Vector3 normalRelativeTarget;
@@ -65,6 +73,7 @@ public struct NoiseSettings
     public bool afterAlterations;
     public bool reverse;
     public bool ignoreNormal;
+
     public Vector3 appliesOnlyToFace;
     [Range(0, 10)]
     public float edgeSmoothening;
@@ -79,7 +88,6 @@ public struct NoiseSettings
     public Color highColor;
     public Color highColorLerp;
     public Color lowColor;
-    public Material material;
     public bool texOne;
     public bool texTwo;
     public bool texThree;
@@ -89,15 +97,20 @@ public struct NoiseSettings
     public float colorLerpRoughness;
     [Range(0, 1)]
     public float colorLerpStrength;
-
     [Range(0, 10)]
     public float colorMultiplier;
     [Range(0, 1)]
     public float colorCutOff;
     [Range(0, 2)]
     public float colorIncompatability;
+   // [Range(0, 1)]
+    //public float colorGlow;
 
-    public bool removeColor;
+    //[Range(0, 1)]
+    //public float metalness;
+    //[Range(0, 1)]
+    //public float smoothness;
+
 
 
 }
@@ -277,133 +290,145 @@ public class ShaderTerrainShape : MonoBehaviour
 
         if (noises != null && noises.Length > 0)
         {
-            foreach (NoiseSettings o in noises)
+            // foreach (NoiseSettings o in noises)
+            // {
+
+            // bool found = false;
+
+
+            for (int i = 0; i < noises.Length; i++)
             {
+                NoiseSettings ns = noises[i];
                 float noi = 0;
-                bool found = false;
 
-                for (int i = 0; i < noises.Length; i++)
-                {
-                    NoiseSettings ns = noises[i];
-
-                    if (!used[i]
+                if (!used[i]
                         && ns.afterAlterations == afterAlterations
-                        && ns.normalRelativeTarget == o.normalRelativeTarget
+                        // && ns.normalRelativeTarget == o.normalRelativeTarget
                         && ns.strength > 0
                         && ns.layers > 0
-                        && ns.overExtent == o.overExtent
-                        && ns.reverse == o.reverse
+                        // && ns.overExtent == o.overExtent
+                        //  && ns.reverse == o.reverse
                         && (ns.appliesOnlyToFace == Vector3.zero || ns.appliesOnlyToFace == localUp)
                         )
+                {
+
+                    used[i] = true;
+                    //found = true;
+
+
+                    float eval = EvaluateNoise(noise, currentPos, sp.point + ns.offset, ns);
+
+                    //Noise only applied to this face
+                    if (ns.appliesOnlyToFace == localUp && ns.edgeSmoothening > 0)
                     {
 
-                        used[i] = true;
-                        found = true;
+
+                        float mul = Mathf.Clamp01(Mathf.Sin(percent.x * Mathf.PI) * Mathf.Sin(percent.y * Mathf.PI) * ns.edgeSmoothening);
+                        mul = mul * mul * mul * (mul * (6f * mul - 15f) + 10f);
+                        eval *= mul;
+
+                    }
+
+                    noi = UpdateNoise(noi, eval, ns.negative, ns.multiply, ns.cutoff);
+
+                    if (noi > ns.resolutionCutoff && ns.resolution > 1)
+                    {
+                        sp.resolution = Mathf.Max(sp.resolution, ns.resolution);
+                    }
+
+                    float spPrevTexOne = sp.texOne;
+                    float spPrevTexTwo = sp.texTwo;
+                    float spPrevTexThree = sp.texThree;
+                    float spPrevTexFour = sp.texFour;
+                    float spPrevAlpha = sp.alpha;
+
+                    sp.texOne = ns.texOne ? UpdateNoise(sp.texOne, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texOne;
+                    sp.texTwo = ns.texTwo ? UpdateNoise(sp.texTwo, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texTwo;
+                    sp.texThree = ns.texThree ? UpdateNoise(sp.texThree, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texThree;
+                    sp.texFour = ns.texFour ? UpdateNoise(sp.texFour, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texFour;
+                    sp.alpha = ns.useColor ? UpdateNoise(sp.alpha, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.alpha;
+                    //sp.metalness = sp.metalness == 0? ns.metalness : Mathf.Lerp(sp.metalness,ns.metalness,0.5f);
+                    //sp.smoothness = sp.smoothness == 0 ? ns.smoothness : Mathf.Lerp(sp.smoothness, ns.smoothness, 0.5f);
+                    //sp.glow = ns.useColor ? ns.colorGlow : sp.glow;
+
+                    //Removes other colors based on this color
+                    if (ns.useColor && noi > 0)
+                    {
+
+                        Color32 highColorVariant = Color32.Lerp(ns.highColor, ns.highColorLerp,
+                            SimpleNoise(noise, currentPos, sp.point, ns.colorLerpRoughness) * ns.colorLerpStrength);
 
 
-                        float eval = EvaluateNoise(noise, currentPos, sp.point + ns.offset, ns);
+                        if (sp.color.r == 0 && sp.color.g == 0 && sp.color.b == 0)
+                         {
+                        sp.color = Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha);
+                         }
+                         else
+                         {
+                             sp.color = Color.Lerp(sp.color, Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha), 0.5f);
+                         }
+                    }
+                    if (ns.texOne && ns.colorIncompatability > 0)
+                    {
+                        sp.texTwo = ReduceColor(sp.texTwo, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                        sp.texThree = ReduceColor(sp.texThree, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                        sp.texFour = ReduceColor(sp.texFour, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                        sp.alpha = ReduceColor(sp.alpha, sp.texOne - spPrevTexOne, ns.colorIncompatability);
+                    }
+                    else if (ns.texTwo && ns.colorIncompatability > 0)
+                    {
+                        sp.texOne = ReduceColor(sp.texOne, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                        sp.texThree = ReduceColor(sp.texThree, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                        sp.texFour = ReduceColor(sp.texFour, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
+                        sp.alpha = ReduceColor(sp.alpha, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
 
-                        //Noise only applied to this face
-                        if (ns.appliesOnlyToFace == localUp && ns.edgeSmoothening > 0)
-                        {
+                    }
+                    else if (ns.texThree && ns.colorIncompatability > 0)
+                    {
+                        sp.texOne = ReduceColor(sp.texOne, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                        sp.texTwo = ReduceColor(sp.texTwo, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                        sp.texFour = ReduceColor(sp.texFour, sp.texThree - spPrevTexThree, ns.colorIncompatability);
+                        sp.alpha = ReduceColor(sp.alpha, sp.texThree - spPrevTexThree, ns.colorIncompatability);
 
-
-                            float mul = Mathf.Clamp01(Mathf.Sin(percent.x * Mathf.PI) * Mathf.Sin(percent.y * Mathf.PI) * ns.edgeSmoothening);
-                            mul = mul * mul * mul * (mul * (6f * mul - 15f) + 10f);
-                            eval *= mul;
-
-                        }
-
-                        noi = UpdateNoise(noi, eval, ns.negative, ns.multiply, ns.cutoff);
-
-                        if (noi > ns.resolutionCutoff && ns.resolution > 1)
-                        {
-                            sp.resolution = Mathf.Max(sp.resolution, ns.resolution);
-                        }
-
-                        float spPrevTexOne = sp.texOne;
-                        float spPrevTexTwo = sp.texTwo;
-                        float spPrevTexThree = sp.texThree;
-                        float spPrevTexFour = sp.texFour;
-                        float spPrevAlpha = sp.alpha;
-
-                        sp.texOne = ns.texOne ? UpdateNoise(sp.texOne, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texOne;
-                        sp.texTwo = ns.texTwo ? UpdateNoise(sp.texTwo, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texTwo;
-                        sp.texThree = ns.texThree ? UpdateNoise(sp.texThree, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texThree;
-                        sp.texFour = ns.texFour ? UpdateNoise(sp.texFour, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.texFour;
-                        sp.alpha = ns.useColor ? UpdateNoise(sp.alpha, eval, ns.negative, ns.multiply, Mathf.Max(ns.colorCutOff, ns.cutoff), ns.colorMultiplier == 0 ? 1 : ns.colorMultiplier) : sp.alpha;
-
-                        //Removes other colors based on this color
-                        if (ns.useColor)
-                        {
-
-                            Color32 highColorVariant = Color32.Lerp(ns.highColor, ns.highColorLerp,
-                                SimpleNoise(noise, currentPos, sp.point, ns.colorLerpRoughness) * ns.colorLerpStrength);
-
-
-                            if (sp.color.r == 0 && sp.color.g == 0 && sp.color.b == 0)
-                            {
-                                sp.color = Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha);
-                            }
-                            else
-                            {
-                                sp.color = Color.Lerp(sp.color, Color32.Lerp(ns.lowColor, highColorVariant, sp.alpha), 0.5f);
-                            }
-                        }
-                        if (ns.texOne && ns.colorIncompatability > 0)
-                        {
-                            sp.texTwo = ReduceColor(sp.texTwo, sp.texOne - spPrevTexOne, ns.colorIncompatability);
-                            sp.texThree = ReduceColor(sp.texThree, sp.texOne - spPrevTexOne, ns.colorIncompatability);
-                            sp.texFour = ReduceColor(sp.texFour, sp.texOne - spPrevTexOne, ns.colorIncompatability);
-                            sp.alpha = ReduceColor(sp.alpha, sp.texOne - spPrevTexOne, ns.colorIncompatability);
-                        }
-                        else if (ns.texTwo && ns.colorIncompatability > 0)
-                        {
-                            sp.texOne = ReduceColor(sp.texOne, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
-                            sp.texThree = ReduceColor(sp.texThree, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
-                            sp.texFour = ReduceColor(sp.texFour, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
-                            sp.alpha = ReduceColor(sp.alpha, sp.texTwo - spPrevTexTwo, ns.colorIncompatability);
-
-                        }
-                        else if (ns.texThree && ns.colorIncompatability > 0)
-                        {
-                            sp.texOne = ReduceColor(sp.texOne, sp.texThree - spPrevTexThree, ns.colorIncompatability);
-                            sp.texTwo = ReduceColor(sp.texTwo, sp.texThree - spPrevTexThree, ns.colorIncompatability);
-                            sp.texFour = ReduceColor(sp.texFour, sp.texThree - spPrevTexThree, ns.colorIncompatability);
-                            sp.alpha = ReduceColor(sp.alpha, sp.texThree - spPrevTexThree, ns.colorIncompatability);
-
-                        }
-                        else if (ns.texFour && ns.colorIncompatability > 0)
-                        {
-                            sp.texOne = ReduceColor(sp.texOne, sp.texFour - spPrevTexFour, ns.colorIncompatability);
-                            sp.texTwo = ReduceColor(sp.texTwo, sp.texFour - spPrevTexFour, ns.colorIncompatability);
-                            sp.texThree = ReduceColor(sp.texThree, sp.texFour - spPrevTexFour, ns.colorIncompatability);
-                            sp.alpha = ReduceColor(sp.alpha, sp.texFour - spPrevTexFour, ns.colorIncompatability);
-                        }
-                        else if (ns.useColor && ns.colorIncompatability > 0)
-                        {
-                            sp.texOne = ReduceColor(sp.texOne, sp.alpha - spPrevAlpha, ns.colorIncompatability);
-                            sp.texTwo = ReduceColor(sp.texTwo, sp.alpha - spPrevAlpha, ns.colorIncompatability);
-                            sp.texThree = ReduceColor(sp.texThree, sp.alpha - spPrevAlpha, ns.colorIncompatability);
-                            sp.texFour = ReduceColor(sp.texFour, sp.alpha - spPrevAlpha, ns.colorIncompatability);
-                        }
+                    }
+                    else if (ns.texFour && ns.colorIncompatability > 0)
+                    {
+                        sp.texOne = ReduceColor(sp.texOne, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                        sp.texTwo = ReduceColor(sp.texTwo, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                        sp.texThree = ReduceColor(sp.texThree, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                        sp.alpha = ReduceColor(sp.alpha, sp.texFour - spPrevTexFour, ns.colorIncompatability);
+                    }
+                    else if (ns.useColor && ns.colorIncompatability > 0)
+                    {
+                        sp.texOne = ReduceColor(sp.texOne, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                        sp.texTwo = ReduceColor(sp.texTwo, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                        sp.texThree = ReduceColor(sp.texThree, sp.alpha - spPrevAlpha, ns.colorIncompatability);
+                        sp.texFour = ReduceColor(sp.texFour, sp.alpha - spPrevAlpha, ns.colorIncompatability);
                     }
                 }
 
-                if (found)
-                {
-
-                    Vector3 noiseVector = new Vector3(
-                        ((o.ignoreNormal ? 0 : sp.normal.x) + o.normalRelativeTarget.x) * extents.x * (1f + o.overExtent) * (o.reverse ? -1 : 1),
-                        ((o.ignoreNormal ? 0 : sp.normal.y) + o.normalRelativeTarget.y) * extents.y * (1f + o.overExtent) * (o.reverse ? -1 : 1),
-                        ((o.ignoreNormal ? 0 : sp.normal.z) + o.normalRelativeTarget.z) * extents.z * (1f + o.overExtent) * (o.reverse ? -1 : 1)
-                        );
 
 
-                    sp.point = Vector3.Lerp(sp.point, sp.point + noiseVector, noi*o.height);
-                }
+                // if (found)
+                //{
+
+                Vector3 noiseVector = new Vector3(
+                    ((ns.ignoreNormal ? 0 : sp.normal.x) + ns.normalRelativeTarget.x) * extents.x * (1f + ns.overExtent) * (ns.reverse ? -1 : 1),
+                    ((ns.ignoreNormal ? 0 : sp.normal.y) + ns.normalRelativeTarget.y) * extents.y * (1f + ns.overExtent) * (ns.reverse ? -1 : 1),
+                    ((ns.ignoreNormal ? 0 : sp.normal.z) + ns.normalRelativeTarget.z) * extents.z * (1f + ns.overExtent) * (ns.reverse ? -1 : 1)
+                    );
+
+
+                sp.point = Vector3.Lerp(sp.point, sp.point + noiseVector, noi * ns.height);
+                // }
+
+
+
+
             }
+
         }
+        //  }
         return sp;
     }
 
@@ -590,8 +615,24 @@ public class ShaderTerrainShape : MonoBehaviour
             frequency *= ns.roughness;
             amplitude *= ns.persistance;
         }
+        float ret = (noiseValue * ns.strength);
 
-        return (noiseValue * ns.strength) / maximum;
+        if (!ns.notNormalized) {
+            ret /= maximum;
+        }
+        if (ns.sine) {
+            ret = Mathf.Sin(ret);
+        }
+        if (ns.smooth) {
+            ret = ret * ret * (3f - 2f * ret);
+        }
+        if (ns.quadratic > 0) {
+            for (int q = 0; q < ns.quadratic; q++) {
+                ret *= ret;
+            }
+        }
+
+        return ret;
     }
     /*if (maxoutExtentsAtProjectionEnds && projectionDirection != Vector3.zero) {
     if(projectionDirection.x != 0){
