@@ -3,6 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/*public class ConsolidationSet {
+
+    public ;
+
+    public ConsolidationSet(){
+    }
+}*/
 public class WorkingTerrainSet
 {
     public int[,] sharedX;
@@ -10,6 +17,9 @@ public class WorkingTerrainSet
     public int[,] sharedZ;
     public int maxResolution;
     public MeshArrays ma;
+
+  //  public DictionaryList<Vector3, MeshArrays> faces;
+
     public ShaderTerrainShape shape;
     public Dictionary<Vector3, int[,]> vertexFaces;
 
@@ -19,8 +29,8 @@ public class WorkingTerrainSet
         int[,] sharedZ,
         int maxResolution,
         MeshArrays ma,
-        ShaderTerrainShape shape,
-        Dictionary<Vector3, int[,]> vertexFaces
+        ShaderTerrainShape shape//,
+        //Dictionary<Vector3, int[,]> vertexFaces
         )
     {
         this.sharedX = sharedX;
@@ -28,8 +38,9 @@ public class WorkingTerrainSet
         this.sharedZ = sharedZ;
         this.maxResolution = maxResolution;
         this.ma = ma;
+       // this.faces = new DictionaryList<Vector3, MeshArrays>();
         this.shape = shape;
-        this.vertexFaces = vertexFaces;
+        this.vertexFaces = new Dictionary<Vector3, int[,]>();
     }
 }
 public class WorkingFaceSet
@@ -63,13 +74,18 @@ public class WorkingFaceSet
     public Vector3 halfSizeExtent;
     public Vector3 borderRes;
 
+    public FaceChildren children;
+
     public WorkingFaceSet(
+
+        FaceChildren children,
 
         int xResolution,
         int yResolution,
         int zResolution,
         int resolution,
         int dir,
+
 
         int[,] vertexPositions,
         List<ShaderTerrain> childlist,
@@ -96,7 +112,7 @@ public class WorkingFaceSet
 
         )
     {
-
+        this.children = children;
         this.childlist = childlist;
         this.projections = new List<Projection>();
         this.addedTriangles = new List<AddedTriangle>();
@@ -160,6 +176,9 @@ public struct MeshArrays
 
     public Noise noise;
 
+    public bool normalized;
+
+    public VertexChildren children;
 
     public MeshArrays(Noise noise)
     {
@@ -179,6 +198,8 @@ public struct MeshArrays
         this.sharedY = new DictionaryList<ShaderTerrain, int[,]>();
         this.sharedZ = new DictionaryList<ShaderTerrain, int[,]>();
         this.noise = noise;
+        this.normalized = false;
+        this.children = new VertexChildren();
 
     }
 
@@ -327,11 +348,23 @@ public struct CombinedQuads
         this.endY = endY;
     }
 }
+public class VertexChildren {
+    public List<FaceChildren> faces = new List<FaceChildren>();
+    public List<VertexChildren> children = new List<VertexChildren>();
+   
+}
+public class FaceChildren {
+    public int vertcount = 0;
+    public List<int> triangles = new List<int>();
+}
 
 
 [RequireComponent(typeof(ShaderTerrainShape))]
 public class ShaderTerrain : MonoBehaviour
 {
+
+    public static readonly int VERTEX_LIMIT = 65535;
+    public static readonly string NAME = "_ShaderTerrainMeshes_";
 
     public Material material;
     public ShaderTerrain parent;
@@ -400,9 +433,9 @@ public class ShaderTerrain : MonoBehaviour
     public Material[] splatTextures = new Material[] { };
     public Material colorUsage;
 
-    private new MeshRenderer renderer = null;
-    private MeshFilter filter = null;
-    private Mesh mesh;
+    //private new MeshRenderer renderer = null;
+    //private MeshFilter filter = null;
+    //private Mesh mesh;
     // private Noise noise;
     private Vector3 relativePos;
     private Vector3 currentPos;
@@ -413,9 +446,10 @@ public class ShaderTerrain : MonoBehaviour
    // public ListHash<Material> materials = null;
 
 
-    public void Initialize()
+    /*public void Initialize()
     {
         generated = false;
+        
 
         if (renderer == null)
         {
@@ -431,7 +465,7 @@ public class ShaderTerrain : MonoBehaviour
         {
             mesh = filter.sharedMesh = new Mesh();
         }
-    }
+    }*/
     public void Start()
     {
         transform.gameObject.isStatic = true;
@@ -467,8 +501,15 @@ public class ShaderTerrain : MonoBehaviour
         else
         {
             PrepareChildren();
-            Initialize();
-            ApplyMeshArrays(Generate(new MeshArrays(new Noise())), mesh);
+            generated = false;
+            //Initialize();
+            MeshArrays ma = new MeshArrays(new Noise());
+
+            ApplyMeshArrays(SplitMeshArrays(Generate(ma,ma.children)));
+
+            //ApplyMeshArrays(wip, mesh);
+
+            //ApplyMeshArrays(Generate(,, mesh);
         }
     }
     public void SetDefs()
@@ -484,7 +525,7 @@ public class ShaderTerrain : MonoBehaviour
 
         shape.parent = this;
 
-        if (shape.noises != null)
+        /*if (shape.noises != null)
         {
             foreach (NoiseSettings ns in shape.noises)
             {
@@ -493,7 +534,7 @@ public class ShaderTerrain : MonoBehaviour
                  //   materials.AddIfNotContains(ns.material);
                // }
             }
-        }
+        }*/
     }
     public void PrepareChildren()
     {
@@ -509,9 +550,132 @@ public class ShaderTerrain : MonoBehaviour
         }
     }
 
+    public List<MeshArrays> SplitMeshArrays(MeshArrays ma) {
 
+        if (!ma.normalized)
+        {
 
-    public void ApplyMeshArrays(MeshArrays ms, Mesh m)
+            for (int i = 0; i < ma.vertices.Count; i++)
+            {
+                ma.normals[i] = (ma.normals[i] / ((float)ma.sharedVertCount[i])).normalized;
+            }
+
+            ma.normalized = true;
+        }
+
+        List<MeshArrays> list = new List<MeshArrays>();
+        list.Add(ma);
+
+        return list;
+    }
+
+    public void ApplyMeshArrays(List<MeshArrays> mars) {
+
+        Transform found = null;
+        string name = transform.gameObject.name + NAME + "(" + mars.Count + ")";
+
+        for (int i = 0; i < transform.childCount; i++){
+            if (transform.GetChild(i).name.Contains(NAME)) {
+                found = transform.GetChild(i);
+                found.name = name;
+            }
+        }
+
+        if (found == null) {
+            GameObject go = new GameObject(name);
+            go.transform.parent = transform;
+            found = go.transform;
+        }
+
+        found.localPosition = Vector3.zero;
+
+        Material mat = GetMaterial();
+        int childPos = 0;
+
+        for (int i = 0; i < mars.Count; i++)
+        {
+
+            if (mars[i].vertices.Count > 0)
+            {
+                MeshArrays ma = mars[i];
+
+                GameObject go;
+                Mesh m;
+                MeshRenderer mr;
+
+                string childname = "Mesh_Vert_" + ma.vertices.Count + "_Tri_" + ma.triangles.Count/3;
+
+                if (found.childCount > childPos)
+                {
+                    go = found.GetChild(childPos).gameObject;
+                    go.name = childname;
+                    mr = go.GetComponent<MeshRenderer>();
+                    m = go.GetComponent<MeshFilter>().mesh;
+
+                }else {
+
+                    go = new GameObject(childname);
+                    mr = go.AddComponent<MeshRenderer>();
+                    MeshFilter mf = go.AddComponent<MeshFilter>();
+                    m = mf.mesh = new Mesh();
+                    go.transform.parent = found;
+                }
+
+                m.Clear();
+
+                MeshArrayToMesh(ma, m);
+                mr.sharedMaterial = mat;
+
+                childPos++;
+            }
+            else
+            {
+                Debug.Log("Empty mesharray!");
+            }
+        }
+
+        //Clear old objects
+        for (int i = childPos; i < found.childCount; i++) {
+            GameObject go = found.GetChild(childPos).gameObject;
+            go.GetComponent<MeshFilter>().mesh.Clear();
+            go.name = "EmptyMesh";
+        }
+    }
+    private void MeshArrayToMesh(MeshArrays ma, Mesh m) {
+
+        m.vertices = ma.vertices.ToArray();
+        m.uv = ma.uvs.ToArray();
+        m.uv2 = ma.uv2.ToArray();
+        m.normals = ma.normals.ToArray();
+        m.colors32 = ma.vertexColors.ToArray();
+        m.triangles = ma.triangles.ToArray();
+    }
+
+    private Material GetMaterial() {
+
+        Material newMat = new Material(material);
+        SetTexture(0, splatTextures[0], newMat);
+        SetTexture(1, splatTextures[1], newMat);
+        SetTexture(2, splatTextures[2], newMat);
+        SetTexture(3, splatTextures[3], newMat);
+
+        newMat.SetFloat("_ParallaxTextureHeight", textureHeightTexOne);
+        newMat.SetFloat("_ParallaxTextureHeight1", textureHeightTexTwo);
+        newMat.SetFloat("_ParallaxTextureHeight2", textureHeightTexThree);
+        newMat.SetFloat("_ParallaxTextureHeight3", textureHeightTexFour);
+
+        newMat.SetTexture("_BumpMapColor", colorUsage.GetTexture("_BumpMap"));
+        newMat.SetTextureScale("_BumpMapColor", colorUsage.mainTextureScale);
+
+        newMat.SetFloat("_ColorMetallic", colorUsage.GetFloat("_Metallic"));
+        newMat.SetFloat("_ColorGlossiness", colorUsage.GetFloat("_Glossiness"));
+
+        newMat.SetFloat("_ColorGlow", colorGlow);
+
+        return newMat;
+    }
+
+    /*public void ApplyMeshArrays(MeshArrays ms, Mesh m)
     {
         for (int i = 0; i < ms.vertices.Count; i++) {
             ms.normals[i] = (ms.normals[i] / ((float)ms.sharedVertCount[i])).normalized; 
@@ -565,7 +729,7 @@ public class ShaderTerrain : MonoBehaviour
         renderer.material = newMat;
 
 
-    }
+    }*/
 
 
     public void SortChildren()
@@ -609,6 +773,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         Debug.Log("Missing direction: " + dir);
     }
+
     public Vector3 GetCorner(Vector3 orientation)
     {
         return currentPos + new Vector3(orientation.x * xSize / 2f, orientation.y * ySize / 2f, orientation.z * zSize / 2f);
@@ -829,7 +994,7 @@ public class ShaderTerrain : MonoBehaviour
         return minmax;
     }
 
-    public MeshArrays Generate(MeshArrays ma)
+    public MeshArrays Generate(MeshArrays ma, VertexChildren self)
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         stopwatch.Start();
@@ -859,8 +1024,8 @@ public class ShaderTerrain : MonoBehaviour
                 ma.sharedZ.AddGetValue(this, new int[4, (zSize * maxResolution) + 1]),
                 maxResolution,
                 ma,
-                shape,
-                new Dictionary<Vector3, int[,]>()
+                shape//,
+                //new Dictionary<Vector3, int[,]>()
             );
 
         for (int dir = 0; dir < directions.Length; dir++)
@@ -892,7 +1057,11 @@ public class ShaderTerrain : MonoBehaviour
 
             Vector3 borderRes = GetResolution(maxResolution, mod);
 
+            FaceChildren fc = new FaceChildren();
+            self.faces.Add(fc);
+
             WorkingFaceSet wfs = new WorkingFaceSet(
+                fc,
                 (int)borderRes.x,
                 (int)borderRes.y,
                 (int)borderRes.z,
@@ -917,7 +1086,9 @@ public class ShaderTerrain : MonoBehaviour
 
                     if (!wfs.childlist[ca].generated)
                     {
-                        wfs.childlist[ca].Generate(ma);
+                        VertexChildren vc = new VertexChildren();
+                        self.children.Add(vc);
+                        wfs.childlist[ca].Generate(ma,vc);
                     }
                     wfs.projections.Add(wfs.childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
                 }
@@ -926,14 +1097,89 @@ public class ShaderTerrain : MonoBehaviour
             CreateVerticesAndTriangles(wfs, wts);
 
         }
+        //consolidate
+        //Consolidate(wip, wts, list);
+
         stopwatch.Stop();
 
         Debug.Log("Vert total: " + ma.vertices.Count + " triangle total: " + ma.triangles.Count / 3 + " Time taken: " + (stopwatch.ElapsedMilliseconds) / 1000f);
         return ma;
     }
 
+    /*public void Consolidate(MeshArrays wip, WorkingTerrainSet tocons, List<MeshArrays> fullarrays) {
 
-    private void IncorporateTriangle(AddedTriangle at, int[,] vertexPositions, MeshArrays ma, HashSet<int> normalized)
+        DictionaryList<Vector3, MeshArrays > cons = new DictionaryList<Vector3, MeshArrays>();
+
+        int sum = 0;
+        foreach (Vector3 v in tocons.faces) {
+            int toAdd = tocons.faces[v].vertices.Count;
+            if (sum + toAdd >= VERTEX_LIMIT)
+            {
+                //Consolidate existing
+                fullarrays.Add(ConsolidateFaces(new MeshArrays(), cons));
+                sum = 0;
+            }
+            else {
+                sum += toAdd;
+                cons.Add(v, tocons.faces[v]);
+            }
+
+        }
+
+        if (wip.vertices.Count + sum >= VERTEX_LIMIT)
+        {
+            fullarrays.Add(wip);
+            wip = new MeshArrays();
+            //wip = ConsolidateFaces(new MeshArrays(), cons);
+        }
+        //else { 
+        //}
+        wip = ConsolidateFaces(wip, cons);
+
+
+        //Consolidate with parent
+
+    }
+
+    private MeshArrays ConsolidateFaces(MeshArrays ma, DictionaryList<Vector3, MeshArrays> cons) {
+
+        int currentStartIndex = ma.vertices.Count;
+
+        foreach (Vector3 direction in cons) {
+
+            MeshArrays current = cons[direction];
+            int currentEndIndex = currentStartIndex + current.vertices.Count;
+
+            ma.vertices.AddRange(current.vertices);
+            ma.vertexColors.AddRange(current.vertexColors);
+            ma.normals.AddRange(current.normals);
+            ma.uvs.AddRange(current.uvs);
+            ma.uv2.AddRange(current.uv2);
+            ma.uv3.AddRange(current.uv3);
+            ma.uv4.AddRange(current.uv4);
+            
+
+            for (int i = 0; i < current.triangles.Count; i++) {
+                ma.triangles.Add(currentStartIndex + current.triangles[i]);
+            }
+
+            currentStartIndex = currentEndIndex;
+        }
+        
+        cons.Clear();
+
+        return ma;
+    } */
+
+
+    private void IncorporateTriangle(
+        WorkingFaceSet wfs,
+        WorkingTerrainSet wts,
+        AddedTriangle at//, 
+        //int[,] vertexPositions, 
+       // MeshArrays ma
+        /*, 
+        HashSet<int> normalized*/)
     {
 
         int triIndexOne = at.childA - 1;
@@ -943,12 +1189,12 @@ public class ShaderTerrain : MonoBehaviour
         if (at.hasChildB)
         {
             triIndexTwo = at.childB - 1;
-            triIndexThree = vertexPositions[at.parentCX, at.parentCY] - 1;
+            triIndexThree = wfs.vertexPositions[at.parentCX, at.parentCY] - 1;
         }
         else
         {
-            triIndexTwo = vertexPositions[at.parentCX, at.parentCY] - 1;
-            triIndexThree = vertexPositions[at.parentBX, at.parentBY] - 1;
+            triIndexTwo = wfs.vertexPositions[at.parentCX, at.parentCY] - 1;
+            triIndexThree = wfs.vertexPositions[at.parentBX, at.parentBY] - 1;
         }
 
         if (at.flipped)
@@ -972,31 +1218,10 @@ public class ShaderTerrain : MonoBehaviour
         }
         else
         {
-
-            Vector3 newNormal = ShaderTerrainShape.CalculateNormal(ma.vertices[triIndexOne], ma.vertices[triIndexTwo], ma.vertices[triIndexThree]);
-
-
-            if (!normalized.Contains(triIndexOne))
-            {
-                ma.normals[triIndexOne] = (ma.normals[triIndexOne] + newNormal) / 2f;
-                normalized.Add(triIndexOne);
-            }
-            if (!normalized.Contains(triIndexTwo))
-            {
-                ma.normals[triIndexTwo] = (ma.normals[triIndexTwo] + newNormal) / 2f;
-                normalized.Add(triIndexTwo);
-            }
-            if (!normalized.Contains(triIndexThree))
-            {
-                ma.normals[triIndexThree] = (ma.normals[triIndexThree] + newNormal) / 2f;
-                normalized.Add(triIndexThree);
-            }
-
-            ma.triangles.Add(triIndexOne);
-            ma.triangles.Add(triIndexTwo);
-            ma.triangles.Add(triIndexThree);
-
+            AddTriangle(wfs, wts, triIndexOne, triIndexTwo, triIndexThree, true);
         }
+
+        wfs.children.vertcount++;
 
 
     }
@@ -1016,14 +1241,28 @@ public class ShaderTerrain : MonoBehaviour
         int twoPos = AddVertex(wfs, wts, xTwo, yTwo);
         int threePos = AddVertex(wfs, wts, xThree, yThree);
 
-       
+        AddTriangle(wfs, wts, onePos, twoPos, threePos, clockwise);
+
+    }
+    public void AddTriangle(
+        WorkingFaceSet wfs,
+        WorkingTerrainSet wts,
+        int onePos, 
+        int twoPos, 
+        int threePos,
+        bool clockwise = true
+        )
+    {
         wts.ma.triangles.Add(onePos);
+        wfs.children.triangles.Add(onePos);
         Vector3 normal;
 
         if (clockwise)
         {
             wts.ma.triangles.Add(twoPos);
             wts.ma.triangles.Add(threePos);
+            wfs.children.triangles.Add(twoPos);
+            wfs.children.triangles.Add(threePos);
 
             normal = GetNormal(wts.ma.vertices[onePos], wts.ma.vertices[twoPos], wts.ma.vertices[threePos]);
         }
@@ -1031,6 +1270,8 @@ public class ShaderTerrain : MonoBehaviour
         {
             wts.ma.triangles.Add(threePos);
             wts.ma.triangles.Add(twoPos);
+            wfs.children.triangles.Add(threePos);
+            wfs.children.triangles.Add(twoPos);
 
             normal = GetNormal(wts.ma.vertices[onePos], wts.ma.vertices[threePos], wts.ma.vertices[twoPos]);
         }
@@ -1042,6 +1283,7 @@ public class ShaderTerrain : MonoBehaviour
         wts.ma.sharedVertCount[onePos] += 1;
         wts.ma.sharedVertCount[twoPos] += 1;
         wts.ma.sharedVertCount[threePos] += 1;
+
     }
 
     public static Vector3 GetNormal(Vector3 a, Vector3 b, Vector3 c) {
@@ -1073,9 +1315,11 @@ public class ShaderTerrain : MonoBehaviour
     public int AddVertex(
         WorkingFaceSet wfs,
         WorkingTerrainSet wts,
-    int x, int y
+        int x, 
+        int y
     )
     {
+        bool vertCountIncrease = false;
         int linkPos = (y * wfs.xResolution) + x;
         int iplus = wts.ma.vertices.Count + 1;
         int val = 0;
@@ -1085,21 +1329,12 @@ public class ShaderTerrain : MonoBehaviour
             Vector2 percent = new Vector2(x / (float)(wfs.xResolution - 1f), (float)y / (float)(wfs.yResolution - 1f));
 
             ShapePoint center = GetAtlasPoint(wfs, wts, x, y);
-            //atlas, drawnToward, force, shape, ma, x, y, xResolution, yResolution, reverseProjectionSide, currentPos,
-            //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent);
             wfs.vertexPositions[x, y] = iplus;
 
 
             Vector3 vert = (Vector3)center.point + relativePos;
-
             ShapePointToVertex(wts, center, relativePos, percent);
-            /*
-            wts.ma.uvs.Add(percent);
-            wts.ma.uv2.Add(new Vector2(center.texOne, center.texTwo));
-            wts.ma.vertexColors.Add(center.color);
-            wts.ma.vertices.Add(vert);
-            wts.ma.normals.Add(center.normal);
-            */
+            vertCountIncrease = true;
         }
         else
         {
@@ -1109,6 +1344,8 @@ public class ShaderTerrain : MonoBehaviour
         //Share vertices between faces where they connect
         if (x == wfs.xResolution - 1 || y == wfs.yResolution - 1 || x == 0 || y == 0)
         {
+            vertCountIncrease = true;
+
             if (wfs.localUp == Vector3.up)
             {
 
@@ -1266,6 +1503,10 @@ public class ShaderTerrain : MonoBehaviour
                     wts.sharedY[MeshArrays.Y_LEFT_BACK, y] = iplus;
                 }
             }
+        }
+
+        if (vertCountIncrease) {
+            wfs.children.vertcount++;
         }
         return iplus - 1;
     }
@@ -1613,10 +1854,10 @@ public class ShaderTerrain : MonoBehaviour
 
         }
 
-        HashSet<int> normalized = new HashSet<int>();
+        //HashSet<int> normalized = new HashSet<int>();
         foreach (AddedTriangle tri in wfs.addedTriangles)
         {
-            IncorporateTriangle(tri, wfs.vertexPositions, wts.ma, normalized);
+            IncorporateTriangle(wfs,wts,tri);
         }
 
 
