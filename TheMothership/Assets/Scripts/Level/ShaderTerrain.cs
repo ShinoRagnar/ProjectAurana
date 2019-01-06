@@ -22,6 +22,7 @@ public class WorkingTerrainSet
 
     public ShaderTerrainShape shape;
     public Dictionary<Vector3, int[,]> vertexFaces;
+    public List<WorkingTerrainSet> lods;
 
     public WorkingTerrainSet(
         int[,] sharedX,
@@ -33,6 +34,7 @@ public class WorkingTerrainSet
         //Dictionary<Vector3, int[,]> vertexFaces
         )
     {
+        this.lods = new List<WorkingTerrainSet>();
         this.sharedX = sharedX;
         this.sharedY = sharedY;
         this.sharedZ = sharedZ;
@@ -42,9 +44,26 @@ public class WorkingTerrainSet
         this.shape = shape;
         this.vertexFaces = new Dictionary<Vector3, int[,]>();
     }
+
+    public WorkingTerrainSet Copy(MeshArrays ma) {
+        return  new WorkingTerrainSet(
+            new int[sharedX.GetLength(0), sharedX.GetLength(1)],
+            new int[sharedY.GetLength(0), sharedY.GetLength(1)],
+            new int[sharedZ.GetLength(0), sharedZ.GetLength(1)],
+            maxResolution,
+            ma,
+            shape
+            );
+
+    }
+
 }
 public class WorkingFaceSet
 {
+    //public int reducedResolution;
+    //public int reducedNoiseDetails;
+    //public float errorToleranceIncrease; 
+
     public int xResolution;
     public int yResolution;
     public int zResolution;
@@ -75,10 +94,17 @@ public class WorkingFaceSet
     public Vector3 borderRes;
 
     public FaceChildren children;
+    public ShaderLODSettings settings;
+
 
     public WorkingFaceSet(
-
+        ShapePoint[,] atlas,
         FaceChildren children,
+
+        ShaderLODSettings settings,
+        //int reducedResolution,
+        //int reducedNoiseDetails,
+        //float errorToleranceIncrease,
 
         int xResolution,
         int yResolution,
@@ -86,21 +112,9 @@ public class WorkingFaceSet
         int resolution,
         int dir,
 
-
         int[,] vertexPositions,
+
         List<ShaderTerrain> childlist,
-        //List<Projection> projections,
-        //List<AddedTriangle> addedTriangles,
-
-        //ShapePoint[,] atlas,
-        //List<CombinedQuads> cquads,
-        //bool[,] occupiedMap,
-        //bool[,] cornerMap,
-        //bool[,] ignoreMap,
-
-        //Vector3[,] drawnTowards,
-        //float[,] drawnForce,
-
         Vector3 localUp,
         Vector3 halfMod,
         Vector3 halfModExtent,
@@ -112,6 +126,7 @@ public class WorkingFaceSet
 
         )
     {
+        this.settings = settings;
         this.children = children;
         this.childlist = childlist;
         this.projections = new List<Projection>();
@@ -125,8 +140,8 @@ public class WorkingFaceSet
         this.dir = dir;
 
         this.vertexPositions = vertexPositions;
-
-        this.atlas = new ShapePoint[xResolution, yResolution];
+        this.atlas = atlas;
+        //this.atlas = new ShapePoint[xResolution, yResolution];
         this.cquads = new List<CombinedQuads>();
         this.occupiedMap = new bool[xResolution - 1, yResolution - 1];
         this.cornerMap = new bool[xResolution, yResolution];
@@ -143,6 +158,7 @@ public class WorkingFaceSet
         this.halfSize = halfSize;
         this.halfSizeExtent = halfSizeExtent;
     }
+
 }
 public class MeshArrays
 {
@@ -176,13 +192,15 @@ public class MeshArrays
 
     public Noise noise;
 
+    public List<MeshArrays> lods;
+
     public bool normalized;
 
     public VertexChildren children;
 
     public MeshArrays(Noise noise)
     {
-
+        this.lods = new List<MeshArrays>();
         this.vertices = new List<Vector3>();
         this.uvs = new List<Vector2>();
         this.uv2 = new List<Vector2>();
@@ -362,12 +380,25 @@ public class VertexChildren {
 public class FaceChildren {
     public int vertcount = 0;
     public List<int> triangles = new List<int>();
-
+    public List<FaceChildren> lods = new List<FaceChildren>();
     public FaceChildren(int xResolution, int yResolution) {
         vertcount = xResolution * 2 + yResolution * 2 - 4;
     }
 }
+[Serializable]
+public struct ShaderLODSettings {
 
+    [Header("Base Resolution")]
+    [Range(0, 16)]
+    public int resolutionReduction;
+    [Header("Detail Resolution")]
+    [Range(0, 16)]
+    public int noiseDetailReduction;
+    [Header("Error Tolerance")]
+    [Range(0, 1)]
+    public float errorToleranceIncrease;
+
+}
 
 [RequireComponent(typeof(ShaderTerrainShape))]
 public class ShaderTerrain : MonoBehaviour
@@ -389,6 +420,9 @@ public class ShaderTerrain : MonoBehaviour
     public int ySize = 1;
     public Vector3 extents = new Vector3(0.5f, 0.5f, 0.5f);
     public bool flipTriangles = false;
+
+    [Header("LOD settings")]
+    public ShaderLODSettings[] lods;
 
     [Header("Error % allowed")]
     [Range(0, 1)]
@@ -516,7 +550,7 @@ public class ShaderTerrain : MonoBehaviour
             //Initialize();
             MeshArrays ma = new MeshArrays(new Noise());
 
-            ApplyMeshArrays(SplitMeshArrays(Generate(ma,ma.children)));
+            ApplyMeshArrays(SplitMeshArrays(Generate(lods,ma,ma.children)));
 
             //ApplyMeshArrays(wip, mesh);
 
@@ -698,18 +732,33 @@ public class ShaderTerrain : MonoBehaviour
 
                 if (found.childCount > childPos)
                 {
-                    go = found.GetChild(childPos).gameObject;
-                    go.name = childname;
+                    go = found.GetChild(childPos).GetChild(0).gameObject;
+                    found.GetChild(childPos).name = childname;
+
+
                     mr = go.GetComponent<MeshRenderer>();
                     m = go.GetComponent<MeshFilter>().sharedMesh;
 
                 }else {
 
-                    go = new GameObject(childname);
+                    GameObject lodgr = new GameObject(childname);
+                    LODGroup lg = lodgr.AddComponent<LODGroup>();
+
+                    lodgr.transform.parent = found;
+                    lodgr.transform.localPosition = Vector3.zero;
+
+
+                    go = new GameObject("LOD0");
+
                     mr = go.AddComponent<MeshRenderer>();
                     MeshFilter mf = go.AddComponent<MeshFilter>();
                     m = mf.sharedMesh = new Mesh();
-                    go.transform.parent = found;
+
+                    go.transform.parent = lodgr.transform;
+
+                    lg.SetLODs(new LOD[] { new LOD(0.02f, new Renderer[] { mr })});
+                    
+
                 }
 
                 m.Clear();
@@ -729,9 +778,9 @@ public class ShaderTerrain : MonoBehaviour
 
         //Clear old objects
         for (int i = childPos; i < found.childCount; i++) {
-            GameObject go = found.GetChild(childPos).gameObject;
+            GameObject go = found.GetChild(childPos).GetChild(0).gameObject;
             go.GetComponent<MeshFilter>().sharedMesh.Clear();
-            go.name = "EmptyMesh";
+            found.GetChild(childPos).name = "EmptyMesh";
         }
     }
     private void MeshArrayToMesh(MeshArrays ma, Mesh m) {
@@ -1087,7 +1136,7 @@ public class ShaderTerrain : MonoBehaviour
         return minmax;
     }
 
-    public MeshArrays Generate(MeshArrays ma, VertexChildren self)
+    public MeshArrays Generate(ShaderLODSettings[] parentSettings, MeshArrays ma, VertexChildren self)
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         stopwatch.Start();
@@ -1157,7 +1206,9 @@ public class ShaderTerrain : MonoBehaviour
             self.faces.Add(fc);
 
             WorkingFaceSet wfs = new WorkingFaceSet(
-                fc,
+                new ShapePoint[xResolution, yResolution],
+                fc, 
+                new ShaderLODSettings(),
                 xResolution,
                 yResolution,
                 (int)borderRes.z,
@@ -1184,7 +1235,7 @@ public class ShaderTerrain : MonoBehaviour
                     {
                         VertexChildren vc = new VertexChildren(wfs.childlist[ca].separateMesh);
                         self.children.Add(vc);
-                        wfs.childlist[ca].Generate(ma,vc);
+                        wfs.childlist[ca].Generate(lods ?? parentSettings, ma,vc);
                     }
                     wfs.projections.Add(wfs.childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
                 }
@@ -1192,6 +1243,37 @@ public class ShaderTerrain : MonoBehaviour
 
             CreateVerticesAndTriangles(wfs, wts);
 
+            if (parentSettings != null || lods != null) {
+
+                
+                int mxx = Mathf.Max(parentSettings == null ? 0 : parentSettings.Length, lods == null ? 0 : lods.Length);
+
+                if (mxx > 0) {
+
+                    while (ma.lods.Count < mxx) {
+                        MeshArrays manew = new MeshArrays(ma.noise);
+                        ma.lods.Add(manew);
+                        wts.lods.Add(wts.Copy(manew));
+                    }
+
+                    for (int lod = 0; lod < mxx; lod++)
+                    {
+                        ShaderLODSettings currentLOD = lods != null && lod < lods.Length ? lods[lod] : parentSettings[lod];
+
+                        FaceChildren v = new FaceChildren(xResolution, yResolution);
+                        fc.lods.Add(v);
+
+                        wfs.settings = currentLOD;
+                        wfs.children = v;
+
+                        CreateVerticesAndTriangles(wfs, wts.lods[lod]);
+
+                        Debug.Log("Added lod level: " +lod);
+
+                    }
+                }
+                
+            }
         }
         //consolidate
         //Consolidate(wip, wts, list);
@@ -1201,71 +1283,6 @@ public class ShaderTerrain : MonoBehaviour
         Debug.Log("Vert total: " + ma.vertices.Count + " triangle total: " + ma.triangles.Count / 3 + " Time taken: " + (stopwatch.ElapsedMilliseconds) / 1000f);
         return ma;
     }
-
-    /*public void Consolidate(MeshArrays wip, WorkingTerrainSet tocons, List<MeshArrays> fullarrays) {
-
-        DictionaryList<Vector3, MeshArrays > cons = new DictionaryList<Vector3, MeshArrays>();
-
-        int sum = 0;
-        foreach (Vector3 v in tocons.faces) {
-            int toAdd = tocons.faces[v].vertices.Count;
-            if (sum + toAdd >= VERTEX_LIMIT)
-            {
-                //Consolidate existing
-                fullarrays.Add(ConsolidateFaces(new MeshArrays(), cons));
-                sum = 0;
-            }
-            else {
-                sum += toAdd;
-                cons.Add(v, tocons.faces[v]);
-            }
-
-        }
-
-        if (wip.vertices.Count + sum >= VERTEX_LIMIT)
-        {
-            fullarrays.Add(wip);
-            wip = new MeshArrays();
-            //wip = ConsolidateFaces(new MeshArrays(), cons);
-        }
-        //else { 
-        //}
-        wip = ConsolidateFaces(wip, cons);
-
-
-        //Consolidate with parent
-
-    }
-
-    private MeshArrays ConsolidateFaces(MeshArrays ma, DictionaryList<Vector3, MeshArrays> cons) {
-
-        int currentStartIndex = ma.vertices.Count;
-
-        foreach (Vector3 direction in cons) {
-
-            MeshArrays current = cons[direction];
-            int currentEndIndex = currentStartIndex + current.vertices.Count;
-
-            ma.vertices.AddRange(current.vertices);
-            ma.vertexColors.AddRange(current.vertexColors);
-            ma.normals.AddRange(current.normals);
-            ma.uvs.AddRange(current.uvs);
-            ma.uv2.AddRange(current.uv2);
-            ma.uv3.AddRange(current.uv3);
-            ma.uv4.AddRange(current.uv4);
-            
-
-            for (int i = 0; i < current.triangles.Count; i++) {
-                ma.triangles.Add(currentStartIndex + current.triangles[i]);
-            }
-
-            currentStartIndex = currentEndIndex;
-        }
-        
-        cons.Clear();
-
-        return ma;
-    } */
 
 
     private void IncorporateTriangle(
@@ -1771,7 +1788,7 @@ public class ShaderTerrain : MonoBehaviour
     {
         float maxY = 0;
         int b = 1;
-        int r = (int)(wts.maxResolution / wfs.resolution);
+        int r = (int)(wts.maxResolution / (wfs.resolution - wfs.settings.resolutionReduction));
 
         //Find the optimal resolution that does not exceed r to start at
         int vertCount = -1;
@@ -1972,6 +1989,7 @@ public class ShaderTerrain : MonoBehaviour
         )
     {
 
+        float errtol = errorTolerance + wfs.settings.errorToleranceIncrease;
         //int countIter = 0;
 
         for (int y = yStart; y < (inner ? yEnd : yEnd - b); y += r)  //y < wfs.yResolution-b; y += r)  
@@ -2019,7 +2037,7 @@ public class ShaderTerrain : MonoBehaviour
                             nextY += r;
                             first = false;
                             //x,y,nextX, nextY
-                            res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+                            res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errtol);
                             //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                             //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
@@ -2041,7 +2059,7 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextX += r;
 
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errorTolerance);
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errtol);
                                 //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
@@ -2057,7 +2075,7 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextY += r;
 
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errorTolerance);
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errtol);
                                 //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
@@ -2481,7 +2499,13 @@ public class ShaderTerrain : MonoBehaviour
                     for (int ys = 0; ys <= spread; ys++)
                     {
                         float f = (1f - (float)(xs) / (float)spread) * (1f - (float)(ys) / (float)spread);
-                        f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
+                        //f = Mathf.Clamp(f * f * f * f * f, 0, 0.9f);
+                        for (int sl = 0; sl < slope; sl++)
+                        {
+                            f *= f;
+                        }
+                        f = Mathf.Clamp(f, 0, 0.9f);
+
 
                         int xp = Mathf.Max(xFirst/*(xFirst - r)*/ - xs, 0);
                         int yp = Mathf.Max(yFirst/*(yFirst - r)*/ - ys, 0);
