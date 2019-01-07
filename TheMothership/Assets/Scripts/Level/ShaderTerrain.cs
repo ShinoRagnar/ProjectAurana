@@ -45,17 +45,17 @@ public class WorkingTerrainSet
         this.vertexFaces = new Dictionary<Vector3, int[,]>();
     }
 
-    public WorkingTerrainSet Copy(MeshArrays ma) {
-        return  new WorkingTerrainSet(
-            new int[sharedX.GetLength(0), sharedX.GetLength(1)],
-            new int[sharedY.GetLength(0), sharedY.GetLength(1)],
-            new int[sharedZ.GetLength(0), sharedZ.GetLength(1)],
-            maxResolution,
-            ma,
-            shape
-            );
+   /* public WorkingTerrainSet Copy(MeshArrays ma, ShaderTerrain self) {
+        return new WorkingTerrainSet(
+           ma.sharedX.AddGetValue(self, new int[sharedX.GetLength(0), sharedX.GetLength(1)]),   // new int[sharedX.GetLength(0), sharedX.GetLength(1)],
+           ma.sharedY.AddGetValue(self, new int[sharedY.GetLength(0), sharedY.GetLength(1)]),  //new int[sharedY.GetLength(0), sharedY.GetLength(1)],
+           ma.sharedZ.AddGetValue(self, new int[sharedZ.GetLength(0), sharedZ.GetLength(1)]), // new int[sharedZ.GetLength(0), sharedZ.GetLength(1)],
+           maxResolution,
+           ma,
+           shape
+           );
 
-    }
+    }*/
 
 }
 public class WorkingFaceSet
@@ -142,13 +142,8 @@ public class WorkingFaceSet
         this.vertexPositions = vertexPositions;
         this.atlas = atlas;
         //this.atlas = new ShapePoint[xResolution, yResolution];
-        this.cquads = new List<CombinedQuads>();
-        this.occupiedMap = new bool[xResolution - 1, yResolution - 1];
-        this.cornerMap = new bool[xResolution, yResolution];
-        this.ignoreMap = new bool[xResolution, yResolution];
 
-        this.drawnTowards = new Vector3[xResolution, yResolution];
-        this.drawnForce = new float[xResolution, yResolution];
+        ReUse();
 
         this.localUp = localUp;
         this.halfMod = halfMod;
@@ -157,6 +152,17 @@ public class WorkingFaceSet
         this.axisB = axisB;
         this.halfSize = halfSize;
         this.halfSizeExtent = halfSizeExtent;
+    }
+
+    public void ReUse() {
+
+        this.cquads = new List<CombinedQuads>();
+        this.occupiedMap = new bool[xResolution - 1, yResolution - 1];
+        this.cornerMap = new bool[xResolution, yResolution];
+        this.ignoreMap = new bool[xResolution, yResolution];
+
+        this.drawnTowards = new Vector3[xResolution, yResolution];
+        this.drawnForce = new float[xResolution, yResolution];
     }
 
 }
@@ -193,6 +199,7 @@ public class MeshArrays
     public Noise noise;
 
     public List<MeshArrays> lods;
+
 
     public bool normalized;
 
@@ -403,7 +410,7 @@ public struct ShaderLODSettings {
 [RequireComponent(typeof(ShaderTerrainShape))]
 public class ShaderTerrain : MonoBehaviour
 {
-
+   // public static readonly int MAX_RESOLUTION = 16;
     public static readonly int VERTEX_LIMIT = 65535;
     public static readonly string NAME = "_ShaderTerrainMeshes_";
 
@@ -629,7 +636,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         else {
 
-            Combine(new MeshArrays(ma.noise), ma, new int[ma.vertices.Count], ma.children, list);
+            Combine(new MeshArrays(ma.noise), ma, new int[ma.lods.Count,ma.vertices.Count], ma.children, list);
             //list.Add(ma);
             Debug.Log("Complex case: " + ma.vertices.Count);
         }
@@ -638,7 +645,7 @@ public class ShaderTerrain : MonoBehaviour
         return list;
     }
 
-    public void Combine(MeshArrays wip, MeshArrays original, int[] usedVertices, VertexChildren self, ListHash<MeshArrays> list) {
+    public void Combine(MeshArrays wip, MeshArrays original, int[,] usedVertices, VertexChildren self, ListHash<MeshArrays> list) {
 
         int sum = wip.vertices.Count;
 
@@ -646,26 +653,32 @@ public class ShaderTerrain : MonoBehaviour
             if (sum + fc.vertcount >= VERTEX_LIMIT) {
 
                 list.AddIfNotContains(wip);
-                wip = new MeshArrays(wip.noise);
-                usedVertices = new int[usedVertices.Length];
+                wip = NewMeshArraysWithLodCopy(wip, original); //new MeshArrays(wip.noise);
+
+                //foreach (MeshArrays lodlevel in original.lods) {
+                //    wip.lods.Add(new MeshArrays(wip.noise));
+                //}
+                usedVertices = new int[original.lods.Count,usedVertices.Length];
             }
-            foreach (int vert in fc.triangles) {
-                if (usedVertices[vert] == 0) {
+            IncludeVertices(wip, fc, original, 0, usedVertices);
+
+            /*foreach (int vert in fc.triangles) {
+                if (usedVertices[0,vert] == 0) {
                     wip.vertices.Add(original.vertices[vert]);
                     wip.normals.Add(original.normals[vert]);
                     wip.vertexColors.Add(original.vertexColors[vert]);
                     wip.uvs.Add(original.uvs[vert]);
                     wip.uv2.Add(original.uv2[vert]);
 
-                    usedVertices[vert] = wip.vertices.Count; // One more than the index
+                    usedVertices[0,vert] = wip.vertices.Count; // One more than the index
                 }
-                wip.triangles.Add(usedVertices[vert] - 1);
-            }
+                wip.triangles.Add(usedVertices[0,vert] - 1);
+            }*/
         }
         foreach (VertexChildren child in self.children) {
             if (child.separateMesh)
             {
-                Combine(new MeshArrays(wip.noise), original, new int[usedVertices.Length], child, list);
+                Combine(NewMeshArraysWithLodCopy(wip,original),/*new MeshArrays(wip.noise),*/ original, new int[original.lods.Count,usedVertices.Length], child, list);
             }
             else {
                 Combine(wip, original, usedVertices, child, list);
@@ -673,6 +686,35 @@ public class ShaderTerrain : MonoBehaviour
         }
 
         list.AddIfNotContains(wip);
+    }
+
+    private MeshArrays NewMeshArraysWithLodCopy(MeshArrays wip, MeshArrays original) {
+        MeshArrays ret = new MeshArrays(wip.noise);
+
+        foreach (MeshArrays lodlevel in original.lods)
+        {
+            ret.lods.Add(new MeshArrays(wip.noise));
+        }
+
+        return ret;
+    }
+
+    private void IncludeVertices(MeshArrays wip, FaceChildren fc, MeshArrays original, int lodLevel, int[,] usedVertices) {
+        foreach (int vert in fc.triangles)
+        {
+            if (usedVertices[lodLevel, vert] == 0)
+            {
+                wip.vertices.Add(original.vertices[vert]);
+                wip.normals.Add(original.normals[vert]);
+                wip.vertexColors.Add(original.vertexColors[vert]);
+                wip.uvs.Add(original.uvs[vert]);
+                wip.uv2.Add(original.uv2[vert]);
+
+                usedVertices[lodLevel, vert] = wip.vertices.Count; // One more than the index
+            }
+            wip.triangles.Add(usedVertices[lodLevel, vert] - 1);
+        }
+
     }
 
     public static bool CheckForSeparateMeshes(List<VertexChildren> children) {
@@ -1138,10 +1180,13 @@ public class ShaderTerrain : MonoBehaviour
 
     public MeshArrays Generate(ShaderLODSettings[] parentSettings, MeshArrays ma, VertexChildren self)
     {
+
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         stopwatch.Start();
 
         generated = true;
+
+        ShaderLODSettings[] settings = CombineLODSettings(parentSettings, lods);
 
         relativePos = parent == null ? Vector3.zero : localPos + parent.relativePos;
 
@@ -1170,12 +1215,40 @@ public class ShaderTerrain : MonoBehaviour
                 //new Dictionary<Vector3, int[,]>()
             );
 
+        //Add mesh array lods
+        while (ma.lods.Count < settings.Length)
+        {
+            MeshArrays manew = new MeshArrays(ma.noise);
+            ma.lods.Add(manew);
+        }
+
+        for (int lodnr = 0; lodnr < settings.Length; lodnr++)
+        {
+            wts.lods.Add(
+                new WorkingTerrainSet(
+                ma.lods[lodnr].sharedX.AddGetValue(this, new int[4, (xSize * maxResolution) + 1]),
+                ma.lods[lodnr].sharedY.AddGetValue(this, new int[4, (ySize * maxResolution) + 1]),
+                ma.lods[lodnr].sharedZ.AddGetValue(this, new int[4, (zSize * maxResolution) + 1]),
+                maxResolution,
+                ma.lods[lodnr],
+                shape//,
+                     //new Dictionary<Vector3, int[,]>()
+            ));
+
+            //wts.Copy(ma.lods[lodnr], this));
+        }
+
         for (int dir = 0; dir < directions.Length; dir++)
         {
             Vector3 localUp = directions[dir];
             Vector3 mod = GetMod(localUp, xSize, ySize, zSize);
             Vector2 borderRes = GetResolution(maxResolution, mod);
             wts.vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
+
+            //Add lods
+            for (int lodnr = 0; lodnr < settings.Length; lodnr++) {
+                wts.lods[lodnr].vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
+            }
         }
 
         for (int dir = 0; dir < directions.Length; dir++)
@@ -1226,53 +1299,28 @@ public class ShaderTerrain : MonoBehaviour
                 borderRes
                 );
 
-            if (wfs.childlist != null)
-            {
-                for (int ca = 0; ca < wfs.childlist.Count; ca++)
-                {
-
-                    if (!wfs.childlist[ca].generated)
-                    {
-                        VertexChildren vc = new VertexChildren(wfs.childlist[ca].separateMesh);
-                        self.children.Add(vc);
-                        wfs.childlist[ca].Generate(lods ?? parentSettings, ma,vc);
-                    }
-                    wfs.projections.Add(wfs.childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
-                }
-            }
+            AddChildProjections(wfs, settings, ma, localUp, self, maxResolution);
 
             CreateVerticesAndTriangles(wfs, wts);
 
-            if (parentSettings != null || lods != null) {
+            if (settings != null) {
+                for (int lod = 0; lod < settings.Length; lod++)
+                {
+                    FaceChildren lodTriangles = new FaceChildren(xResolution, yResolution);
+                    fc.lods.Add(lodTriangles);
 
-                
-                int mxx = Mathf.Max(parentSettings == null ? 0 : parentSettings.Length, lods == null ? 0 : lods.Length);
+                    wfs.settings = settings[lod];
+                    wfs.children = lodTriangles;
+                    wfs.ReUse();
+                    wfs.vertexPositions = wts.lods[lod].vertexFaces[localUp];
 
-                if (mxx > 0) {
+                    AddChildProjections(wfs, settings, ma.lods[lod], localUp, self, maxResolution);
 
-                    while (ma.lods.Count < mxx) {
-                        MeshArrays manew = new MeshArrays(ma.noise);
-                        ma.lods.Add(manew);
-                        wts.lods.Add(wts.Copy(manew));
-                    }
+                    CreateVerticesAndTriangles(wfs, wts.lods[lod]);
 
-                    for (int lod = 0; lod < mxx; lod++)
-                    {
-                        ShaderLODSettings currentLOD = lods != null && lod < lods.Length ? lods[lod] : parentSettings[lod];
+                    Debug.Log("Added lod level: " + lod);
 
-                        FaceChildren v = new FaceChildren(xResolution, yResolution);
-                        fc.lods.Add(v);
-
-                        wfs.settings = currentLOD;
-                        wfs.children = v;
-
-                        CreateVerticesAndTriangles(wfs, wts.lods[lod]);
-
-                        Debug.Log("Added lod level: " +lod);
-
-                    }
                 }
-                
             }
         }
         //consolidate
@@ -1282,6 +1330,50 @@ public class ShaderTerrain : MonoBehaviour
 
         Debug.Log("Vert total: " + ma.vertices.Count + " triangle total: " + ma.triangles.Count / 3 + " Time taken: " + (stopwatch.ElapsedMilliseconds) / 1000f);
         return ma;
+    }
+
+    public void AddChildProjections(WorkingFaceSet wfs, ShaderLODSettings[] settings, MeshArrays ma, Vector3 localUp, VertexChildren self, int maxResolution) {
+
+        if (wfs.childlist != null)
+        {
+            wfs.projections.Clear();
+
+            for (int ca = 0; ca < wfs.childlist.Count; ca++)
+            {
+
+                if (!wfs.childlist[ca].generated)
+                {
+                    VertexChildren vc = new VertexChildren(wfs.childlist[ca].separateMesh);
+                    self.children.Add(vc);
+                    wfs.childlist[ca].Generate(settings, ma, vc);
+                }
+                wfs.projections.Add(wfs.childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
+            }
+        }
+
+    }
+
+    public static ShaderLODSettings[] CombineLODSettings(ShaderLODSettings[] parent, ShaderLODSettings[] self) {
+
+        if (self == null)
+        {
+            return parent;
+        }
+        else if (parent == null)
+        {
+            return self;
+        }
+        else {
+
+            int max = Mathf.Max(parent.Length, self.Length);
+            ShaderLODSettings[] ret = new ShaderLODSettings[max];
+
+            for (int i = 0; i < max; i++) {
+                ret[i] = self.Length > i ? self[i] : parent[i];
+            }
+
+            return ret;
+        }
     }
 
 
@@ -1788,7 +1880,7 @@ public class ShaderTerrain : MonoBehaviour
     {
         float maxY = 0;
         int b = 1;
-        int r = (int)(wts.maxResolution / (wfs.resolution - wfs.settings.resolutionReduction));
+        int r = (int)(wts.maxResolution / Mathf.Clamp(wfs.resolution - wfs.settings.resolutionReduction,1, wts.maxResolution));
 
         //Find the optimal resolution that does not exceed r to start at
         int vertCount = -1;
@@ -2484,7 +2576,7 @@ public class ShaderTerrain : MonoBehaviour
                 f = Mathf.Clamp(f, 0, 0.9f);
 
                 wfs.drawnTowards[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] =
-                    wts.ma.vertices[relative[firstSlot, thisChildPos] - 1] - relativePos;
+                wts.ma.vertices[relative[firstSlot, thisChildPos] - 1] - relativePos;
                 wfs.drawnForce[thisXPos, Mathf.Min(yLast + s, wfs.yResolution - 1)] = f;
 
                 wfs.drawnTowards[thisXPos, Mathf.Max(yFirst/*(yFirst - r)*/ - s, 0)] = wts.ma.vertices[relative[secondSlot, thisChildPos] - 1] - relativePos;
