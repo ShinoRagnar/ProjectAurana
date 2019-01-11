@@ -196,6 +196,9 @@ public class MeshArrays
     public DictionaryList<ShaderTerrain, int[,]> sharedY;
     public DictionaryList<ShaderTerrain, int[,]> sharedZ;
 
+    public DictionaryList<ShaderTerrain, DictionaryList<Vector3, ShapePoint[,]>> precalculated;
+    public DictionaryList<ShaderTerrain, DictionaryList<Vector3, FaceChildren>> faces;
+
     public Noise noise;
 
     public List<MeshArrays> lods;
@@ -205,7 +208,7 @@ public class MeshArrays
 
     public VertexChildren children;
 
-    public MeshArrays(Noise noise)
+    public MeshArrays(Noise noise, DictionaryList<ShaderTerrain, DictionaryList<Vector3, ShapePoint[,]>> precalc)
     {
         this.lods = new List<MeshArrays>();
         this.vertices = new List<Vector3>();
@@ -225,9 +228,16 @@ public class MeshArrays
         this.noise = noise;
         this.normalized = false;
         this.children = new VertexChildren(true);
-
+        if (precalc == null)
+        {
+            this.precalculated = new DictionaryList<ShaderTerrain, DictionaryList<Vector3, ShapePoint[,]>>();
+        }
+        else {
+            this.precalculated = precalc;
+        }
+        
+        this.faces = new DictionaryList<ShaderTerrain, DictionaryList<Vector3, FaceChildren>>();
     }
-
 }
 public struct VectorPair
 {
@@ -377,7 +387,8 @@ public class VertexChildren {
 
     public bool separateMesh;
     public List<FaceChildren> faces = new List<FaceChildren>();
-    public List<VertexChildren> children = new List<VertexChildren>();
+    //public List<VertexChildren> children = new List<VertexChildren>();
+    public ListDictionary<ShaderTerrain,VertexChildren> children = new ListDictionary<ShaderTerrain, VertexChildren>();
    
     public VertexChildren(bool separateMesh)
     {
@@ -385,25 +396,30 @@ public class VertexChildren {
     }
 }
 public class FaceChildren {
+
+    public Vector3 localup;
+    public ShaderTerrain parent;
     public int vertcount = 0;
     public List<int> triangles = new List<int>();
     public List<FaceChildren> lods = new List<FaceChildren>();
-    public FaceChildren(int xResolution, int yResolution) {
+
+    public FaceChildren(int xResolution, int yResolution, Vector3 localup, ShaderTerrain parent) {
         vertcount = xResolution * 2 + yResolution * 2 - 4;
+        this.localup = localup;
+        this.parent = parent;
     }
 }
 [Serializable]
 public struct ShaderLODSettings {
 
-    [Header("Base Resolution")]
     [Range(0, 16)]
     public int resolutionReduction;
-    [Header("Detail Resolution")]
     [Range(0, 16)]
     public int noiseDetailReduction;
-    [Header("Error Tolerance")]
     [Range(0, 1)]
     public float errorToleranceIncrease;
+    [Range(0, 1)]
+    public float threshold;
 
 }
 
@@ -494,6 +510,7 @@ public class ShaderTerrain : MonoBehaviour
     private Vector3 localPos;
     private List<ShaderTerrain>[] childrenPerFace = null;
     private bool generated = false;
+    //private ListHash<MeshArrays> generated = new ListHash<MeshArrays>();
 
    // public ListHash<Material> materials = null;
 
@@ -553,11 +570,28 @@ public class ShaderTerrain : MonoBehaviour
         else
         {
             PrepareChildren();
+            //generated = new ListHash<MeshArrays>();
             generated = false;
             //Initialize();
-            MeshArrays ma = new MeshArrays(new Noise());
+            MeshArrays ma = new MeshArrays(new Noise(),null);
 
-            ApplyMeshArrays(SplitMeshArrays(Generate(lods,ma,ma.children)));
+            Generate(lods, ma, ma.children, 0);
+
+            if (lods != null)
+            {
+                for (int i = 0; i < lods.Length; i++) {
+
+                    PrepareChildren();
+                    generated = false;
+
+                    MeshArrays lodMA = new MeshArrays(ma.noise, ma.precalculated);
+                    ma.lods.Add(Generate(lods, lodMA, lodMA.children, i + 1));
+                }
+            }
+
+
+            ApplyMeshArrays(SplitMeshArrays(ma));
+
 
             //ApplyMeshArrays(wip, mesh);
 
@@ -636,7 +670,7 @@ public class ShaderTerrain : MonoBehaviour
         }
         else {
 
-            Combine(new MeshArrays(ma.noise), ma, new int[ma.lods.Count,ma.vertices.Count], ma.children, list);
+            Combine(new MeshArrays(ma.noise,null), ma, new int[ma.lods.Count,ma.vertices.Count], ma.children, list);
             //list.Add(ma);
             Debug.Log("Complex case: " + ma.vertices.Count);
         }
@@ -662,6 +696,14 @@ public class ShaderTerrain : MonoBehaviour
             }
             IncludeVertices(wip, fc, original, 0, usedVertices);
 
+            for (int i = 0; i < original.lods.Count; i++) {
+                IncludeVertices(wip.lods[i], original.lods[i].faces[fc.parent][fc.localup], original.lods[i], i + 1, usedVertices);
+
+            }
+            /*for (int i = 0; i < fc.lods.Count; i++) {
+
+                IncludeVertices(wip.lods[i], fc.lods[i], original.lods[i], i + 1, usedVertices);
+            }*/
             /*foreach (int vert in fc.triangles) {
                 if (usedVertices[0,vert] == 0) {
                     wip.vertices.Add(original.vertices[vert]);
@@ -689,11 +731,11 @@ public class ShaderTerrain : MonoBehaviour
     }
 
     private MeshArrays NewMeshArraysWithLodCopy(MeshArrays wip, MeshArrays original) {
-        MeshArrays ret = new MeshArrays(wip.noise);
+        MeshArrays ret = new MeshArrays(wip.noise,null);
 
         foreach (MeshArrays lodlevel in original.lods)
         {
-            ret.lods.Add(new MeshArrays(wip.noise));
+            ret.lods.Add(new MeshArrays(wip.noise,null));
         }
 
         return ret;
@@ -717,7 +759,7 @@ public class ShaderTerrain : MonoBehaviour
 
     }
 
-    public static bool CheckForSeparateMeshes(List<VertexChildren> children) {
+    public static bool CheckForSeparateMeshes(ListDictionary<ShaderTerrain, VertexChildren> children){ //List<VertexChildren> children) {
 
         bool ret = false;
 
@@ -765,12 +807,59 @@ public class ShaderTerrain : MonoBehaviour
             if (mars[i].vertices.Count > 0)
             {
                 MeshArrays ma = mars[i];
+                GameObject lodgr;
+                LODGroup lg;
+                List<LOD> lods = new List<LOD>();
 
+                string childname = "Mesh_Vert_" + ma.vertices.Count + "_Tri_" + ma.triangles.Count / 3;
+
+                if (found.childCount > childPos)
+                {
+                    lodgr = found.GetChild(childPos).gameObject;
+                    lg = lodgr.GetComponent<LODGroup>();
+                    lodgr.name = childname;
+                }
+                else {
+                    lodgr = new GameObject(childname);
+                    lg = lodgr.AddComponent<LODGroup>();
+
+                    lodgr.transform.parent = found;
+                    lodgr.transform.localPosition = Vector3.zero;
+                }
+                float threshold = 1f;
+
+                AddLODToLODGroup(lods, ma, lodgr, 0, lg, mat, threshold);
+
+                for (int lod = 0; lod < Mathf.Max(ma.lods.Count,lodgr.transform.childCount-1); lod++)
+                {
+                    if (lod < ma.lods.Count)
+                    {
+                        threshold -= 1f / ((float)ma.lods.Count + 1f);
+                        AddLODToLODGroup(lods, ma, lodgr, lod + 1, lg, mat, threshold);
+                    }
+                    else {
+                        GameObject empt = lodgr.transform.GetChild(lod).gameObject;
+                        empt.GetComponent<MeshFilter>().sharedMesh.Clear();
+                        empt.name = "Empty LOD";
+                    }
+                }
+
+                lg.SetLODs(lods.ToArray());
+
+                /*
+                 *                 for (int lod = 0; lod < ma.lods.Count; lod++) {
+
+                    threshold += 1f / (float)ma.lods.Count;
+
+                    AddLODToLODGroup(lods, ma, lodgr, lod + 1, lg, mat, threshold);
+
+                }*/
+
+                /*
                 GameObject go;
                 Mesh m;
                 MeshRenderer mr;
 
-                string childname = "Mesh_Vert_" + ma.vertices.Count + "_Tri_" + ma.triangles.Count/3;
 
                 if (found.childCount > childPos)
                 {
@@ -809,6 +898,10 @@ public class ShaderTerrain : MonoBehaviour
                 mr.sharedMaterial = mat;
 
                 go.transform.localPosition = Vector3.zero;
+                */
+
+                //lg.SetLODs(new LOD[] { new LOD(threshold, new Renderer[] { mr }) });
+
 
                 childPos++;
             }
@@ -820,11 +913,55 @@ public class ShaderTerrain : MonoBehaviour
 
         //Clear old objects
         for (int i = childPos; i < found.childCount; i++) {
-            GameObject go = found.GetChild(childPos).GetChild(0).gameObject;
-            go.GetComponent<MeshFilter>().sharedMesh.Clear();
-            found.GetChild(childPos).name = "EmptyMesh";
+            GameObject go = found.GetChild(childPos).gameObject;
+            //go.GetComponent<MeshFilter>().sharedMesh.Clear();
+            go.name = "EmptyMesh";
+
+            foreach (Transform child in go.transform) {
+                child.GetComponent<MeshFilter>().sharedMesh.Clear();
+            }
         }
     }
+
+    private void AddLODToLODGroup(List<LOD> workingSet, MeshArrays ma, GameObject lodgroup, int lod, LODGroup lg, Material mat, float threshold)
+    {
+
+        GameObject currentLod;
+        Mesh m;
+        MeshRenderer mr;
+        MeshArrays vv = lod == 0 ? ma : ma.lods[lod - 1];
+
+        string childname = "LOD_" + lod+"_vert_"+vv.vertices.Count;
+
+        if (lodgroup.transform.childCount > lod)
+        {
+            currentLod = lodgroup.transform.GetChild(lod).gameObject;
+            lodgroup.transform.GetChild(lod).name = childname;
+            mr = currentLod.GetComponent<MeshRenderer>();
+            m = currentLod.GetComponent<MeshFilter>().sharedMesh;
+        }
+        else
+        {
+            currentLod = new GameObject(childname);
+
+            mr = currentLod.AddComponent<MeshRenderer>();
+            MeshFilter mf = currentLod.AddComponent<MeshFilter>();
+            m = mf.sharedMesh = new Mesh();
+
+            currentLod.transform.parent = lodgroup.transform;
+        }
+
+        m.Clear();
+
+        MeshArrayToMesh(vv, m);
+        mr.sharedMaterial = mat;
+
+        currentLod.transform.localPosition = Vector3.zero;
+        
+        workingSet.Add(new LOD(threshold, new Renderer[] { mr }));
+    }
+
+
     private void MeshArrayToMesh(MeshArrays ma, Mesh m) {
 
         m.vertices = ma.vertices.ToArray();
@@ -926,6 +1063,8 @@ public class ShaderTerrain : MonoBehaviour
             if (st.projectionDirection != Vector3.zero)
             {
                 st.generated = false;
+                //st.generated = new ListHash<MeshArrays>();
+
                 AddIfDirection(st, -st.projectionDirection);
 
                 if (st.doubleProject)
@@ -1178,12 +1317,13 @@ public class ShaderTerrain : MonoBehaviour
         return minmax;
     }
 
-    public MeshArrays Generate(ShaderLODSettings[] parentSettings, MeshArrays ma, VertexChildren self)
+    public MeshArrays Generate(ShaderLODSettings[] parentSettings, MeshArrays ma, VertexChildren self, int lod)
     {
 
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         stopwatch.Start();
 
+        //generated.Add(ma);
         generated = true;
 
         ShaderLODSettings[] settings = CombineLODSettings(parentSettings, lods);
@@ -1191,6 +1331,9 @@ public class ShaderTerrain : MonoBehaviour
         relativePos = parent == null ? Vector3.zero : localPos + parent.relativePos;
 
         SortChildren();
+
+        ma.precalculated.AddIfNotContains(this, new DictionaryList<Vector3, ShapePoint[,]>());
+        ma.faces.AddIfNotContains(this, new DictionaryList<Vector3, FaceChildren>());
 
         int maxResolution = 1;
         foreach (int res in resolutions)
@@ -1216,7 +1359,7 @@ public class ShaderTerrain : MonoBehaviour
             );
 
         //Add mesh array lods
-        while (ma.lods.Count < settings.Length)
+        /*while (ma.lods.Count < settings.Length)
         {
             MeshArrays manew = new MeshArrays(ma.noise);
             ma.lods.Add(manew);
@@ -1236,7 +1379,7 @@ public class ShaderTerrain : MonoBehaviour
             ));
 
             //wts.Copy(ma.lods[lodnr], this));
-        }
+        }*/
 
         for (int dir = 0; dir < directions.Length; dir++)
         {
@@ -1246,9 +1389,9 @@ public class ShaderTerrain : MonoBehaviour
             wts.vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
 
             //Add lods
-            for (int lodnr = 0; lodnr < settings.Length; lodnr++) {
-                wts.lods[lodnr].vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
-            }
+            //for (int lodnr = 0; lodnr < settings.Length; lodnr++) {
+            //    wts.lods[lodnr].vertexFaces.Add(localUp, new int[(int)borderRes.x, (int)borderRes.y]);
+            //}
         }
 
         for (int dir = 0; dir < directions.Length; dir++)
@@ -1275,13 +1418,17 @@ public class ShaderTerrain : MonoBehaviour
             int xResolution = (int)borderRes.x;
             int yResolution = (int)borderRes.y;
 
-            FaceChildren fc = new FaceChildren(xResolution,yResolution);
+            FaceChildren fc = new FaceChildren(xResolution,yResolution, localUp, parent);
             self.faces.Add(fc);
 
+            ma.faces[this].AddIfNotContains(localUp, fc);
+            ma.precalculated[this].AddIfNotContains(localUp, new ShapePoint[xResolution, yResolution]);
+
             WorkingFaceSet wfs = new WorkingFaceSet(
-                new ShapePoint[xResolution, yResolution],
+                ma.precalculated[this][localUp],
+                //new ShapePoint[xResolution, yResolution],
                 fc, 
-                new ShaderLODSettings(),
+                lod == 0 ? new ShaderLODSettings() : settings[lod-1],
                 xResolution,
                 yResolution,
                 (int)borderRes.z,
@@ -1299,11 +1446,13 @@ public class ShaderTerrain : MonoBehaviour
                 borderRes
                 );
 
-            AddChildProjections(wfs, settings, ma, localUp, self, maxResolution);
+
+
+            AddChildProjections(wfs, settings, ma, localUp, self, maxResolution, lod);
 
             CreateVerticesAndTriangles(wfs, wts);
 
-            if (settings != null) {
+            /*if (settings != null) {
                 for (int lod = 0; lod < settings.Length; lod++)
                 {
                     FaceChildren lodTriangles = new FaceChildren(xResolution, yResolution);
@@ -1321,7 +1470,7 @@ public class ShaderTerrain : MonoBehaviour
                     Debug.Log("Added lod level: " + lod);
 
                 }
-            }
+            }*/
         }
         //consolidate
         //Consolidate(wip, wts, list);
@@ -1332,11 +1481,11 @@ public class ShaderTerrain : MonoBehaviour
         return ma;
     }
 
-    public void AddChildProjections(WorkingFaceSet wfs, ShaderLODSettings[] settings, MeshArrays ma, Vector3 localUp, VertexChildren self, int maxResolution) {
+    public void AddChildProjections(WorkingFaceSet wfs, ShaderLODSettings[] settings, MeshArrays ma, Vector3 localUp, VertexChildren self, int maxResolution, int lod) {
 
         if (wfs.childlist != null)
         {
-            wfs.projections.Clear();
+            //wfs.projections.Clear();
 
             for (int ca = 0; ca < wfs.childlist.Count; ca++)
             {
@@ -1344,8 +1493,8 @@ public class ShaderTerrain : MonoBehaviour
                 if (!wfs.childlist[ca].generated)
                 {
                     VertexChildren vc = new VertexChildren(wfs.childlist[ca].separateMesh);
-                    self.children.Add(vc);
-                    wfs.childlist[ca].Generate(settings, ma, vc);
+                    self.children.Add(wfs.childlist[ca],vc);
+                    wfs.childlist[ca].Generate(settings, ma, vc, lod);
                 }
                 wfs.projections.Add(wfs.childlist[ca].GetProjectionOn(this, ma, -localUp, maxResolution));
             }
