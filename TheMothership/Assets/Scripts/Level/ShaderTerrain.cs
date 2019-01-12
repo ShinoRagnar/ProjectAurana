@@ -414,8 +414,7 @@ public struct ShaderLODSettings {
 
     [Range(0, 16)]
     public int resolutionReduction;
-    [Range(0, 16)]
-    public int noiseDetailReduction;
+    public bool ignoreDetailResolution;
     [Range(0, 1)]
     public float errorToleranceIncrease;
     [Range(0, 1)]
@@ -1916,14 +1915,18 @@ public class ShaderTerrain : MonoBehaviour
             {
                 returnRes = Mathf.Min(r, (int)(wts.maxResolution / Math.Max(self.resolution, 1)));
 
-                ShapePoint br = GetAtlasPoint(wfs, wts, nextX, y);
-                returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(br.resolution, 1)));
+                if (!wfs.settings.ignoreDetailResolution) {
 
-                ShapePoint tr = GetAtlasPoint(wfs, wts, nextX, nextY);
-                returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tr.resolution, 1)));
+                    ShapePoint br = GetAtlasPoint(wfs, wts, nextX, y);
+                    returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(br.resolution, 1)));
 
-                ShapePoint tl = GetAtlasPoint(wfs, wts, x, nextY);
-                returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tl.resolution, 1)));
+                    ShapePoint tr = GetAtlasPoint(wfs, wts, nextX, nextY);
+                    returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tr.resolution, 1)));
+
+                    ShapePoint tl = GetAtlasPoint(wfs, wts, x, nextY);
+                    returnRes = Mathf.Min(returnRes, (int)(wts.maxResolution / Math.Max(tl.resolution, 1)));
+
+                }
 
                 return returnRes;
             }
@@ -1993,7 +1996,7 @@ public class ShaderTerrain : MonoBehaviour
                     }
                 }
             }
-            return returnRes;
+            return wfs.settings.ignoreDetailResolution ? r : returnRes;
         }
 
 
@@ -2247,7 +2250,7 @@ public class ShaderTerrain : MonoBehaviour
                 int nextX = inner ? x + r : (x + r >= xEnd ? xEnd - 1 : x + r); //xEnd ? xEnd - 1 : x + r; wfs.xResolution ? wfs.xResolution - 1 : x + r;
                 int nextY = inner ? y + r : (y + r >= yEnd ? yEnd - 1 : y + r); //yEnd ? yEnd - 1 : y + r;  wfs.yResolution ? wfs.yResolution - 1 : y + r;
 
-                int res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errorTolerance);
+                int res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, nextY, errtol);
                 //atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                 //  projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
@@ -2300,7 +2303,7 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextX += r;
 
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY, errtol);
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, nextX, foundY,  errtol);
                                 //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, nextX, foundY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
@@ -2316,7 +2319,7 @@ public class ShaderTerrain : MonoBehaviour
                             {
                                 nextY += r;
 
-                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY, errtol);
+                                res = CheckMap(wfs, wts, selfpos, xEnd, yEnd, b, r, x, y, foundX, nextY,  errtol);
                                 //CheckMap(atlas, drawnTowards, drawnForce, ignoreMap, selfpos, shape, ma, xResolution, yResolution, maxResolution, b, r, x, y, foundX, nextY, occupiedMap, reverseProjectionSide, currentPos,
                                 //projectionDirection, localUp, extents, halfMod, halfModExtent, axisA, axisB, halfSize, halfSizeExtent, errorTolerance);
 
