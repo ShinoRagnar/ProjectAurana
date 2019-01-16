@@ -425,11 +425,11 @@ public struct ShaderLODSettings {
 [RequireComponent(typeof(ShaderTerrainShape))]
 public class ShaderTerrain : MonoBehaviour
 {
-   // public static readonly int MAX_RESOLUTION = 16;
+    // public static readonly int MAX_RESOLUTION = 16;
+    public static readonly float CULL_PERCENTAGE = 0.01f;
     public static readonly int VERTEX_LIMIT = 65535;
     public static readonly string NAME = "_ShaderTerrainMeshes_";
 
-    public Material material;
     public ShaderTerrain parent;
     public ShaderTerrainShape shape;
     public bool update = false;
@@ -475,7 +475,10 @@ public class ShaderTerrain : MonoBehaviour
 
     [Header("Children")]
     public ShaderTerrain[] children;
+    [Header("Texture")]
+    public ShaderTextures textures;
 
+    /*
     [Header("Texture")]
     [Range(0, 2)]
     public float textureScale = 1;
@@ -499,7 +502,7 @@ public class ShaderTerrain : MonoBehaviour
 
     public Material[] splatTextures = new Material[] { };
     public Material colorUsage;
-
+    */
     //private new MeshRenderer renderer = null;
     //private MeshFilter filter = null;
     //private Mesh mesh;
@@ -825,7 +828,13 @@ public class ShaderTerrain : MonoBehaviour
                     lodgr.transform.parent = found;
                     lodgr.transform.localPosition = Vector3.zero;
                 }
+
                 float threshold = 1f;
+
+                if (ma.lods.Count == 0)
+                {
+                    threshold = CULL_PERCENTAGE;
+                }
 
                 AddLODToLODGroup(lods, ma, lodgr, 0, lg, mat, threshold);
 
@@ -973,24 +982,24 @@ public class ShaderTerrain : MonoBehaviour
 
     private Material GetMaterial() {
 
-        Material newMat = new Material(material);
-        SetTexture(0, splatTextures[0], newMat);
-        SetTexture(1, splatTextures[1], newMat);
-        SetTexture(2, splatTextures[2], newMat);
-        SetTexture(3, splatTextures[3], newMat);
+        Material newMat = new Material(textures.material);
+        SetTexture(0, textures.splatTextures[0], newMat);
+        SetTexture(1, textures.splatTextures[1], newMat);
+        SetTexture(2, textures.splatTextures[2], newMat);
+        SetTexture(3, textures.splatTextures[3], newMat);
 
-        newMat.SetFloat("_ParallaxTextureHeight", textureHeightTexOne);
-        newMat.SetFloat("_ParallaxTextureHeight1", textureHeightTexTwo);
-        newMat.SetFloat("_ParallaxTextureHeight2", textureHeightTexThree);
-        newMat.SetFloat("_ParallaxTextureHeight3", textureHeightTexFour);
+        newMat.SetFloat("_ParallaxTextureHeight", textures.textureHeightTexOne);
+        newMat.SetFloat("_ParallaxTextureHeight1", textures.textureHeightTexTwo);
+        newMat.SetFloat("_ParallaxTextureHeight2", textures.textureHeightTexThree);
+        newMat.SetFloat("_ParallaxTextureHeight3", textures.textureHeightTexFour);
 
-        newMat.SetTexture("_BumpMapColor", colorUsage.GetTexture("_BumpMap"));
-        newMat.SetTextureScale("_BumpMapColor", colorUsage.mainTextureScale);
+        newMat.SetTexture("_BumpMapColor", textures.colorUsage.GetTexture("_BumpMap"));
+        newMat.SetTextureScale("_BumpMapColor", textures.colorUsage.mainTextureScale);
 
-        newMat.SetFloat("_ColorMetallic", colorUsage.GetFloat("_Metallic"));
-        newMat.SetFloat("_ColorGlossiness", colorUsage.GetFloat("_Glossiness"));
+        newMat.SetFloat("_ColorMetallic", textures.colorUsage.GetFloat("_Metallic"));
+        newMat.SetFloat("_ColorGlossiness", textures.colorUsage.GetFloat("_Glossiness"));
 
-        newMat.SetFloat("_ColorGlow", colorGlow);
+        newMat.SetFloat("_ColorGlow", textures.colorGlow);
 
         return newMat;
     }
@@ -1057,26 +1066,27 @@ public class ShaderTerrain : MonoBehaviour
 
         childrenPerFace = new List<ShaderTerrain>[directions.Length];
 
-        foreach (ShaderTerrain st in children)
-        {
-            if (st.projectionDirection != Vector3.zero)
+        if (children != null) {
+            foreach (ShaderTerrain st in children)
             {
-                st.generated = false;
-                //st.generated = new ListHash<MeshArrays>();
-
-                AddIfDirection(st, -st.projectionDirection);
-
-                if (st.doubleProject)
+                if (st.projectionDirection != Vector3.zero)
                 {
-                    AddIfDirection(st, st.projectionDirection);
+                    st.generated = false;
+                    //st.generated = new ListHash<MeshArrays>();
+
+                    AddIfDirection(st, -st.projectionDirection);
+
+                    if (st.doubleProject)
+                    {
+                        AddIfDirection(st, st.projectionDirection);
+                    }
+                }
+                else
+                {
+                    Debug.Log("Could not combine with child <" + st.xSize + "," + st.ySize + "," + st.zSize + "> " + st.currentPos);
                 }
             }
-            else
-            {
-                Debug.Log("Could not combine with child <" + st.xSize + "," + st.ySize + "," + st.zSize + "> " + st.currentPos);
-            }
         }
-
     }
     private void AddIfDirection(ShaderTerrain st, Vector3 dir)
     {
@@ -1119,28 +1129,28 @@ public class ShaderTerrain : MonoBehaviour
         string n = num == 0 ? "" : num + "";
 
         to.SetTexture("_MainTex" + n, from.mainTexture);
-        to.SetTextureScale("_MainTex" + n, new Vector2(textureScale, textureScale));
+        to.SetTextureScale("_MainTex" + n, new Vector2(textures.textureScale, textures.textureScale));
 
         to.SetTexture("_BumpMap" + n, from.GetTexture("_BumpMap"));
-        to.SetTextureScale("_BumpMap" + n, new Vector2(textureScale, textureScale));
+        to.SetTextureScale("_BumpMap" + n, new Vector2(textures.textureScale, textures.textureScale));
 
         //if (setParallaxDetails)
         //{
 
             to.SetTexture("_ParallaxMap" + n, from.GetTexture("_ParallaxMap"));
-            to.SetTextureScale("_ParallaxMap" + n, new Vector2(textureScale, textureScale));
+            to.SetTextureScale("_ParallaxMap" + n, new Vector2(textures.textureScale, textures.textureScale));
 
             to.SetTexture("_OcclusionMap" + n, from.GetTexture("_OcclusionMap"));
-            to.SetTextureScale("_OcclusionMap" + n, new Vector2(textureScale, textureScale));
+            to.SetTextureScale("_OcclusionMap" + n, new Vector2(textures.textureScale, textures.textureScale));
 
             to.SetTexture("_MetallicGlossMap" + n, from.GetTexture("_MetallicGlossMap"));
-            to.SetTextureScale("_MetallicGlossMap" + n, new Vector2(textureScale, textureScale));
+            to.SetTextureScale("_MetallicGlossMap" + n, new Vector2(textures.textureScale, textures.textureScale));
 
             to.SetTexture("_DetailAlbedoMap" + n, from.GetTexture("_DetailAlbedoMap"));
-            to.SetTextureScale("_DetailAlbedoMap" + n, new Vector2(detailScale, detailScale));
+            to.SetTextureScale("_DetailAlbedoMap" + n, new Vector2(textures.detailScale, textures.detailScale));
 
             to.SetTexture("_DetailNormalMap" + n, from.GetTexture("_DetailNormalMap"));
-            to.SetTextureScale("_DetailNormalMap" + n, new Vector2(detailScale, detailScale));
+            to.SetTextureScale("_DetailNormalMap" + n, new Vector2(textures.detailScale, textures.detailScale));
 
             to.SetFloat("_Parallax" + n, from.GetFloat("_Parallax"));
         //}
