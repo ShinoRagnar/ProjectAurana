@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-[Serializable]
 public class ShaderPlatform
 {
     public int relativeXStart;
@@ -36,7 +35,6 @@ public class ShaderPlatform
         this.dungeon = null;
     }
 }
-[Serializable]
 public class ShaderPlatformSegment
 {
     public ShaderDungeon dungeon;
@@ -85,7 +83,6 @@ public class ShaderPlatformSegment
         this.dungeon = null;
     }
 }
-[Serializable]
 public class ShaderDoor
 {
     public Color color;
@@ -117,9 +114,12 @@ public class ShaderDoor
 }
 public class ShaderDungeon
 {
+    public Color color = Color.grey;
     public Vector3 size;
     public Vector3 position;
     public string name;
+
+    public int search = 0;
 
     public List<ShaderDoor> doors;
     public List<ShaderDungeon> children;
@@ -128,6 +128,20 @@ public class ShaderDungeon
     public Vector3 siblingDirection = Vector3.zero;
 
     public bool joinedWithSibling = false;
+    public bool alive = true;
+
+    /*public void AddDoor(ShaderDoor door) {
+        if (door == null)
+        {
+            throw new Exception("Null door");
+        }
+        else {
+            doors.Add(door);
+        }
+    }
+    public List<ShaderDoor> GetDoors() {
+        return doors;
+    }*/
 
     public ShaderDungeon(string name, Vector3 size, Vector3 position)
     {
@@ -154,6 +168,7 @@ public class ShaderLevel : MonoBehaviour {
     public bool dress = false;
     public bool unlockJumpHeight = false;
     public bool drawGizmos = false;
+    public bool hideDeadDungeons = false;
 
     [Header("Level Settings")]
     [Range(1, 1000)]
@@ -204,6 +219,20 @@ public class ShaderLevel : MonoBehaviour {
     public int maxRoomSize = 100;
     [Range(0.1f, 1f)]
     public float roomSplitChance = 0.5f;
+
+    [Header("Golden Room Settings")]
+    [Range(0.1f, 1f)]
+    public float goldenRoomDepth = 0.5f;
+
+    [Header("Treasure Room Settings")]
+    [Range(1, 100)]
+    public int treasureRooms = 1;
+    [Range(0.0f, 2f)]
+    public float treasureDepthFactor = 0.5f;
+    [Range(0.0f, 2f)]
+    public float treasureSizeFactor = 0.5f;
+    [Range(1, 10f)]
+    public int minTreasureDistance = 3;
 
 
     //[Header("Generated")]
@@ -290,8 +319,10 @@ public class ShaderLevel : MonoBehaviour {
                 }
                 if (doors != null) {
                     foreach (ShaderDoor door in doors) {
-                        Gizmos.color = door.color;
-                        Gizmos.DrawWireCube(door.position, door.Size(doorHeight,platformZWidth));
+                        if (!hideDeadDungeons || (door.from != null && door.from.alive && door.to != null && door.to.alive)) {
+                            Gizmos.color = door.color;
+                            Gizmos.DrawWireCube(door.position, door.Size(doorHeight, platformZWidth));
+                        }
                     }
                 }
                 if (undergroundDungeon != null) {
@@ -347,8 +378,10 @@ public class ShaderLevel : MonoBehaviour {
         if (dungeon.children.Count == 0)
         {
             //drawString(dungeon.name, dungeon.position+new Vector3(0,5,0), Color.blue);
-            Gizmos.color = Color.gray;
-            Gizmos.DrawWireCube(dungeon.position, dungeon.size);
+            if (!hideDeadDungeons || dungeon.alive) {
+                Gizmos.color = dungeon.color;
+                Gizmos.DrawWireCube(dungeon.position, dungeon.size);
+            }
         }
         else {
             foreach (ShaderDungeon sd in dungeon.children) {
@@ -392,6 +425,22 @@ public class ShaderLevel : MonoBehaviour {
         undergroundDungeon = new ShaderDungeon("Underground Dungeon", new Vector3(levelLength, undergroundMaxHeight, platformZWidth), new Vector3(levelLength / 2f, -undergroundMaxHeight / 2f));
         SplitYDungeon(undergroundDungeon.name, new List<ShaderDungeon>(), undergroundDungeon, null);
         LinkDungeon(drs, undergroundDungeon);
+
+        //Find a common room where all roads connect to
+        List<ShaderDungeon> goldenRoom = new List<ShaderDungeon>();
+        FindBestCandidateAsGoldenRoom(undergroundDungeon, goldenRoom);
+        goldenRoom[0].color = Color.yellow;
+
+        //List all children
+        List<ShaderDungeon> dungeonChildren = new List<ShaderDungeon>();
+        ListChildren(undergroundDungeon, dungeonChildren);
+
+        //List of all paths leading to the goldenroom
+        ListHash<ShaderDungeon> pathsToGoldenRoom = new ListHash<ShaderDungeon>();
+        pathsToGoldenRoom.AddIfNotContains(goldenRoom);
+
+        //List all paths leading to treasure rooms
+        ListHash<ShaderDungeon> pathsToTreasureRooms = new ListHash<ShaderDungeon>();
 
         //Clear up child objects
         foreach (Transform child in transform)
@@ -574,10 +623,19 @@ public class ShaderLevel : MonoBehaviour {
                 {
                     ShaderDungeon dr = overlap.Get(UnityEngine.Random.Range(0, overlap.Count - 1));
                     BuildDoorsBetween(drs, dr, overlap[dr], Vector3.up, Color.green); // Vector3.down);
+
+                    //Make a route to the golden room
+                    List<ShaderDungeon> route = ShortestRoute(undergroundDungeon, dr, goldenRoom[0]);
+                    foreach (ShaderDungeon dungeon in route)
+                    {
+                        dungeon.color = Color.blue;
+                    }
+                    pathsToGoldenRoom.AddIfNotContains(route);
+                    
                 }
                 else
                 {
-                    Debug.Log("No overlap found for platform to underground dungeon in: " + seed + " undergroundCandidates: " + undergroundCandidates.Count + " platformCandidates: " + platformCandidates.Count);
+                    Debug.LogError("No overlap found for platform to underground dungeon in: " + seed + " undergroundCandidates: " + undergroundCandidates.Count + " platformCandidates: " + platformCandidates.Count);
                 }
 
 
@@ -587,8 +645,67 @@ public class ShaderLevel : MonoBehaviour {
             platformNum++;
         }
 
-        //Create underground dungeon
+        //Create treasure rooms
+        for (int i = 0; i < treasureRooms; i++) {
 
+            SearchClear(undergroundDungeon);
+            foreach (ShaderDungeon path in pathsToGoldenRoom) {
+                WeightPath(path, 0);
+            }
+
+            //List possible candidates ranked by depth and size, higher chance for more depth and more size
+            DictionaryList<ShaderDungeon, int> candidates = new DictionaryList<ShaderDungeon,int>();
+            int allVal = 0;
+
+            foreach (ShaderDungeon child in dungeonChildren) {
+                if (child.search >= minTreasureDistance) {
+                    int value = (int)
+                                (
+                                Mathf.Max(Mathf.Abs(child.position.y * treasureDepthFactor), 1f) 
+                                * Mathf.Max(Mathf.Sqrt(child.size.x*child.size.y) * treasureSizeFactor, 1f)
+                                );
+
+                    candidates.Add(child,value);
+                    allVal += value;
+                }
+            }
+            //Find a random candidate with higher prob
+            if (candidates.Count > 0) {
+
+                int curr = 0;
+                int choice = UnityEngine.Random.Range(0, allVal);
+                ShaderDungeon chosen = null;
+
+                foreach (ShaderDungeon sd in candidates) {
+                    if (curr + candidates[sd] >= choice && choice >= curr) {
+                        chosen = sd;
+                        break;
+                    }
+                    curr += candidates[sd];
+                }
+
+                if (chosen != null) {
+                    List<ShaderDungeon> pathsToRoom = CompleteSearch(chosen);
+                    foreach (ShaderDungeon sd in pathsToRoom) {
+                        sd.color = Color.cyan;
+                        //Require a distance to this path
+                        WeightPath(sd, 0);
+                    }
+                    chosen.color = Color.magenta;
+
+                    pathsToTreasureRooms.AddIfNotContains(pathsToRoom);
+                }
+            }
+            
+
+
+        }
+        //Remove rooms without connections
+        foreach (ShaderDungeon child in dungeonChildren) {
+            if (!pathsToGoldenRoom.Contains(child) && !pathsToTreasureRooms.Contains(child)) {
+                child.alive = false;
+            }
+        }
 
 
         doors = drs.ToArray();
@@ -602,7 +719,160 @@ public class ShaderLevel : MonoBehaviour {
 
 
     }
+    private List<ShaderDungeon> CompleteSearch(ShaderDungeon from) {
 
+        List<ShaderDungeon> ret = new List<ShaderDungeon>();
+        ret.Add(from);
+
+        ShaderDungeon current = from;
+
+        if (from.search == int.MaxValue)
+        {
+            return null;
+        }
+
+        for (int i = from.search - 1; i > 0; i--)
+        {
+
+            List<ShaderDungeon> candidates = new List<ShaderDungeon>();
+            foreach (ShaderDoor door in current.doors)
+            {
+                if (door.from != null && door.from.search == i)
+                {
+                    candidates.Add(door.from);
+                }
+                if (door.to != null && door.to.search == i)
+                {
+                    candidates.Add(door.to);
+                }
+            }
+            if (candidates.Count == 0)
+            {
+                Debug.Log("No valid path found from"+from.name);
+                break;
+            }
+            else
+            {
+                current = candidates[UnityEngine.Random.Range(0, candidates.Count - 1)];
+                ret.Add(current);
+            }
+        }
+        return ret;
+    }
+
+    private List<ShaderDungeon> ShortestRoute(ShaderDungeon overarchingDungeon, ShaderDungeon from, ShaderDungeon to) {
+
+        SearchClear(overarchingDungeon);
+        WeightPath(to,0);
+
+        return CompleteSearch(from);
+
+        /*List<ShaderDungeon> ret = new List<ShaderDungeon>();
+        ret.Add(from);
+
+        ShaderDungeon current = from;
+
+        if (from.search == int.MaxValue) {
+            return null;
+        }
+
+        for (int i = from.search-1; i > 0; i--) {
+
+            List<ShaderDungeon> candidates = new List<ShaderDungeon>();
+            foreach (ShaderDoor door in current.doors) {
+                if (door.from != null && door.from.search == i) {
+                    candidates.Add(door.from);
+                }
+                if (door.to != null && door.to.search == i)
+                {
+                    candidates.Add(door.to);
+                }
+            }
+            if (candidates.Count == 0)
+            {
+                Debug.Log("No valid path found to: " + to.name);
+                break;
+            }
+            else {
+                current = candidates[UnityEngine.Random.Range(0, candidates.Count - 1)];
+                ret.Add(current);
+            }
+        }
+
+        return ret;
+        */
+    }
+    private void ListChildren(ShaderDungeon dungeon, List<ShaderDungeon> children) {
+        if (dungeon.children.Count == 0)
+        {
+            children.Add(dungeon);
+        }
+        else {
+            foreach (ShaderDungeon child in dungeon.children) {
+                ListChildren(child, children);
+            }
+        }
+    }
+
+    private void WeightPath(ShaderDungeon to, int curr) {
+
+        to.search = curr;
+
+        foreach (ShaderDoor door in to.doors) {
+
+            if (door == null) {
+                Debug.LogError("WTF");
+            }
+
+            if (door.from != null) {
+                if (door.from.search > curr+1) {
+                    WeightPath(door.from, curr + 1);
+                }
+            }
+            if (door.to != null)
+            {
+                if (door.to.search > curr+1) {
+                    WeightPath(door.to, curr + 1);
+                }
+            }
+        }
+    }
+
+    private void SearchClear(ShaderDungeon dung) {
+        dung.search = int.MaxValue;
+
+        foreach (ShaderDungeon child in dung.children) {
+            SearchClear(child);
+        }
+    }
+
+
+    private void FindBestCandidateAsGoldenRoom(ShaderDungeon dungeon, List<ShaderDungeon> bestCandidateSoFar) {
+
+        if (dungeon.children.Count > 0)
+        {
+            foreach (ShaderDungeon child in dungeon.children) {
+                FindBestCandidateAsGoldenRoom(child, bestCandidateSoFar);
+            }
+        }
+        else
+        {
+            if (
+                (dungeon.position.y + dungeon.size.y / 2f < transform.position.y - undergroundMaxHeight * goldenRoomDepth || bestCandidateSoFar.Count == 0)
+                &&
+                (bestCandidateSoFar.Count == 0 || dungeon.size.x * dungeon.size.y > bestCandidateSoFar[0].size.x * bestCandidateSoFar[0].size.y)
+                )
+            {
+                if (bestCandidateSoFar.Count == 0)
+                {
+                    bestCandidateSoFar.Add(dungeon);
+                }
+                else {
+                    bestCandidateSoFar[0] = dungeon;
+                }
+            }
+        }
+    }
     private void LinkDungeon(List<ShaderDoor> doors, ShaderDungeon dung) {
 
 
@@ -652,8 +922,7 @@ public class ShaderLevel : MonoBehaviour {
         dung.joinedWithSibling = true;
         dung.sibling.joinedWithSibling = true;
     }
-
-    private void BuildDoorsBetween(List<ShaderDoor> doors, ShaderDungeon first, ShaderDungeon second, Vector3 direction, Color color) {
+    private ShaderDoor BuildDoorsBetween(List<ShaderDoor> doors, ShaderDungeon first, ShaderDungeon second, Vector3 direction, Color color) {
 
         bool isX = direction == Vector3.up || direction == Vector3.down;
 
@@ -677,12 +946,12 @@ public class ShaderLevel : MonoBehaviour {
         first.doors.Add(door);
         second.doors.Add(door);
 
+        return door;
         //Debug.Log("Creating door from: " + first.name + " to " + second.name);
         //place door in middle
 
 
     }
-
     private DictionaryList<ShaderDungeon, ShaderDungeon> GetAllOverlappingCandidates(ListHash<ShaderDungeon> self, ListHash<ShaderDungeon> sibling, bool isX)
     {
 
@@ -718,7 +987,6 @@ public class ShaderLevel : MonoBehaviour {
 
         return matches;
     }
-
     private void GetAllChildrenWhoAreAdjacentTo(ListHash<ShaderDungeon> found, ShaderDungeon search, ShaderDungeon adjacent, Vector3 direction)
     {
         if (search.children.Count == 0)
@@ -755,24 +1023,6 @@ public class ShaderLevel : MonoBehaviour {
         //    i
        // }
     }
-
-    /*private void GetAllChildrenWhoAreNotInDirection(ListHash<ShaderDungeon> found, ShaderDungeon search, Vector3 direction) {
-
-        if (search.siblingDirection != direction) {
-
-            if (search.children.Count == 0)
-            {
-                found.AddIfNotContains(search);
-            }
-            else {
-                foreach (ShaderDungeon child in search.children) {
-                    GetAllChildrenWhoAreNotInDirection(found, child, direction);
-                }
-            }
-        }
-
-    }*/
-
     private void SplitYDungeon(string parentName, List<ShaderDungeon> list, ShaderDungeon dung, ShaderDoor mainEntrance) {
 
         //Y split
@@ -811,7 +1061,10 @@ public class ShaderLevel : MonoBehaviour {
             botHalf.sibling = topHalf;
             botHalf.siblingDirection = Vector3.up;
 
-            topHalf.doors.Add(mainEntrance);
+            if (mainEntrance != null) {
+                topHalf.doors.Add(mainEntrance);
+            }
+
 
             dung.children.Add(topHalf);
             dung.children.Add(botHalf);
@@ -834,9 +1087,6 @@ public class ShaderLevel : MonoBehaviour {
             //}
         }
     }
-
-    //private void 
-
     private void SplitXDungeon(string parentName, List<ShaderDungeon> list, ShaderDungeon dung, ShaderDoor mainEntrance) {
 
 
@@ -935,8 +1185,6 @@ public class ShaderLevel : MonoBehaviour {
         }
 
     }
-
-
     private ShaderPlatformSegment GetClosest(ListHash<ShaderPlatformSegment> segments, int least, ShaderPlatformSegment notThis) {
 
         ShaderPlatformSegment closest = null;
@@ -957,7 +1205,6 @@ public class ShaderLevel : MonoBehaviour {
         }
         return closest;
     }
-
     public ShaderRoom GenerateRoom(List<ShaderRoom> rooms, Vector3 pos, Vector3 size, string name) {
 
         
@@ -980,7 +1227,6 @@ public class ShaderLevel : MonoBehaviour {
         return room;
         
     }
-
     public int GetRandomJumpHeight(Noise noise, Vector3 randomOffset, int pos, int platformLength, int maxHeight, float frequency) {
        return (int)(((noise.Evaluate(randomOffset + new Vector3(frequency * (pos + platformLength / 2f), 0, 0)) + 1f) / 2f) * maxHeight);
 

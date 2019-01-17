@@ -147,6 +147,13 @@ public class ListHash<T> : IEnumerable, System.IEquatable<ListHash<T>>, IEnumera
         }
         return contains;
     }
+    public void AddIfNotContains(ICollection<T> col)
+    {
+        foreach(T c in col)
+        {
+            AddIfNotContains(c);
+        }
+    }
     public bool Contains(T value)
     {
         return hashset.Contains(value);
