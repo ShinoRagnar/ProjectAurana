@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class ShaderPlatform
+public class MetaPlatform
 {
     public int relativeXStart;
     public int relativeXEnd;
     public int relativeYPos;
     public int caveEntrances;
 
-    public ShaderPlatformSegment[] segments;
-    public ShaderDungeon dungeon;
+    public MetaPlatformSegment[] segments;
+    public MetaDungeon dungeon;
 
     public int Length() {
         return relativeXEnd - relativeXStart;
@@ -26,7 +26,7 @@ public class ShaderPlatform
         return new Vector3(Length(), relativeYPos, width);
     }
 
-    public ShaderPlatform(int relativeXStart, int relativeXEnd,int relativeYPos) {
+    public MetaPlatform(int relativeXStart, int relativeXEnd,int relativeYPos) {
         this.relativeXEnd = relativeXEnd;
         this.relativeXStart = relativeXStart;
         this.relativeYPos = relativeYPos;
@@ -35,10 +35,10 @@ public class ShaderPlatform
         this.dungeon = null;
     }
 }
-public class ShaderPlatformSegment
+public class MetaPlatformSegment
 {
-    public ShaderDungeon dungeon;
-    public ShaderPlatform parent;
+    public MetaDungeon dungeon;
+    public MetaPlatform parent;
     public int relativeXStart;
     public int relativeXEnd;
     public int relativeYPos;
@@ -63,8 +63,8 @@ public class ShaderPlatformSegment
     }
 
 
-    public ShaderPlatformSegment(
-        ShaderPlatform parent,
+    public MetaPlatformSegment(
+        MetaPlatform parent,
         int relativeXStart, 
         int relativeXEnd, 
         int relativeYPos, 
@@ -83,17 +83,20 @@ public class ShaderPlatformSegment
         this.dungeon = null;
     }
 }
-public class ShaderDoor
+public class MetaDoor
 {
     public Color color;
     public Vector3 direction;
     public Vector3 position;
-    public ShaderDungeon from;
-    public ShaderDungeon to;
+    public MetaDungeon from;
+    public MetaDungeon to;
+    public bool shuffled = false;
     //public ShaderRoom from;
     //public ShaderRoom to;
 
-    public ShaderDoor(Color color, Vector3 direction, Vector3 position, ShaderDungeon from, ShaderDungeon to){ //, ShaderRoom from, ShaderRoom to) {
+    public bool Valid { get { return (from == null || from.alive) && (to == null || to.alive); } set { } }
+
+    public MetaDoor(Color color, Vector3 direction, Vector3 position, MetaDungeon from, MetaDungeon to){ //, ShaderRoom from, ShaderRoom to) {
         this.color = color;
         this.direction = direction;
         this.from = from;
@@ -111,24 +114,49 @@ public class ShaderDoor
             return new Vector3(doorsize, 1, zWidth);
         }
     }
+    public MetaDungeon GetOtherSide(MetaDungeon self) {
+        if (self == from)
+        {
+            return to;
+        }
+        else {
+            return from;
+        }
+    }
+
+    
 }
-public class ShaderDungeon
+public class MetaDungeon
 {
+
+    public List<MetaDoor> roofDoors = new List<MetaDoor>();
+    public List<MetaDoor> floorDoors = new List<MetaDoor>();
+    public List<MetaDoor> leftDoors = new List<MetaDoor>();
+    public List<MetaDoor> rightDoors = new List<MetaDoor>();
+
+    public List<MetaWall> walls = new List<MetaWall>();
+  //  public List<MetaWall> grounds = new List<MetaWall>();
+
+
     public Color color = Color.grey;
     public Vector3 size;
     public Vector3 position;
+    public Vector3 hub;
     public string name;
 
     public int search = 0;
 
-    public List<ShaderDoor> doors;
-    public List<ShaderDungeon> children;
+    public List<MetaPath> paths;
+    public List<MetaDoor> doors;
+    public List<MetaDungeon> children;
 
-    public ShaderDungeon sibling = null;
+    public MetaDungeon sibling = null;
     public Vector3 siblingDirection = Vector3.zero;
 
     public bool joinedWithSibling = false;
     public bool alive = true;
+
+    public int errors = 0;
 
     /*public void AddDoor(ShaderDoor door) {
         if (door == null)
@@ -143,13 +171,101 @@ public class ShaderDungeon
         return doors;
     }*/
 
-    public ShaderDungeon(string name, Vector3 size, Vector3 position)
+    public MetaDungeon(string name, Vector3 size, Vector3 position)
     {
         this.name = name;
         this.size = size;
         this.position = position;
-        this.children = new List<ShaderDungeon>();
-        this.doors = new List<ShaderDoor>();
+        this.children = new List<MetaDungeon>();
+        this.doors = new List<MetaDoor>();
+        this.paths = new List<MetaPath>();
+    }
+
+    public Vector4 Intersection(MetaDungeon intersectWith) {
+
+        Vector4 iBounds = intersectWith.GetBounds();
+        Vector4 bounds = GetBounds();
+
+        int xStart = 0;
+        int xEnd = 0;
+        int yStart = 0;
+        int yEnd = 0;
+
+
+        if (bounds.y < iBounds.x || bounds.x > iBounds.y)
+        {
+            //Out of bounds X
+        }
+        else {
+            xStart = (int)Mathf.Max(bounds.x,iBounds.x);
+            xEnd = (int)Mathf.Min(bounds.y, iBounds.y);
+        }
+        if (bounds.w < iBounds.z || bounds.z > iBounds.w)
+        {
+            //Out of bounds X
+        }
+        else
+        {
+            yStart = (int)Mathf.Max(bounds.z, iBounds.z);
+            yEnd = (int)Mathf.Min(bounds.w, iBounds.w);
+        }
+        return new Vector4(xStart, xEnd, yStart, yEnd);
+    }
+
+    private Vector4 GetBounds() {
+
+        return new Vector4(
+            (int)(position.x - size.x / 2f),
+            (int)(position.x + size.x / 2f),
+            (int)(position.y - size.y / 2f),
+            (int)(position.y + size.y / 2f)
+            );
+    }
+}
+public class MetaWall {
+
+    public Vector3 size;
+    public Vector3 position;
+
+    public MetaWall(Vector3 position, Vector3 size) {
+        this.size = size;
+        this.position = position;
+    }
+}
+public class MetaPath {
+
+    public Vector3[] path;
+
+    //public Vector3 from;
+    //public Vector3 to;
+
+    public MetaPath(Vector3[] path) {
+        this.path = path;
+        //this.from = from;
+        //this.to = to;
+    }
+    //Paths are ordered from top to bottom 
+    public Vector3[] GetPathAtY(int y) {
+        for (int i = 0; i < path.Length-1; i++) {
+            if (path[i].y >= y && path[i + 1].y <= y) {
+                return new Vector3[] { path[i], path[i + 1] };
+            }
+        }
+        if (path[0].y < y) { return new Vector3[] { path[0], path[1] }; }
+        return new Vector3[] { path[path.Length-2], path[path.Length-1] };
+    }
+
+}
+public class MetaOverlap{
+
+    public MetaDungeon from;
+    public MetaDungeon to;
+    public int length;
+
+    public MetaOverlap(MetaDungeon from, MetaDungeon to, int length) {
+        this.from = from;
+        this.to = to;
+        this.length = length;
     }
 }
 
@@ -169,6 +285,11 @@ public class ShaderLevel : MonoBehaviour {
     public bool unlockJumpHeight = false;
     public bool drawGizmos = false;
     public bool hideDeadDungeons = false;
+    public bool showGrounds = false;
+    public bool showPlatforms = true;
+    public bool showPaths = true;
+
+    public GameObject player = null;
 
     [Header("Level Settings")]
     [Range(1, 1000)]
@@ -187,9 +308,9 @@ public class ShaderLevel : MonoBehaviour {
     public int jumpMaxLength = 10;
 
     [Header("Platform Settings")]
-    [Range(1, 200)]
+    [Range(1, 1000)]
     public int maxPlatformLength = 100;
-    [Range(1, 100)]
+    [Range(1, 500)]
     public int minPlatformLength = 10;
     [Range(1, 100)]
     public int platformZWidth = 10;
@@ -214,11 +335,21 @@ public class ShaderLevel : MonoBehaviour {
 
     [Header("Room Settings")]
     [Range(1, 100)]
-    public int minRoomSize = 10;
+    public int minRoomXSize = 40;
+    [Range(1, 100)]
+    public int minRoomYSize = 20;
     [Range(1, 1000)]
-    public int maxRoomSize = 100;
+    public int maxRoomXSize = 100;
+    [Range(1, 1000)]
+    public int maxRoomYSize = 50;
     [Range(0.1f, 1f)]
     public float roomSplitChance = 0.5f;
+    [Range(1, 10)]
+    public int wallWidth = 2;
+
+    [Header("Path Settings")]
+    [Range(0.1f, 0.5f)]
+    public float floorPathSpread = 0.4f;
 
     [Header("Golden Room Settings")]
     [Range(0.1f, 1f)]
@@ -236,10 +367,11 @@ public class ShaderLevel : MonoBehaviour {
 
 
     //[Header("Generated")]
-    private ShaderPlatform[] platforms;
+    private MetaPlatform[] platforms;
     private ShaderRoom[] rooms;
-    private ShaderDoor[] doors;
-    private ShaderDungeon undergroundDungeon;
+    private MetaDoor[] doors;
+    private MetaDungeon undergroundDungeon;
+
 
     public void OnValidate()
     {
@@ -255,10 +387,10 @@ public class ShaderLevel : MonoBehaviour {
             try
             {
 
-                if (platforms != null)
+                if (showPlatforms && platforms != null)
                 {
 
-                    foreach (ShaderPlatform platform in platforms)
+                    foreach (MetaPlatform platform in platforms)
                     {
 
                         if (platform.caveEntrances == 0)
@@ -275,7 +407,7 @@ public class ShaderLevel : MonoBehaviour {
                         if (platform.segments != null)
                         {
 
-                            foreach (ShaderPlatformSegment segment in platform.segments)
+                            foreach (MetaPlatformSegment segment in platform.segments)
                             {
 
                                 if (segment.leftSideCaveEntrance || segment.rightSideCaveEntrance)
@@ -317,14 +449,14 @@ public class ShaderLevel : MonoBehaviour {
                         }
                     }
                 }
-                if (doors != null) {
-                    foreach (ShaderDoor door in doors) {
-                        if (!hideDeadDungeons || (door.from != null && door.from.alive && door.to != null && door.to.alive)) {
+                /*if (doors != null) {
+                    foreach (MetaDoor door in doors) {
+                        if (!hideDeadDungeons || door.from == null || door.to == null || (door.from.alive && door.to.alive)) {
                             Gizmos.color = door.color;
                             Gizmos.DrawWireCube(door.position, door.Size(doorHeight, platformZWidth));
                         }
                     }
-                }
+                }*/
                 if (undergroundDungeon != null) {
                     GizmoDisplay(undergroundDungeon);
                 }
@@ -373,18 +505,50 @@ public class ShaderLevel : MonoBehaviour {
     }
 
 
-    private void GizmoDisplay(ShaderDungeon dungeon) {
+    private void GizmoDisplay(MetaDungeon dungeon) {
 
         if (dungeon.children.Count == 0)
         {
             //drawString(dungeon.name, dungeon.position+new Vector3(0,5,0), Color.blue);
             if (!hideDeadDungeons || dungeon.alive) {
-                Gizmos.color = dungeon.color;
-                Gizmos.DrawWireCube(dungeon.position, dungeon.size);
+                if (dungeon.errors == 0)
+                {
+                    Gizmos.color = dungeon.color;
+                }
+                else {
+                    Gizmos.color = Color.red;
+                }
+
+                if (dungeon.walls.Count > 0)
+                {
+                    foreach (MetaWall wall in dungeon.walls)
+                    {
+                        Gizmos.DrawCube(wall.position, wall.size);
+                    }
+                }
+                else {
+                    Gizmos.DrawWireCube(dungeon.position, dungeon.size);
+                }
+                if (showPaths) {
+                    foreach (MetaPath path in dungeon.paths)
+                    {
+                        Gizmos.color = Color.white;
+                        for (int i = 0; i < path.path.Length - 1; i++) {
+                            Gizmos.DrawLine(path.path[i], path.path[i+1]);
+                        }
+                    }
+                }
+
+                foreach (MetaDoor door in dungeon.doors) {
+                    if (door.Valid) {
+                        Gizmos.color = door.color;
+                        Gizmos.DrawWireCube(door.position, door.Size(doorHeight, platformZWidth));
+                    }
+                }
             }
         }
         else {
-            foreach (ShaderDungeon sd in dungeon.children) {
+            foreach (MetaDungeon sd in dungeon.children) {
                 GizmoDisplay(sd);
             }
         }
@@ -405,14 +569,755 @@ public class ShaderLevel : MonoBehaviour {
 
         ReValidateParameters();
 
+        Noise noise = new Noise();
+
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         stopwatch.Start();
 
-        Noise noise = new Noise();
+        List<MetaDungeon> activeRooms = CreateMetaData(noise);
 
-        List<ShaderPlatform> pls = new List<ShaderPlatform>();
+        ShuffleDoors(activeRooms);
+        
+        CreateMetaPaths(activeRooms);
+
+        CreateMetaGrounds(activeRooms);
+
+        CreateMetaWalls(activeRooms);
+
+        ShowPlayerRoom(activeRooms);
+
+
+
+        stopwatch.Stop();
+
+        Debug.Log("Level generated in: " +(stopwatch.ElapsedMilliseconds) / 1000f);
+
+
+        // rooms = rms.ToArray();
+
+
+    }
+
+    public void ShowPlayerRoom(List<MetaDungeon> activeRooms) {
+        if (player != null) {
+
+
+        }
+
+    }
+
+    public void CreateMetaGrounds(List<MetaDungeon> activeRooms) {
+
+        foreach (MetaDungeon room in activeRooms)
+        {
+
+            //if (room.roofDoors.Count == 0 && room.floorDoors.Count == 0) {
+
+            int floor = (int)(room.position.y - room.size.y / 2) + wallWidth / 2;
+            int left = (int)(room.position.x - room.size.x / 2) + wallWidth / 2;
+            int right = (int)(room.position.x + room.size.x / 2) - wallWidth / 2;
+
+            MetaDoor leftBottomDoor = null;
+            MetaDoor rightBottomDoor = null;
+            MetaDoor leftFloorDoor = null;
+            MetaDoor rightFloorDoor = null;
+            
+
+            foreach (MetaDoor door in room.leftDoors)
+            {
+                if (leftBottomDoor == null || leftBottomDoor.position.y > door.position.y)
+                {
+                    leftBottomDoor = door;
+                }
+            }
+            foreach (MetaDoor door in room.rightDoors)
+            {
+                if (rightBottomDoor == null || rightBottomDoor.position.y > door.position.y)
+                {
+                    rightBottomDoor = door;
+                }
+            }
+            foreach (MetaDoor door in room.floorDoors)
+            {
+                if (rightFloorDoor == null || rightFloorDoor.position.x > door.position.x)
+                {
+                    rightFloorDoor = door;
+                }
+                if (leftFloorDoor == null || leftFloorDoor.position.x < door.position.x)
+                {
+                    leftFloorDoor = door;
+                }
+            }
+
+            int splitL = (int)(room.position.x + UnityEngine.Random.Range(-room.size.x / 4f, room.size.x / 4f));
+            int splitR = (int)(room.position.x + UnityEngine.Random.Range(-room.size.x / 4f, room.size.x / 4f));
+
+            if (leftFloorDoor != null)
+            {
+                splitL = (int)Mathf.Max(Mathf.Min(splitL, leftFloorDoor.position.x - doorHeight / 2f), left);
+            }
+            if (rightFloorDoor != null)
+            {
+                splitR = (int)Mathf.Min(Mathf.Max(splitR, rightFloorDoor.position.x + doorHeight / 2f), right);
+            }
+
+            if (leftBottomDoor != null)
+            {
+
+                int doorPosBot = (int)(leftBottomDoor.position.y - doorHeight / 2);
+                int height = (int)(doorPosBot - floor);
+                int minSteps = Mathf.Max(height / jumpHeight, 1);
+
+                int size = Mathf.Min((splitL - left) / minSteps, doorHeight);
+
+                int halfSize = size / 2;
+                int progression = left + halfSize;
+
+                if (size > 0 && height > 0)
+                {
+                    if (height > jumpHeight)
+                    {
+                        for (int step = 0; step < minSteps; step++)
+                        {
+                            AddGroundStep(room, progression, floor, height, size);
+
+                            //room.walls.Add(new MetaWall(new Vector3(progression, floor + height / 2), new Vector3(size, height, platformZWidth)));
+
+                            /*foreach (MetaPath path in room.paths) {
+                                int endPathX = (int)path.path[path.path.Length - 1].x;
+                                if (endPathX >= (progression - room.size.x) && endPathX <= (progression + room.size.x)) {
+                                    path.path[path.path.Length - 1] = new Vector3(endPathX, floor + height, path.path[path.path.Length - 1].z);
+                                }
+                            }*/
+
+                            progression += size;
+
+                            if (height > jumpHeight + 1)
+                            {
+                                height -= jumpHeight;
+                            }
+                        }
+                    }
+                    else if (height > 0)
+                    {
+
+                        //Create the smallest platform possible
+                        int minS = Mathf.Min(doorHeight, splitL - left);
+                        AddGroundStep(room, left + minS / 2, floor, height, minS);
+                        //room.walls.Add(new MetaWall(new Vector3(left + minS / 2, floor + height / 2), new Vector3(minS, height, platformZWidth)));
+                    }
+                }
+                else
+                {
+                    room.errors++;
+                    Debug.Log("Size less than one! "+seed);
+                }
+
+            }
+
+            if (rightBottomDoor != null)
+            {
+
+                int doorPosBot = (int)(rightBottomDoor.position.y - doorHeight / 2);
+                int height = (int)(doorPosBot - floor);
+                int minSteps = Mathf.Max(height / jumpHeight, 1);
+
+                int size = Mathf.Min((right - splitR) / minSteps, doorHeight);
+                int halfSize = size / 2;
+                int progression = right - halfSize;
+
+                if (size > 0 && height > 0)
+                {
+
+
+                    if (height > jumpHeight)
+                    {
+                        for (int step = 0; step < minSteps; step++)
+                        {
+                            /*foreach (MetaPath path in room.paths)
+                            {
+                                int endPathX = (int)path.path[path.path.Length - 1].x;
+                                if (endPathX >= (progression - room.size.x) && endPathX <= (progression + room.size.x))
+                                {
+                                    path.path[path.path.Length - 1] = new Vector3(endPathX, floor + height, path.path[path.path.Length - 1].z);
+                                }
+                            }*/
+                            //room.walls.Add(new MetaWall(new Vector3(progression, floor + height / 2),
+                            //    new Vector3(size, height, platformZWidth)));
+
+                            AddGroundStep(room, progression, floor, height, size);
+
+                            progression -= size;
+
+                            if (height > jumpHeight + 1)
+                            {
+                                height -= jumpHeight;
+                            }
+                        }
+                    }
+                    else if (height > 0)
+                    {
+                        //Create the smallest platform possible
+                        int minS = Mathf.Min(doorHeight, right - splitR);
+                        AddGroundStep(room, right - minS / 2, floor, height, minS);
+                        //room.walls.Add(new MetaWall(new Vector3(right - minS / 2, floor + height / 2), new Vector3(minS, height, platformZWidth)));
+                    }
+                }
+                else
+                {
+                    room.errors++;
+                    Debug.Log("Size less than one! "+seed);
+                }
+
+
+            }
+
+            if (room.paths.Count > 0) {
+
+                int roof = (int)(room.position.y + room.size.y / 2 - wallWidth);
+
+                foreach (MetaPath path in room.paths)
+                {
+                    //int pathEndX = (int)path.path[path.path.Length - 1].x;
+                    bool isLeft = UnityEngine.Random.Range(0, 1f) > 0.5f;
+
+                    int lowY = (int)path.path[path.path.Length - 1].y+jumpHeight;
+                    int highY = roof-jumpHeight;
+
+                    int lenY = highY - lowY;
+                    int numberOfSplits = Mathf.Max(Mathf.FloorToInt(lenY / (float)jumpHeight),1);
+
+                    if ((highY - lowY) < jumpHeight * 4 && numberOfSplits > 2) {
+                        numberOfSplits -= 1;
+                    }
+
+                    int[] positions = new int[numberOfSplits];
+
+                    if (numberOfSplits == 1 || lowY >= highY)
+                    {
+                        positions = new int[] { lowY + lenY / 2 };
+                    }
+                    else {
+
+                        int stepsize = (highY - lowY) / numberOfSplits;
+                        int curr = lowY;
+
+                        for (int i = 0; i < positions.Length; i++) {
+
+                            positions[i] = curr;
+                            curr += stepsize;
+                        }
+
+                        /*int l = lowY + jumpHeight;
+                        int h = highY - jumpHeight;
+
+                        positions[0] = lowY + jumpHeight;
+                        positions[positions.Length - 1] = highY - jumpHeight;
+
+                        if (numberOfSplits > 2) {
+                            int remainder = h - l;
+                            int st = remainder / (numberOfSplits - 2);
+                            for (int i = 1; i < positions.Length - 1; i++) {
+                                positions[i] = l + i * st;
+                            }
+                        }*/
+
+                    }
+
+                    foreach (int yPos in positions)
+                    //}
+                    //for (int yPos = roof; yPos > floor + wallWidth; yPos -= jumpHeight)
+                    //for (int yPos = roof; yPos > floor + wallWidth; yPos -= jumpHeight)
+                    {
+
+                        Vector3[] p = path.GetPathAtY(yPos);
+
+                        Vector3 high = p[0];//path.from.y < path.to.y ? path.from : path.to;
+                        Vector3 low = p[1];//path.from.y < path.to.y ? path.to : path.from;
+
+                        int platformLength = (int)UnityEngine.Random.Range(doorHeight, room.size.x / 2);
+
+                        isLeft = !isLeft;
+                       // int yPos = (int)(high.y + jumpHeight);
+
+                        float progress = Mathf.Clamp01((yPos - low.y) / (high.y - low.y));
+
+                        Vector3 pos = Vector3.Lerp(low, high, progress);
+
+                        pos.y = yPos;
+
+
+                        if (isLeft)
+                        {
+                            platformLength = DivisibleBy2((int)Mathf.Min(platformLength, pos.x - left));
+                        }
+                        else
+                        {
+                            platformLength = DivisibleBy2((int)Mathf.Min(platformLength, right - pos.x));
+                        }
+
+                        room.walls.Add(new MetaWall(new Vector3(
+                            isLeft ? pos.x - platformLength / 2 : pos.x + platformLength / 2
+                            , pos.y), new Vector3(platformLength, wallWidth, platformZWidth)));
+                    }
+
+
+                }
+
+            }
+
+
+            /*foreach (MetaPath path in room.paths) {
+
+                Vector3 low = path.from.y < path.to.y ? path.to : path.from;
+                Vector3 high = path.from.y < path.to.y ? path.from : path.to;
+
+                int platformLength = (int) UnityEngine.Random.Range(doorHeight, room.size.x / 2);
+                
+
+                int yPos = (int)(high.y + jumpHeight);
+
+                float progress = Mathf.Clamp01((yPos - low.y) / (high.y - low.y));
+
+                Vector3 pos = Vector3.Lerp(low, high, progress);
+
+                pos.y = yPos;
+
+                bool isLeft = UnityEngine.Random.Range(0, 1f) > 0.5f;
+
+                if (yPos < roof - jumpHeight) {
+
+                    if (isLeft)
+                    {
+                        platformLength = DivisibleBy2((int)Mathf.Min(platformLength, pos.x - left));
+                    }
+                    else {
+                        platformLength = DivisibleBy2((int)Mathf.Min(platformLength, right - pos.x));
+                    }
+
+                    room.walls.Add(new MetaWall(new Vector3(
+                        isLeft ? pos.x - platformLength / 2 : pos.x + platformLength / 2
+                        , pos.y), new Vector3(platformLength, wallWidth, platformZWidth)));
+
+                }
+
+            }*/
+
+
+            // }
+        }
+    }
+
+    public void AddGroundStep(MetaDungeon room, int progression, int floor, int height, int size) {
+
+        foreach (MetaPath path in room.paths)
+        {
+            int endPathX = (int)path.path[path.path.Length - 1].x;
+            if (endPathX >= (progression - size/2) && endPathX <= (progression + size/2))
+            {
+                path.path[path.path.Length - 1] = new Vector3(endPathX, floor + height, path.path[path.path.Length - 1].z);
+                break;
+            }
+        }
+        room.walls.Add(new MetaWall(new Vector3(progression, floor + height / 2),
+            new Vector3(size, height, platformZWidth)));
+    }
+
+
+
+    private void ShuffleDoors(List<MetaDungeon> activeRooms) {
+
+        foreach (MetaDungeon room in activeRooms) {
+
+            foreach (MetaDoor door in room.floorDoors) {
+
+                if (!door.shuffled) {
+                    MetaDungeon leadsTo = door.GetOtherSide(room);
+                    Vector4 intersection = room.Intersection(leadsTo);
+
+                    int leftCount = room.leftDoors.Count + leadsTo.leftDoors.Count;
+                    int rightCount = room.rightDoors.Count + leadsTo.rightDoors.Count;
+
+                    int intersectionXLength = (int)((intersection.y - intersection.x) / 2f);
+
+
+                    foreach (MetaDoor upDoor in room.roofDoors) {
+                        if (upDoor.position.x < room.position.x - room.size.x / 4f)
+                        {
+                            leftCount++;
+                        }
+                        if (upDoor.position.x > room.position.x + room.size.x / 4f)
+                        {
+                            rightCount++;
+                        }
+                    }
+
+                    //if (leftCount == 0 && rightCount == 0) {
+                    //    leftCount = leadsTo.leftDoors.Count;
+                    //    rightCount = leadsTo.rightDoors.Count;
+                    //}
+
+                    /*
+                    bool l = leftCount > rightCount;
+                    bool r = leftCount < rightCount;
+
+                    int rightX = (int)(intersection.y - ((l || (!l && !r)) ?  doorHeight / 2f : intersectionXLength));
+                    int leftX = (int)(intersection.y + ((r || (!l && !r)) ? doorHeight / 2f : intersectionXLength));
+                    int pos = UnityEngine.Random.Range(leftX, rightX);
+
+                    if (leftX < rightX) {
+                        door.position = new Vector3(pos, door.position.y);
+                        door.shuffled = true;
+                    }*/
+
+                    int margin = (int)(doorHeight / 2f + wallWidth / 2f);
+
+
+                    if (leftCount > rightCount)
+                    {
+                        int rightX = (int)(intersection.y - margin);
+                        int leftX = (int)(intersection.x + intersectionXLength);
+                        int pos = UnityEngine.Random.Range(leftX, rightX);
+
+                        if (leftX < rightX)
+                        {
+                            door.position = new Vector3(pos, door.position.y);
+                            door.shuffled = true;
+                        }
+                    }
+                    else if (leftCount < rightCount)
+                    {
+                        int rightX = (int)(intersection.y - intersectionXLength);
+                        int leftX = (int)(intersection.x + margin);
+                        int pos = UnityEngine.Random.Range(leftX, rightX);
+
+                        if (leftX < rightX)
+                        {
+                            door.position = new Vector3(pos, door.position.y);
+                            door.shuffled = true;
+                        }
+                    }
+                    else {
+                        int rightX = (int)(intersection.y - margin);
+                        int leftX = (int)(intersection.x + margin);
+                        int pos = UnityEngine.Random.Range(leftX, rightX);
+
+                        if (leftCount > 0 && rightCount > 0) {
+                            //Mid
+                            pos = (int)(intersection.x + intersectionXLength);
+                        }
+
+                        if (leftX < rightX)
+                        {
+                            door.position = new Vector3(pos, door.position.y);
+                            door.shuffled = true;
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+
+
+    }
+
+    private void CreateMetaPaths(List<MetaDungeon> activeRooms)
+    {
+        foreach (MetaDungeon room in activeRooms) {
+
+            List<MetaDoor> roofDoors = new List<MetaDoor>();
+            List<MetaDoor> floorDoors = new List<MetaDoor>();
+            List<MetaDoor> leftDoors = new List<MetaDoor>();
+            List<MetaDoor> rightDoors = new List<MetaDoor>();
+
+            int xTop = 0;
+            foreach (MetaDoor door in room.doors) {
+                if ((door.from == null || door.from.alive) && (door.to == null || door.to.alive)) {
+
+                    if (door.direction == Vector3.up || door.direction == Vector3.down)
+                    {
+                        if (door.position.y > room.position.y)
+                        {
+                            xTop += (int)door.position.x;
+                            roofDoors.Add(door);
+                        }
+                        else
+                        {
+                            floorDoors.Add(door);
+                        }
+                    }
+                    if (door.direction == Vector3.left || door.direction == Vector3.right)
+                    {
+                        if (door.position.x < room.position.x)
+                        {
+                            leftDoors.Add(door);
+                        }
+                        else
+                        {
+                            rightDoors.Add(door);
+                        }
+                    }
+                }
+            }
+
+            MetaDoor first = null;
+            MetaDoor last = null;
+
+            foreach (MetaDoor door in floorDoors)
+            {
+                if (first == null || first.position.x > door.position.x)
+                {
+                    first = door;
+                }
+                if (last == null || last.position.x < door.position.x)
+                {
+                    last = door;
+                }
+            }
+
+            int firstSpace = 0;
+            int lastSpace = 0;
+            int middleSpace = 0;
+
+            int connectXLeft = (int)(room.position.x);
+            int connectXRight = (int)(room.position.x);
+            int connectXMiddle = (int)(room.position.x);
+
+            if (first != null) {
+
+                firstSpace = (int)(first.position.x - (room.position.x - room.size.x / 2f) - doorHeight / 2f);
+                lastSpace = (int)((room.position.x + room.size.x / 2f) - last.position.x - doorHeight / 2f);
+                middleSpace = (int)(last.position.x - first.position.x);
+
+                connectXLeft = (int)(room.position.x - room.size.x / 2f + UnityEngine.Random.Range((0.5f-floorPathSpread), floorPathSpread)*firstSpace);
+                connectXRight = (int)(room.position.x + room.size.x / 2f - UnityEngine.Random.Range((0.5f-floorPathSpread),floorPathSpread)*lastSpace);
+                connectXMiddle = (int)((first.position.x + last.position.x) / 2f);
+            }
+
+            room.hub = new Vector3(roofDoors.Count > 0 ? xTop / roofDoors.Count : (int)room.position.x, room.position.y);
+
+
+            /*foreach (MetaDoor door in leftDoors) {
+
+                if (room.size.y > room.size.x || (first != null && first.position.x < room.position.x))
+                {
+                    if (first != null)
+                    {
+                        room.paths.Add(new MetaPath(door.position, new Vector3(
+                            firstSpace > doorHeight ? connectXLeft : connectXMiddle, room.position.y - room.size.y / 2f)));
+                    }
+                    else {
+                        room.paths.Add(new MetaPath(room.hub, door.position));
+                    }
+                }
+                else {
+                    room.paths.Add(new MetaPath(door.position,
+                        new Vector3(room.position.x + UnityEngine.Random.Range(-room.size.x * floorPathSpread, 0), room.position.y - room.size.y / 2f)));
+
+                }
+            }
+
+            foreach (MetaDoor door in rightDoors)
+            {
+                if (room.size.y > room.size.x || (last != null && last.position.x > room.position.x))
+                {
+                    if (last != null)
+                    {
+                        room.paths.Add(new MetaPath(door.position, new Vector3(
+                            lastSpace > doorHeight ? connectXRight : connectXMiddle, room.position.y - room.size.y / 2f)));
+                    }
+                    else
+                    {
+                        room.paths.Add(new MetaPath(room.hub, door.position));
+                    }
+                }
+                else
+                {
+                    room.paths.Add(new MetaPath(door.position,
+                        new Vector3(room.position.x + UnityEngine.Random.Range(0, room.size.x * floorPathSpread), room.position.y - room.size.y / 2f)));
+                }
+            }*/
+
+            if (roofDoors.Count > 0) {
+                
+                //foreach (MetaDoor door in roofDoors) {
+                //    room.paths.Add(new MetaPath(room.hub, door.position));
+                //}
+
+                if (floorDoors.Count == 0)
+                {
+                    int floorX = (int)room.position.x - (int)UnityEngine.Random.Range(-room.size.x * floorPathSpread, room.size.x * floorPathSpread);
+
+                    foreach (MetaDoor door in roofDoors) {
+                        room.paths.Add(new MetaPath(
+                            new Vector3[] { door.position, room.hub, new Vector3(floorX, room.position.y - room.size.y / 2f) }));
+
+                    }
+
+                }
+                else {
+                    if (room.hub.x < first.position.x && firstSpace > doorHeight) //firstSpace > lastSpace && firstSpace > middleSpace)
+                    {
+
+                        foreach (MetaDoor door in roofDoors)
+                        {
+                            room.paths.Add(new MetaPath(
+                                new Vector3[] { door.position, room.hub, new Vector3(connectXLeft, room.position.y - room.size.y / 2f) }));
+
+                        }
+                    }
+                    else if (room.hub.x > last.position.x && lastSpace > doorHeight)
+                    {
+                        foreach (MetaDoor door in roofDoors)
+                        {
+                            room.paths.Add(new MetaPath(
+                                new Vector3[] { door.position, room.hub, new Vector3(connectXRight, room.position.y - room.size.y / 2f) }));
+
+                        }
+                        //room.paths.Add(new MetaPath(room.hub,new Vector3(connectXRight,room.position.y - room.size.y / 2f)));
+                    }
+                    else {
+                        foreach (MetaDoor door in roofDoors)
+                        {
+                            room.paths.Add(new MetaPath(
+                                new Vector3[] { door.position, room.hub, new Vector3(connectXMiddle, room.position.y - room.size.y / 2f) }));
+
+                        }
+                        //room.paths.Add(new MetaPath(room.hub,new Vector3(connectXMiddle, room.position.y - room.size.y / 2f)));
+                    }
+                }
+            }
+        }
+    }
+
+    private void CreateMetaWalls(List<MetaDungeon> activeRooms) {
+        //Add walls to each active rooms
+        foreach (MetaDungeon room in activeRooms) {
+            CreateMetaWall(room);
+        }
+    }
+
+    private void CreateMetaWall(MetaDungeon room) {
+
+        //Left side
+        bool[] blockedL = new bool[(int)room.size.y];
+        bool[] blockedR = new bool[(int)room.size.y];
+        bool[] blockedU = new bool[(int)room.size.x];
+        bool[] blockedD = new bool[(int)room.size.x];
+
+        int initY = (int)(room.position.y - room.size.y / 2f);
+        int initX = (int)(room.position.x - room.size.x / 2f);
+
+        foreach (MetaDoor door in room.doors) {
+            if ((door.from == null || door.from.alive) && (door.to == null || door.to.alive)) {
+
+                if (door.direction == Vector3.left || door.direction == Vector3.right)
+                {
+                    int startRem = (int)(door.position.y - doorHeight / 2f) - initY;
+                    for (int i = Mathf.Max(startRem, 0); i < Mathf.Min(startRem + doorHeight, blockedL.Length - 1); i++)
+                    {
+                        if (door.position.x < room.position.x)
+                        {
+                            blockedL[i] = true;
+                        }
+                        else
+                        {
+                            blockedR[i] = true;
+                        }
+                    }
+
+                }
+                else {
+
+                    int startRem = (int)(door.position.x - doorHeight / 2f) - initX;
+                    for (int i = Mathf.Max(startRem, 0); i < Mathf.Min(startRem + doorHeight, blockedU.Length - 1); i++)
+                    {
+                        if (door.position.y < room.position.y)
+                        {
+                            blockedD[i] = true;
+                        }
+                        else
+                        {
+                            blockedU[i] = true;
+                        }
+                    }
+
+                }
+            }
+        }
+
+        Wall(room, blockedL, initX, initY,true);
+        Wall(room, blockedR, (int)(initX + room.size.x)-wallWidth, initY,true);
+
+        Wall(room, blockedU, initX, (int)(initY + room.size.y) - wallWidth, false);
+        Wall(room, blockedD, initX, initY, false);
+
+
+    }
+
+    private void Wall(MetaDungeon room, bool[] blocked, int initX, int initY, bool isX) {
+
+        int currentLength = 0;
+
+        for (int p = 0; p < blocked.Length; p++)
+        {
+            if (blocked[p])
+            {
+                if (currentLength > 0)
+                {
+                    room.walls.Add(new MetaWall(
+                        isX ? 
+                            new Vector3(initX + wallWidth / 2f, initY + p - currentLength / 2f)
+                            : new Vector3(initX + p - currentLength / 2f, initY + wallWidth / 2f)
+                        ,
+                        isX ?
+                            new Vector3(wallWidth, currentLength, platformZWidth)
+                            : new Vector3(currentLength, wallWidth, platformZWidth)
+                        ));
+                }
+                currentLength = 0;
+            }
+            else
+            {
+                currentLength++;
+            }
+        }
+        if (currentLength > 0)
+        {
+            room.walls.Add(new MetaWall(
+                        isX ?
+                            new Vector3(initX + wallWidth / 2f, initY + blocked.Length - currentLength / 2f)
+                            : new Vector3(initX + blocked.Length - currentLength / 2f, initY + wallWidth / 2f)
+                        ,
+                        isX ?
+                            new Vector3(wallWidth, currentLength, platformZWidth)
+                            : new Vector3(currentLength, wallWidth, platformZWidth)
+                        ));
+        }
+    }
+
+    
+
+    /*private void Spawn(ShaderDungeon room, Vector3 position, Vector3 size) {
+
+        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cube.transform.parent = this.transform;
+
+        cube.transform.position = position;
+        cube.transform.localScale = size;
+
+        room.walls.Add(cube);
+        
+    }*/
+
+
+    public List<MetaDungeon> CreateMetaData(Noise noise) {
+
+        List<MetaPlatform> pls = new List<MetaPlatform>();
         List<ShaderRoom> rms = new List<ShaderRoom>();
-        List<ShaderDoor> drs = new List<ShaderDoor>();
+        List<MetaDoor> drs = new List<MetaDoor>();
 
         UnityEngine.Random.InitState(seed);
 
@@ -422,25 +1327,27 @@ public class ShaderLevel : MonoBehaviour {
             UnityEngine.Random.Range(0, MAX_RANDOM_OFFSET));
 
         //Creates the underground dungeon
-        undergroundDungeon = new ShaderDungeon("Underground Dungeon", new Vector3(levelLength, undergroundMaxHeight, platformZWidth), new Vector3(levelLength / 2f, -undergroundMaxHeight / 2f));
-        SplitYDungeon(undergroundDungeon.name, new List<ShaderDungeon>(), undergroundDungeon, null);
+        undergroundDungeon = new MetaDungeon("Underground Dungeon", new Vector3(levelLength, undergroundMaxHeight, platformZWidth), new Vector3(levelLength / 2f, -undergroundMaxHeight / 2f));
+        //SplitYDungeon(undergroundDungeon.name, new List<ShaderDungeon>(), undergroundDungeon, null);
+        SplitXDungeon(undergroundDungeon.name, new List<MetaDungeon>(), undergroundDungeon, null);
+
         LinkDungeon(drs, undergroundDungeon);
 
         //Find a common room where all roads connect to
-        List<ShaderDungeon> goldenRoom = new List<ShaderDungeon>();
+        List<MetaDungeon> goldenRoom = new List<MetaDungeon>();
         FindBestCandidateAsGoldenRoom(undergroundDungeon, goldenRoom);
         goldenRoom[0].color = Color.yellow;
 
         //List all children
-        List<ShaderDungeon> dungeonChildren = new List<ShaderDungeon>();
+        List<MetaDungeon> dungeonChildren = new List<MetaDungeon>();
         ListChildren(undergroundDungeon, dungeonChildren);
 
         //List of all paths leading to the goldenroom
-        ListHash<ShaderDungeon> pathsToGoldenRoom = new ListHash<ShaderDungeon>();
+        ListHash<MetaDungeon> pathsToGoldenRoom = new ListHash<MetaDungeon>();
         pathsToGoldenRoom.AddIfNotContains(goldenRoom);
 
         //List all paths leading to treasure rooms
-        ListHash<ShaderDungeon> pathsToTreasureRooms = new ListHash<ShaderDungeon>();
+        ListHash<MetaDungeon> pathsToTreasureRooms = new ListHash<MetaDungeon>();
 
         //Clear up child objects
         foreach (Transform child in transform)
@@ -453,24 +1360,27 @@ public class ShaderLevel : MonoBehaviour {
 
 
         //Create platforms
-        while (pos < levelLength) {
+        while (pos < levelLength)
+        {
 
             int platformLength = (int)Mathf.Min(DivisibleBy2(UnityEngine.Random.Range(minPlatformLength, maxPlatformLength)), levelLength - pos);
             platformLength = Mathf.Max(platformLength, 2);
 
             int platformY = DivisibleBy2(GetRandomJumpHeight(noise, randomOffset, pos, platformLength, overgroundMaxHeight, platformYFrequency));
 
-            if (!unlockJumpHeight && !(platformY + jumpHeight > previousPlatformY && platformY - jumpHeight < previousPlatformY)) {
+            if (!unlockJumpHeight && !(platformY + jumpHeight > previousPlatformY && platformY - jumpHeight < previousPlatformY))
+            {
                 if (platformY > previousPlatformY)
                 {
                     platformY = DivisibleBy2(previousPlatformY + jumpHeight);
                 }
-                else {
+                else
+                {
                     platformY = DivisibleBy2(previousPlatformY - jumpHeight);
                 }
             }
 
-            pls.Add(new ShaderPlatform(pos, pos + platformLength, platformY));
+            pls.Add(new MetaPlatform(pos, pos + platformLength, platformY));
 
             pos += (int)(platformLength + UnityEngine.Random.Range(jumpMinLength, jumpMaxLength));
 
@@ -480,16 +1390,18 @@ public class ShaderLevel : MonoBehaviour {
         platforms = pls.ToArray();
 
         //Spawn cave entrances
-        for (int i = 0; i < caveEntrances; i++){
+        for (int i = 0; i < caveEntrances; i++)
+        {
             platforms[(int)UnityEngine.Random.Range(0, platforms.Length - 1)].caveEntrances++;
         }
 
         //Create segments
         int platformNum = 0;
 
-        foreach (ShaderPlatform platform in platforms) {
+        foreach (MetaPlatform platform in platforms)
+        {
 
-            List<ShaderPlatformSegment> segments = new List<ShaderPlatformSegment>();
+            List<MetaPlatformSegment> segments = new List<MetaPlatformSegment>();
 
             pos = 0;
             int previousSegmentY = 0;
@@ -501,7 +1413,7 @@ public class ShaderLevel : MonoBehaviour {
                 segmentLength = Mathf.Max(segmentLength, 2);
 
                 float progress = (float)pos / (float)platform.Length();
-                float edgeNearness = Mathf.Sin(progress*Mathf.PI); //((float)pos / (float)platform.Length())* (1f - ((float)pos + segmentLength / (float)platform.Length()));
+                float edgeNearness = Mathf.Sin(progress * Mathf.PI); //((float)pos / (float)platform.Length())* (1f - ((float)pos + segmentLength / (float)platform.Length()));
 
                 edgeNearness *= edgeNearness;
 
@@ -521,78 +1433,81 @@ public class ShaderLevel : MonoBehaviour {
                     }
                 }
 
-                segments.Add(new ShaderPlatformSegment(platform,pos, pos + segmentLength, segmentY,false,false,false));
+                segments.Add(new MetaPlatformSegment(platform, pos, pos + segmentLength, segmentY, false, false, false));
 
                 pos += segmentLength;
 
                 previousSegmentY = segmentY;
             }
 
-            
-            if (platform.caveEntrances > 0) {
 
-                ListHash<ShaderPlatformSegment> entranceSegments = new ListHash<ShaderPlatformSegment>();
+            if (platform.caveEntrances > 0)
+            {
 
-                for (int i = 0; i < platform.caveEntrances; i++) {
+                ListHash<MetaPlatformSegment> entranceSegments = new ListHash<MetaPlatformSegment>();
+
+                for (int i = 0; i < platform.caveEntrances; i++)
+                {
                     entranceSegments.AddIfNotContains(segments[UnityEngine.Random.Range(0, segments.Count - 1)]);
                 }
 
                 //Split entrances into 3 segments
                 int segmentNum = 0;
 
-                foreach (ShaderPlatformSegment entrance in entranceSegments) {
+                foreach (MetaPlatformSegment entrance in entranceSegments)
+                {
 
                     segments.Remove(entrance);
 
-                    int length = (int) (entrance.Length() / 2f);
-                    int beforeLength = (int) (entrance.Length() - length - length / 2f);
+                    int length = (int)(entrance.Length() / 2f);
+                    int beforeLength = (int)(entrance.Length() - length - length / 2f);
                     int endLength = entrance.Length() - length - beforeLength;
 
                     bool left = UnityEngine.Random.Range(0f, 1f) > 0.5f;
 
-                    segments.Add(new ShaderPlatformSegment(platform,
+                    segments.Add(new MetaPlatformSegment(platform,
                         entrance.relativeXStart,
                         entrance.relativeXStart + beforeLength,
                         entrance.relativeYPos,
-                        false,false,left));
+                        false, false, left));
 
-                    ShaderPlatformSegment entra = new ShaderPlatformSegment(platform,
+                    MetaPlatformSegment entra = new MetaPlatformSegment(platform,
                         entrance.relativeXStart + beforeLength,
                         entrance.relativeXStart + beforeLength + length,
                         entrance.relativeYPos + doorHeight,
                         left, !left, false);
 
                     segments.Add(entra);
-                    entra.dungeon = new ShaderDungeon("Entrance Dungeon",entra.Size(platformZWidth), entra.Position(transform.position));
+                    entra.dungeon = new MetaDungeon("Entrance Dungeon", entra.Size(platformZWidth), entra.Position(transform.position));
 
-                    segments.Add(new ShaderPlatformSegment(platform,
+                    segments.Add(new MetaPlatformSegment(platform,
                         entrance.relativeXStart + beforeLength + length,
                         entrance.relativeXEnd,
                         entrance.relativeYPos,
                         false, false, !left));
 
-                   // entra.room = GenerateRoom(rms, entra.Position(transform.position), entra.Size(platformZWidth), 
-                   //     PLATFORM+platformNum+SEGMENT+segmentNum+ENTRANCE);
+                    // entra.room = GenerateRoom(rms, entra.Position(transform.position), entra.Size(platformZWidth), 
+                    //     PLATFORM+platformNum+SEGMENT+segmentNum+ENTRANCE);
 
                     //Door leading into the segment
-                    drs.Add(new ShaderDoor(
+                    drs.Add(new MetaDoor(
                         Color.green,
-                        left ? Vector3.right : Vector3.left, 
-                        entra.Position(transform.position)+new Vector3((entra.Length() / 2f)* (left ? -1 : 1),entra.relativeYPos/2f-doorHeight/2f),
+                        left ? Vector3.right : Vector3.left,
+                        entra.Position(transform.position) + new Vector3((entra.Length() / 2f) * (left ? -1 : 1), entra.relativeYPos / 2f - doorHeight / 2f),
                         null, entra.dungeon));
-                    
+
                     segmentNum++;
                 }
 
-                ShaderPlatformSegment closest = GetClosest(entranceSegments, 0, null);
+                MetaPlatformSegment closest = GetClosest(entranceSegments, 0, null);
 
-                platform.dungeon = new ShaderDungeon("Platform dungeon", platform.Size(platformZWidth), platform.Position(transform.position));
+                platform.dungeon = new MetaDungeon("Platform dungeon", platform.Size(platformZWidth), platform.Position(transform.position));
 
                 //Door leading into the platform
-                ShaderDoor dungEntrance = new ShaderDoor(
+                MetaDoor dungEntrance = new MetaDoor(
                     Color.green,
                     Vector3.down,
-                    closest.Position(transform.position) + new Vector3(0,-closest.relativeYPos/2f),
+                    closest.Position(transform.position) + new Vector3(0, -closest.relativeYPos / 2f),
                     closest.dungeon,
                     null
                     );
@@ -601,7 +1516,8 @@ public class ShaderLevel : MonoBehaviour {
                 drs.Add(dungEntrance);
 
                 //Split the dungeon randomly into sections
-                SplitYDungeon(PLATFORM+platformNum+"_",new List<ShaderDungeon>(), platform.dungeon, dungEntrance);
+                //SplitYDungeon(PLATFORM+platformNum+"_",new List<ShaderDungeon>(), platform.dungeon, dungEntrance);
+                SplitXDungeon(PLATFORM + platformNum + "_", new List<MetaDungeon>(), platform.dungeon, dungEntrance);
                 //Add doors
                 LinkDungeon(drs, platform.dungeon);
 
@@ -609,29 +1525,42 @@ public class ShaderLevel : MonoBehaviour {
 
             //Create doors to the underground level
 
-            if (platform.dungeon != null) {
+            if (platform.dungeon != null)
+            {
 
-                ListHash<ShaderDungeon> undergroundCandidates = new ListHash<ShaderDungeon>();
-                ListHash<ShaderDungeon> platformCandidates = new ListHash<ShaderDungeon>();
+                ListHash<MetaDungeon> undergroundCandidates = new ListHash<MetaDungeon>();
+                ListHash<MetaDungeon> platformCandidates = new ListHash<MetaDungeon>();
 
                 GetAllChildrenWhoAreAdjacentTo(undergroundCandidates, undergroundDungeon, platform.dungeon, Vector3.up);
                 GetAllChildrenWhoAreAdjacentTo(platformCandidates, platform.dungeon, undergroundDungeon, Vector3.down);
 
-                DictionaryList<ShaderDungeon, ShaderDungeon> overlap = GetAllOverlappingCandidates(undergroundCandidates, platformCandidates, true);
+                //DictionaryList<MetaDungeon, MetaDungeon> overlap 
+                List<MetaOverlap> overlaps = GetAllOverlappingCandidates(undergroundCandidates, platformCandidates, true);
 
-                if (overlap.Count > 0)
+                if (overlaps.Count > 0)
                 {
-                    ShaderDungeon dr = overlap.Get(UnityEngine.Random.Range(0, overlap.Count - 1));
-                    BuildDoorsBetween(drs, dr, overlap[dr], Vector3.up, Color.green); // Vector3.down);
+                    MetaOverlap found = null;
+                    int maxLength = 0;
+                    foreach (MetaOverlap lap in overlaps)
+                    {
+                        if (found == null || lap.length > maxLength)
+                        {
+                            found = lap;
+                            maxLength = lap.length;
+                        }
+                    }
+
+                    //MetaDungeon dr = overlap.Get(UnityEngine.Random.Range(0, overlap.Count - 1));
+                    BuildDoorsBetween(drs, found.from, found.to, Vector3.up, Color.green); // Vector3.down);
 
                     //Make a route to the golden room
-                    List<ShaderDungeon> route = ShortestRoute(undergroundDungeon, dr, goldenRoom[0]);
-                    foreach (ShaderDungeon dungeon in route)
+                    List<MetaDungeon> route = ShortestRoute(undergroundDungeon, found.from, goldenRoom[0]);
+                    foreach (MetaDungeon dungeon in route)
                     {
                         dungeon.color = Color.blue;
                     }
                     pathsToGoldenRoom.AddIfNotContains(route);
-                    
+
                 }
                 else
                 {
@@ -646,47 +1575,56 @@ public class ShaderLevel : MonoBehaviour {
         }
 
         //Create treasure rooms
-        for (int i = 0; i < treasureRooms; i++) {
+        for (int i = 0; i < treasureRooms; i++)
+        {
 
             SearchClear(undergroundDungeon);
-            foreach (ShaderDungeon path in pathsToGoldenRoom) {
+            foreach (MetaDungeon path in pathsToGoldenRoom)
+            {
                 WeightPath(path, 0);
             }
 
             //List possible candidates ranked by depth and size, higher chance for more depth and more size
-            DictionaryList<ShaderDungeon, int> candidates = new DictionaryList<ShaderDungeon,int>();
+            DictionaryList<MetaDungeon, int> candidates = new DictionaryList<MetaDungeon, int>();
             int allVal = 0;
 
-            foreach (ShaderDungeon child in dungeonChildren) {
-                if (child.search >= minTreasureDistance) {
+            foreach (MetaDungeon child in dungeonChildren)
+            {
+                if (child.search >= minTreasureDistance)
+                {
                     int value = (int)
                                 (
-                                Mathf.Max(Mathf.Abs(child.position.y * treasureDepthFactor), 1f) 
-                                * Mathf.Max(Mathf.Sqrt(child.size.x*child.size.y) * treasureSizeFactor, 1f)
+                                Mathf.Max(Mathf.Abs(child.position.y * treasureDepthFactor), 1f)
+                                * Mathf.Max(Mathf.Sqrt(child.size.x * child.size.y) * treasureSizeFactor, 1f)
                                 );
 
-                    candidates.Add(child,value);
+                    candidates.Add(child, value);
                     allVal += value;
                 }
             }
             //Find a random candidate with higher prob
-            if (candidates.Count > 0) {
+            if (candidates.Count > 0)
+            {
 
                 int curr = 0;
                 int choice = UnityEngine.Random.Range(0, allVal);
-                ShaderDungeon chosen = null;
+                MetaDungeon chosen = null;
 
-                foreach (ShaderDungeon sd in candidates) {
-                    if (curr + candidates[sd] >= choice && choice >= curr) {
+                foreach (MetaDungeon sd in candidates)
+                {
+                    if (curr + candidates[sd] >= choice && choice >= curr)
+                    {
                         chosen = sd;
                         break;
                     }
                     curr += candidates[sd];
                 }
 
-                if (chosen != null) {
-                    List<ShaderDungeon> pathsToRoom = CompleteSearch(chosen);
-                    foreach (ShaderDungeon sd in pathsToRoom) {
+                if (chosen != null)
+                {
+                    List<MetaDungeon> pathsToRoom = CompleteSearch(chosen);
+                    foreach (MetaDungeon sd in pathsToRoom)
+                    {
                         sd.color = Color.cyan;
                         //Require a distance to this path
                         WeightPath(sd, 0);
@@ -696,35 +1634,86 @@ public class ShaderLevel : MonoBehaviour {
                     pathsToTreasureRooms.AddIfNotContains(pathsToRoom);
                 }
             }
-            
+
 
 
         }
         //Remove rooms without connections
-        foreach (ShaderDungeon child in dungeonChildren) {
-            if (!pathsToGoldenRoom.Contains(child) && !pathsToTreasureRooms.Contains(child)) {
+        foreach (MetaDungeon child in dungeonChildren)
+        {
+            if (!pathsToGoldenRoom.Contains(child) && !pathsToTreasureRooms.Contains(child))
+            {
                 child.alive = false;
             }
         }
 
-
         doors = drs.ToArray();
 
-        stopwatch.Stop();
+        //List all active rooms
+        List<MetaDungeon> activeRooms = new List<MetaDungeon>();
 
-        Debug.Log("Level generated in: " + +(stopwatch.ElapsedMilliseconds) / 1000f);
+        foreach (MetaPlatform platform in platforms)
+        {
+            if (platform.dungeon != null)
+            {
+                ListChildren(platform.dungeon, activeRooms);
+            }
+        }
+
+        List<MetaDungeon> allRooms = new List<MetaDungeon>();
+        ListChildren(undergroundDungeon, allRooms);
+
+        foreach (MetaDungeon dung in allRooms)
+        {
+            if (dung.alive)
+            {
+                activeRooms.Add(dung);
+            }
+        }
 
 
-        // rooms = rms.ToArray();
+        //Order doors
+        foreach (MetaDungeon room in activeRooms)
+        {
+            foreach (MetaDoor door in room.doors)
+            {
+                if (door.Valid)
+                {
+                    if (door.direction == Vector3.up || door.direction == Vector3.down)
+                    {
+                        if (door.position.y > room.position.y)
+                        {
+                            room.roofDoors.Add(door);
+                        }
+                        else
+                        {
+                            room.floorDoors.Add(door);
+                        }
+                    }
+                    if (door.direction == Vector3.left || door.direction == Vector3.right)
+                    {
+                        if (door.position.x < room.position.x)
+                        {
+                            room.leftDoors.Add(door);
+                        }
+                        else
+                        {
+                            room.rightDoors.Add(door);
+                        }
+                    }
+                }
+            }
+        }
 
-
+        return activeRooms;
     }
-    private List<ShaderDungeon> CompleteSearch(ShaderDungeon from) {
+    
+    private List<MetaDungeon> CompleteSearch(MetaDungeon from) {
 
-        List<ShaderDungeon> ret = new List<ShaderDungeon>();
+        List<MetaDungeon> ret = new List<MetaDungeon>();
         ret.Add(from);
 
-        ShaderDungeon current = from;
+        MetaDungeon current = from;
 
         if (from.search == int.MaxValue)
         {
@@ -734,8 +1723,8 @@ public class ShaderLevel : MonoBehaviour {
         for (int i = from.search - 1; i > 0; i--)
         {
 
-            List<ShaderDungeon> candidates = new List<ShaderDungeon>();
-            foreach (ShaderDoor door in current.doors)
+            List<MetaDungeon> candidates = new List<MetaDungeon>();
+            foreach (MetaDoor door in current.doors)
             {
                 if (door.from != null && door.from.search == i)
                 {
@@ -757,10 +1746,13 @@ public class ShaderLevel : MonoBehaviour {
                 ret.Add(current);
             }
         }
+
         return ret;
+
+
     }
 
-    private List<ShaderDungeon> ShortestRoute(ShaderDungeon overarchingDungeon, ShaderDungeon from, ShaderDungeon to) {
+    private List<MetaDungeon> ShortestRoute(MetaDungeon overarchingDungeon, MetaDungeon from, MetaDungeon to) {
 
         SearchClear(overarchingDungeon);
         WeightPath(to,0);
@@ -802,23 +1794,23 @@ public class ShaderLevel : MonoBehaviour {
         return ret;
         */
     }
-    private void ListChildren(ShaderDungeon dungeon, List<ShaderDungeon> children) {
+    private void ListChildren(MetaDungeon dungeon, List<MetaDungeon> children) {
         if (dungeon.children.Count == 0)
         {
             children.Add(dungeon);
         }
         else {
-            foreach (ShaderDungeon child in dungeon.children) {
+            foreach (MetaDungeon child in dungeon.children) {
                 ListChildren(child, children);
             }
         }
     }
 
-    private void WeightPath(ShaderDungeon to, int curr) {
+    private void WeightPath(MetaDungeon to, int curr) {
 
         to.search = curr;
 
-        foreach (ShaderDoor door in to.doors) {
+        foreach (MetaDoor door in to.doors) {
 
             if (door == null) {
                 Debug.LogError("WTF");
@@ -838,20 +1830,20 @@ public class ShaderLevel : MonoBehaviour {
         }
     }
 
-    private void SearchClear(ShaderDungeon dung) {
+    private void SearchClear(MetaDungeon dung) {
         dung.search = int.MaxValue;
 
-        foreach (ShaderDungeon child in dung.children) {
+        foreach (MetaDungeon child in dung.children) {
             SearchClear(child);
         }
     }
 
 
-    private void FindBestCandidateAsGoldenRoom(ShaderDungeon dungeon, List<ShaderDungeon> bestCandidateSoFar) {
+    private void FindBestCandidateAsGoldenRoom(MetaDungeon dungeon, List<MetaDungeon> bestCandidateSoFar) {
 
         if (dungeon.children.Count > 0)
         {
-            foreach (ShaderDungeon child in dungeon.children) {
+            foreach (MetaDungeon child in dungeon.children) {
                 FindBestCandidateAsGoldenRoom(child, bestCandidateSoFar);
             }
         }
@@ -873,7 +1865,7 @@ public class ShaderLevel : MonoBehaviour {
             }
         }
     }
-    private void LinkDungeon(List<ShaderDoor> doors, ShaderDungeon dung) {
+    private void LinkDungeon(List<MetaDoor> doors, MetaDungeon dung) {
 
 
         if (dung.sibling != null && !dung.joinedWithSibling)
@@ -881,16 +1873,16 @@ public class ShaderLevel : MonoBehaviour {
             JoinDungeons(doors, dung);
         }
 
-        foreach (ShaderDungeon child in dung.children)
+        foreach (MetaDungeon child in dung.children)
         {
             LinkDungeon(doors, child);
         }
 
     }
-    private void JoinDungeons(List<ShaderDoor> doors, ShaderDungeon dung) {
+    private void JoinDungeons(List<MetaDoor> doors, MetaDungeon dung) {
 
-        ListHash<ShaderDungeon> sibling = new ListHash<ShaderDungeon>();
-        ListHash<ShaderDungeon> self = new ListHash<ShaderDungeon>();
+        ListHash<MetaDungeon> sibling = new ListHash<MetaDungeon>();
+        ListHash<MetaDungeon> self = new ListHash<MetaDungeon>();
 
         //Dungeon is below
         // if (dung.siblingDirection == Vector3.up) {
@@ -905,12 +1897,21 @@ public class ShaderLevel : MonoBehaviour {
 
         bool isX = dung.siblingDirection == Vector3.up || dung.siblingDirection == Vector3.down;
 
-        DictionaryList<ShaderDungeon, ShaderDungeon> overlap = GetAllOverlappingCandidates(self, sibling, isX);
+        List<MetaOverlap> overlap = GetAllOverlappingCandidates(self, sibling, isX);
 
         if (overlap.Count > 0)
         {
-            ShaderDungeon dr = overlap.Get(UnityEngine.Random.Range(0, overlap.Count - 1));
-            BuildDoorsBetween(doors, dr, overlap[dr], dung.siblingDirection, Color.red); // Vector3.down);
+            // foreach(MetaDungeon )
+            MetaOverlap found = null;
+            int maxLength = 0;
+            foreach (MetaOverlap lap in overlap) {
+                if (found == null || lap.length > maxLength) {
+                    found = lap;
+                    maxLength = lap.length;
+                }
+            }
+            //MetaDungeon dr = overlap.Get(UnityEngine.Random.Range(0, overlap.Count - 1));
+            BuildDoorsBetween(doors, found.from, found.to, dung.siblingDirection, Color.red); // Vector3.down);
         }
         else
         {
@@ -922,7 +1923,7 @@ public class ShaderLevel : MonoBehaviour {
         dung.joinedWithSibling = true;
         dung.sibling.joinedWithSibling = true;
     }
-    private ShaderDoor BuildDoorsBetween(List<ShaderDoor> doors, ShaderDungeon first, ShaderDungeon second, Vector3 direction, Color color) {
+    private MetaDoor BuildDoorsBetween(List<MetaDoor> doors, MetaDungeon first, MetaDungeon second, Vector3 direction, Color color) {
 
         bool isX = direction == Vector3.up || direction == Vector3.down;
 
@@ -935,12 +1936,18 @@ public class ShaderLevel : MonoBehaviour {
         int ostart = Mathf.Max(ileft, left);
         int oend = Mathf.Min(iright, right);
 
-        int doorpos = (oend - ostart) / 2 + ostart;
+        int length = (oend - ostart);
+
+        int doorpos = length + ostart;
+
+        if (!isX) {
+            doorpos = ostart + doorHeight / 2+wallWidth;
+        }
 
         Vector3 xPos = new Vector3(doorpos, direction == Vector3.up ? first.position.y + first.size.y / 2 : first.position.y - first.size.y / 2);
         Vector3 yPos = new Vector3(direction == Vector3.right ? first.position.x + first.size.x / 2 : first.position.x - first.size.x / 2, doorpos);
 
-        ShaderDoor door = new ShaderDoor(color,direction, isX ? xPos : yPos, first, second);
+        MetaDoor door = new MetaDoor(color,direction, isX ? xPos : yPos, first, second);
 
         doors.Add(door);
         first.doors.Add(door);
@@ -952,17 +1959,17 @@ public class ShaderLevel : MonoBehaviour {
 
 
     }
-    private DictionaryList<ShaderDungeon, ShaderDungeon> GetAllOverlappingCandidates(ListHash<ShaderDungeon> self, ListHash<ShaderDungeon> sibling, bool isX)
+    private List<MetaOverlap> GetAllOverlappingCandidates(ListHash<MetaDungeon> self, ListHash<MetaDungeon> sibling, bool isX)
     {
 
-        DictionaryList<ShaderDungeon, ShaderDungeon> matches = new DictionaryList<ShaderDungeon, ShaderDungeon>();
+        List<MetaOverlap> matches = new List<MetaOverlap>();
 
-        foreach (ShaderDungeon s in self)
+        foreach (MetaDungeon s in self)
         {
             int left = isX ? (int)(s.position.x - s.size.x / 2f) : (int)(s.position.y - s.size.y / 2f);
             int right = isX ? (int)(s.position.x + s.size.x / 2f) : (int)(s.position.y + s.size.y / 2f);
 
-            foreach (ShaderDungeon i in sibling)
+            foreach (MetaDungeon i in sibling)
             {
                 int ileft = isX ? (int)(i.position.x - i.size.x / 2f) : (int)(i.position.y - i.size.y / 2f);
                 int iright = isX ? (int)(i.position.x + i.size.x / 2f) : (int)(i.position.y + i.size.y / 2f);
@@ -979,7 +1986,7 @@ public class ShaderLevel : MonoBehaviour {
 
                     if (oend - ostart > doorHeight)
                     {
-                        matches.AddIfNotContains(s, i);
+                        matches.Add(new MetaOverlap(s, i, oend-ostart));
                     }
                 }
             }
@@ -987,7 +1994,7 @@ public class ShaderLevel : MonoBehaviour {
 
         return matches;
     }
-    private void GetAllChildrenWhoAreAdjacentTo(ListHash<ShaderDungeon> found, ShaderDungeon search, ShaderDungeon adjacent, Vector3 direction)
+    private void GetAllChildrenWhoAreAdjacentTo(ListHash<MetaDungeon> found, MetaDungeon search, MetaDungeon adjacent, Vector3 direction)
     {
         if (search.children.Count == 0)
         {
@@ -1012,7 +2019,7 @@ public class ShaderLevel : MonoBehaviour {
         }
         else
         {
-            foreach (ShaderDungeon child in search.children)
+            foreach (MetaDungeon child in search.children)
             {
                 GetAllChildrenWhoAreAdjacentTo(found, child, adjacent, direction);
             }
@@ -1023,23 +2030,23 @@ public class ShaderLevel : MonoBehaviour {
         //    i
        // }
     }
-    private void SplitYDungeon(string parentName, List<ShaderDungeon> list, ShaderDungeon dung, ShaderDoor mainEntrance) {
+    private void SplitYDungeon(string parentName, List<MetaDungeon> list, MetaDungeon dung, MetaDoor mainEntrance) {
 
         //Y split
-        int split = DivisibleBy2((int) UnityEngine.Random.Range(minRoomSize, Mathf.Max(dung.size.y - minRoomSize, minRoomSize)));
+        int split = DivisibleBy2((int) UnityEngine.Random.Range(minRoomYSize, Mathf.Max(dung.size.y - minRoomYSize, minRoomYSize)));
 
         int topHeight = (int)(dung.size.y - split);
         int botHeight = split;
 
         bool doSplit = true;
 
-        if (dung.size.y < maxRoomSize) {
+        if (dung.size.y < maxRoomYSize) {
             doSplit = UnityEngine.Random.Range(0, 1f) < roomSplitChance;
         }
 
-        if (doSplit && topHeight >= minRoomSize && botHeight >= minRoomSize)
+        if (doSplit && topHeight >= minRoomYSize && botHeight >= minRoomYSize)
         {
-            ShaderDungeon topHalf = new ShaderDungeon(
+            MetaDungeon topHalf = new MetaDungeon(
                 parentName+list.Count,
                 new Vector3(dung.size.x, topHeight, dung.size.z),
                 dung.position + new Vector3(0, dung.size.y / 2f - topHeight / 2f, 0)
@@ -1047,7 +2054,7 @@ public class ShaderLevel : MonoBehaviour {
 
             list.Add(topHalf);
 
-            ShaderDungeon botHalf = new ShaderDungeon(
+            MetaDungeon botHalf = new MetaDungeon(
                 parentName + list.Count,
                 new Vector3(dung.size.x, botHeight, dung.size.z),
                 dung.position + new Vector3(0, -dung.size.y / 2f + botHeight / 2f, 0)
@@ -1072,7 +2079,12 @@ public class ShaderLevel : MonoBehaviour {
             SplitXDungeon(parentName, list, topHalf, mainEntrance);
             SplitXDungeon(parentName, list, botHalf, null);
 
-        }else {
+        }
+        else if (dung.size.x > minRoomXSize * 2 + 4 && dung.size.x > maxRoomXSize)
+        {
+            SplitXDungeon(parentName, list, dung, mainEntrance);
+        }
+        else {
 
             //ShaderRoom room = GenerateRoom(rooms, dung.position, dung.size, name + ROOM);
 
@@ -1087,10 +2099,10 @@ public class ShaderLevel : MonoBehaviour {
             //}
         }
     }
-    private void SplitXDungeon(string parentName, List<ShaderDungeon> list, ShaderDungeon dung, ShaderDoor mainEntrance) {
+    private void SplitXDungeon(string parentName, List<MetaDungeon> list, MetaDungeon dung, MetaDoor mainEntrance) {
 
 
-        int split = DivisibleBy2((int)UnityEngine.Random.Range(minRoomSize, Mathf.Max(dung.size.x - minRoomSize, minRoomSize)));
+        int split = DivisibleBy2((int)UnityEngine.Random.Range(minRoomXSize, Mathf.Max(dung.size.x - minRoomXSize, minRoomXSize)));
 
         int leftLength = (int)(dung.size.x - split);
         int rightLength = split;
@@ -1114,23 +2126,23 @@ public class ShaderLevel : MonoBehaviour {
 
         bool doSplit = true;
 
-        if (dung.size.x < maxRoomSize)
+        if (dung.size.x < maxRoomXSize)
         {
             doSplit = UnityEngine.Random.Range(0, 1f) < roomSplitChance;
         }
 
-        if (doSplit && leftLength >= minRoomSize && rightLength >= minRoomSize)
+        if (doSplit && leftLength >= minRoomXSize && rightLength >= minRoomXSize)
         {
 
-            ShaderDungeon leftHalf = new ShaderDungeon(
-                parentName+list.Count,
+            MetaDungeon leftHalf = new MetaDungeon(
+                parentName + list.Count,
                 new Vector3(leftLength, dung.size.y, dung.size.z),
                 dung.position + new Vector3(-dung.size.x / 2f + leftLength / 2f, 0, 0)
                 );
 
             list.Add(leftHalf);
 
-            ShaderDungeon rightHalf = new ShaderDungeon(
+            MetaDungeon rightHalf = new MetaDungeon(
                 parentName + list.Count,
                 new Vector3(rightLength, dung.size.y, dung.size.z),
                 dung.position + new Vector3(dung.size.x / 2f - rightLength / 2f, 0, 0)
@@ -1146,8 +2158,8 @@ public class ShaderLevel : MonoBehaviour {
             dung.children.Add(leftHalf);
             dung.children.Add(rightHalf);
 
-            ShaderDoor leftDoor = null;
-            ShaderDoor rightDoor = null;
+            MetaDoor leftDoor = null;
+            MetaDoor rightDoor = null;
 
             if (mainEntrance != null)
             {
@@ -1170,11 +2182,16 @@ public class ShaderLevel : MonoBehaviour {
                 }
             }
 
-            SplitYDungeon(parentName,  list, leftHalf, leftDoor);
+            SplitYDungeon(parentName, list, leftHalf, leftDoor);
             SplitYDungeon(parentName, list, rightHalf, rightDoor);
 
         }
-        else {
+        else if (dung.size.y > minRoomYSize*2+4 && dung.size.y > maxRoomYSize) {
+
+            SplitYDungeon(parentName, list, dung, mainEntrance);
+
+        }else
+        {
 
             //ShaderRoom room = GenerateRoom(rooms, dung.position, dung.size, name + ROOM);
 
@@ -1185,11 +2202,11 @@ public class ShaderLevel : MonoBehaviour {
         }
 
     }
-    private ShaderPlatformSegment GetClosest(ListHash<ShaderPlatformSegment> segments, int least, ShaderPlatformSegment notThis) {
+    private MetaPlatformSegment GetClosest(ListHash<MetaPlatformSegment> segments, int least, MetaPlatformSegment notThis) {
 
-        ShaderPlatformSegment closest = null;
+        MetaPlatformSegment closest = null;
 
-        foreach (ShaderPlatformSegment findClosest in segments)
+        foreach (MetaPlatformSegment findClosest in segments)
         {
 
             if (closest == null || 

@@ -48,7 +48,7 @@ public class ShaderRoom : MonoBehaviour {
 
     public ShaderTextures textures;
 
-    private ShaderDoor[] doors;
+    private MetaDoor[] doors;
 
     public void OnValidate()
     {
