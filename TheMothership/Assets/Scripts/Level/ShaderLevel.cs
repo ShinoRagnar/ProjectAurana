@@ -288,8 +288,13 @@ public class ShaderLevel : MonoBehaviour {
     public bool showGrounds = false;
     public bool showPlatforms = true;
     public bool showPaths = true;
+    public bool generateWalls = true;
+
 
     public GameObject player = null;
+
+    [Header("Texture Settings")]
+    public ShaderTextures undergroundTexture = null;
 
     [Header("Level Settings")]
     [Range(1, 1000)]
@@ -601,10 +606,67 @@ public class ShaderLevel : MonoBehaviour {
     public void ShowPlayerRoom(List<MetaDungeon> activeRooms) {
         if (player != null) {
 
+            Vector3 playerPos = player.transform.position;
+
+            MetaDungeon closest = null;
+            float distance = 0;
+
+            foreach (MetaDungeon room in activeRooms) {
+
+                float di = Vector3.Distance(room.position, playerPos);
+
+                if (closest == null || di < distance) {
+                    closest = room;
+                    distance = di;
+                }
+
+            }
+
+            if (closest != null) {
+                ShowRoom(closest);
+            }
 
         }
 
     }
+    public void ShowRoom(MetaDungeon dungeon)
+    {
+        Vector3 pos = dungeon.position;
+        Vector3 size = dungeon.size;
+        size.z = DivisibleBy2((int)UnityEngine.Random.Range(dungeon.size.x, dungeon.size.y));
+        pos.z += size.z / 2;
+        pos.z -= platformZWidth / 2;
+
+
+        GameObject room = new GameObject(dungeon.name);
+        room.transform.parent = this.transform;
+        room.transform.position = pos;
+
+        if (generateWalls) {
+            int nr = 0;
+            foreach (MetaWall wall in dungeon.walls)
+            {
+                GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                ground.transform.parent = room.transform;
+                ground.name = "Ground_" + dungeon.name + "_NR_" + nr;
+                ground.transform.position = wall.position;
+                ground.transform.localScale = wall.size;
+
+                nr++;
+            }
+        }
+
+        if (dress) {
+
+            ShaderRoom r = room.AddComponent<ShaderRoom>();
+            r.textures = this.undergroundTexture;
+            r.SetAndDress(size);
+
+
+        }
+    }
+
+
 
     public void CreateMetaGrounds(List<MetaDungeon> activeRooms) {
 

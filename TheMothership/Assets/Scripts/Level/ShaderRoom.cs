@@ -58,44 +58,44 @@ public class ShaderRoom : MonoBehaviour {
     }
 
     public void ExecuteUpdate() {
-
-        if (dress) {
-
-            ShaderTerrain room = null;
-            ShaderTerrainShape shape = null;
-
-            foreach (Transform t in transform)
-            {
-
-                if (t.gameObject.name.Contains(CHILD_NAME))
-                {
-                    room = t.gameObject.GetComponent<ShaderTerrain>();
-                    shape = t.gameObject.GetComponent<ShaderTerrainShape>();
-                    break;
-                }
-            }
-
-            if (room == null)
-            {
-                GameObject go = new GameObject(transform.name + CHILD_NAME);
-                go.transform.parent = this.transform;
-                go.transform.localPosition = Vector3.zero;
-                room = go.AddComponent<ShaderTerrain>();
-                shape = go.GetComponent<ShaderTerrainShape>();
-            }
-
-            DressRoom(room, shape);
+        if (dress)
+        {
+            SetAndDress(new Vector3(xSize, ySize, zSize));
         }
-
     }
 
-    public void GenerateWalls() {
 
-        if (doors != null) {
+    public void SetAndDress(Vector3 size) {
 
+        this.xSize = (int)size.x;
+        this.ySize = (int)size.y;
+        this.zSize = (int)size.z;
 
+        ShaderTerrain room = null;
+        ShaderTerrainShape shape = null;
 
+        foreach (Transform t in transform)
+        {
+            if (t.gameObject.name.Contains(CHILD_NAME))
+            {
+                room = t.gameObject.GetComponent<ShaderTerrain>();
+                shape = t.gameObject.GetComponent<ShaderTerrainShape>();
+                break;
+            }
         }
+
+        if (room == null)
+        {
+            GameObject go = new GameObject(transform.name + CHILD_NAME);
+            go.transform.parent = this.transform;
+            go.transform.localPosition = Vector3.zero;
+            room = go.AddComponent<ShaderTerrain>();
+            shape = go.GetComponent<ShaderTerrainShape>();
+        }
+
+        DressRoom(room, shape);
+
+
     }
 
     public void DressRoom(ShaderTerrain room, ShaderTerrainShape shape) {
@@ -106,9 +106,9 @@ public class ShaderRoom : MonoBehaviour {
         room.ySize = ySize;
         room.zSize = zSize;
 
-        room.directions = new Vector3[] { Vector3.back, Vector3.left, Vector3.right, Vector3.up, Vector3.down };
+        room.directions = new Vector3[] { Vector3.forward, Vector3.left, Vector3.right, Vector3.up, Vector3.down };
         room.resolutions = new int[] { 1, 1, 1, 1, 1 };
-        room.projectionDirection = Vector3.forward;
+        room.projectionDirection = Vector3.back;
 
         room.extents = new Vector3(-5, -10, -5);
 
